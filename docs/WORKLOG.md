@@ -8,7 +8,12 @@
 - **الرابط الدائم لآخر نسخة:** `https://github.com/tarikchouika/F-W-M-S/releases/latest/download/FWMS.apk`
 - **الإصدار 0.10.1** (`version.ts` + `package.json`) + توثيق كامل (CHANGELOG + DEPLOYMENT §3.4 + بند تحقق §5 + KNOWLEDGE_BASE ثلاثة دروس + هذا القيد).
 
-**التحقق (ما قبل التشغيل الأول):** YAML سليم + بنية السير كما صُممت (16 خطوة) + الأسرار الأربعة مؤكدة عبر API. التشغيل الأول قيد المتابعة فور الدفع — تُحدَّث نتيجته في هذا القيد فور ظهورها.
+**التحقق الحي (قياسًا لا ادعاءً — ثلاث تشغيلات حتى الأخضراء):**
+- **التشغيل 1** فشل عند «Init Capacitor»: `cap init` (Capacitor 6) أنشأ `capacitor.config.ts` لا `.json` ففشلت قراءته (ENOENT) — عولج بكتابة الإعداد يدويًا (لا `cap init` إطلاقًا).
+- **التشغيل 2:** البناء والتوقيع نجحا (BUILD SUCCESSFUL + `validateSigningRelease`) لكن `android.injected.build.abi` كانت تنقل المخرجات إلى `apk/<abi>/release/` فأخفقت `ls` — أُسقطت الخاصية (لا مكتبات native في غلاف webview) وجُمع الأصل بـ `find` بلا افتراض مسار.
+- **التشغيل 3: أخضراء كاملة** (السيران معًا — Android App Build + CI).
+- **الرابط الدائم يرد 200 بلا مصادقة (كما يراه أي مستخدم):** `releases/latest/download/FWMS.apk` → 302 → `v0.10.1/FWMS.apk` — 2,978,917 بايت، `content-type: application/vnd.android.package-archive`، وتنزيل فعلي بصمة `PK` سليمة.
+- **التوقيع الثابت مؤكد من سجل CI:** «استخدام مفتاح التوقيع الثابت من أسرار المستودع» (`KEYSTORE_FROM_SECRET=true`) والمصدر `app-release.apk` لا `-unsigned` — مع `validateSigningRelease` ✓.
 
 ### طلبات موجهة للمساعد الآخر
 - [ ] تجربة تثبيت `FWMS.apk` على الهاتف (Samsung A53) فوق أي نسخة سابقة والتحقق من قبول أندرويد للتحديث (تطابق التوقيع) — الأولوية: عالية — السبب: إثبات استمرارية التوقيع قياسًا لا افتراضًا.
