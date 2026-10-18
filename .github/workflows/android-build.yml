@@ -117,21 +117,39 @@ jobs:
       - name: Install Capacitor (no project deps touched)
         run: npm install --no-save @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
 
-      - name: Init Capacitor + add Android platform
+      - name: Write Capacitor config + add Android platform
         working-directory: android-shell
         run: |
-          npx cap init "$APP_NAME" "$PACKAGE_ID" --web-dir=www --non-interactive || npx cap init "$APP_NAME" "$PACKAGE_ID" --web-dir=www
+          # الإعداد يُكتب مباشرة (لا cap init): حتمي بلا تبعية لصيغة تختارها CLI —
+          # درس التشغيل الأول: cap init أنشأ capacitor.config.ts (لا .json) ففشلت قراءته.
+          cat > package.json <<PKG
+          {
+            "name": "fwms-android-shell",
+            "version": "$APP_VERSION",
+            "private": true
+          }
+          PKG
           # التطبيق يشير إلى النشر الحي مباشرة (server.url) — www مجرد احتياط بلا اتصال
-          node -e "
-            const fs = require('fs');
-            const cfg = JSON.parse(fs.readFileSync('capacitor.config.json', 'utf8'));
-            cfg.server = { url: process.env.APP_URL, cleartext: false };
-            cfg.android = { allowMixedContent: false };
-            cfg.androidScheme = 'https';
-            fs.writeFileSync('capacitor.config.json', JSON.stringify(cfg, null, 2));
-            console.log(JSON.stringify(cfg, null, 2));
-          "
+          cat > capacitor.config.json <<CFG
+          {
+            "appId": "$PACKAGE_ID",
+            "appName": "$APP_NAME",
+            "webDir": "www",
+            "server": {
+              "url": "$APP_URL",
+              "cleartext": false
+            },
+            "android": {
+              "allowMixedContent": false
+            },
+            "androidScheme": "https"
+          }
+          CFG
+          echo "→ capacitor.config.json:"
+          cat capacitor.config.json
           npx cap add android
+          echo "→ android/ project:"
+          ls android/
 
       - name: Prepare signing keystore
         working-directory: android-shell
