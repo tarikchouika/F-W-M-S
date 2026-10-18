@@ -80,26 +80,31 @@ export default async function DashboardPage() {
           <h1 className="text-2xl font-bold tracking-tight text-foreground">
             {t("dashboard.welcome")}، {session.name}
           </h1>
-          <div className="mt-1.5 flex items-center gap-2 text-sm text-muted-foreground">
-            <span>{t("dashboard.activeCompany")}:</span>
-            <span className="font-semibold text-foreground">{session.companyName}</span>
-            <span aria-hidden>·</span>
-            <span>{t("dashboard.currentRole")}:</span>
-            <Badge variant="secondary" className="font-semibold">{t(roleBadgeKey)}</Badge>
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+            {/* كل (وسم + قيمة) في مجموعة واحدة حتى تنزاح ككتلة متماسكة على الجوال */}
+            <span className="inline-flex min-w-0 items-center gap-2">
+              <span className="shrink-0">{t("dashboard.activeCompany")}:</span>
+              <span className="min-w-0 break-words font-semibold text-foreground">{session.companyName}</span>
+            </span>
+            <span aria-hidden className="hidden sm:inline">·</span>
+            <span className="inline-flex items-center gap-2">
+              <span className="shrink-0">{t("dashboard.currentRole")}:</span>
+              <Badge variant="secondary" className="shrink-0 font-semibold">{t(roleBadgeKey)}</Badge>
+            </span>
           </div>
         </div>
       </div>
 
-      {/* الإحصاءات */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {/* الإحصاءات — الجوال: عمودان (كانا عمودًا واحدًا يلتهم الشاشة) — سطح المكتب: أربعة */}
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {stats.map((s) => (
           <Card key={s.labelKey} className="fwms-card-hover border-border/70">
-            <CardContent className="flex items-center justify-between gap-3 p-5">
-              <div className="flex flex-col">
+            <CardContent className="flex items-center justify-between gap-2 p-4 sm:gap-3 sm:p-5">
+              <div className="flex min-w-0 flex-col">
                 <span className="text-2xl font-extrabold tabular-nums text-foreground" dir="ltr">
                   {s.value}
                 </span>
-                <span className="mt-0.5 text-xs font-medium text-muted-foreground">{t(s.labelKey)}</span>
+                <span className="mt-0.5 break-words text-xs font-medium text-muted-foreground">{t(s.labelKey)}</span>
               </div>
               <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-secondary text-primary">
                 <s.icon className="size-5" aria-hidden />

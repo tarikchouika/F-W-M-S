@@ -16,7 +16,7 @@
 
 const ORIGIN = "fwms-orpin.vercel.app"; // أصل النشر الحي — بلا بروتوكول ولا منفذ
 
-export default {
+const worker = {
   async fetch(request) {
     const url = new URL(request.url);
 
@@ -80,3 +80,5 @@ export default {
     }
   },
 };
+
+export default worker;

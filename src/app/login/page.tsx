@@ -40,23 +40,28 @@ export default async function LoginPage() {
   const branding = await getPlatformBranding();
 
   return (
-    <div className="fwms-hero-gradient relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-4 py-10">
+    <div className="fwms-hero-gradient relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-4 py-10 lg:px-8">
       <div className="fwms-zellige absolute inset-0 opacity-50" aria-hidden />
 
       <div className="absolute top-4 end-4 z-10">
         <LangSwitcher variant="secondary" />
       </div>
 
-      <div className="relative z-10 flex w-full max-w-sm flex-col items-center gap-6">
-        <div className="flex flex-col items-center gap-3 text-center">
-          <FwmsLogo className="size-14 drop-shadow-lg" />
+      {/* الحاسوب: عمودان — لوحة الهوية + بطاقة الدخول (يُملآن الشاشة بدل ترك مساحة ميتة) — الجوال: مكدّستان في عمود */}
+      <div className="relative z-10 grid w-full max-w-5xl items-center gap-8 lg:grid-cols-2 lg:gap-16">
+        {/* لوحة الهوية — بلا أي نص مثبّت: الاسم من القاعدة (white-label) والإصدار من version.ts */}
+        <div className="flex flex-col items-center gap-4 text-center lg:items-start lg:text-start">
+          <FwmsLogo className="size-14 drop-shadow-lg lg:size-20" />
+          <div className="text-2xl font-bold text-white drop-shadow lg:text-3xl" dir="ltr">
+            {branding.displayName}
+          </div>
           <div className="flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white/90 backdrop-blur">
             <ShieldCheck className="size-3.5" aria-hidden />
-            <span dir="ltr">{branding.displayName} · v{APP_VERSION}</span>
+            <span dir="ltr">v{APP_VERSION}</span>
           </div>
         </div>
 
-        <Card className="w-full border-white/20 bg-white/95 shadow-2xl backdrop-blur">
+        <Card className="w-full max-w-md justify-self-center border-white/20 bg-white/95 shadow-2xl backdrop-blur lg:max-w-none">
           <CardHeader className="text-center">
             <CardTitle className="text-xl font-bold text-card-foreground">
               {tServer(dict, "auth.loginTitle")}

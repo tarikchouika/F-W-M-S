@@ -47,6 +47,7 @@ export function TeamSetup({
   const [info, setInfo] = useState<TeamInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [membersOptions, setMembersOptions] = useState<MemberOption[]>([]);
   const [sites, setSites] = useState<{ id: string; name: string }[]>([]);
@@ -88,7 +89,6 @@ export function TeamSetup({
       setLoading(false);
     }
   }, [groupId, t]);
-  const [error, setError] = useState<string | null>(null);
 
   const loadOptions = useCallback(async () => {
     try {

@@ -19,6 +19,14 @@ const eslintConfig = [...nextCoreWebVitals, ...nextTypescript, {
     // React rules
     "react-hooks/exhaustive-deps": "off",
     "react-hooks/purity": "off",
+    // 2026-10-18 — تخفيف مُبرَّر إلى warn (قرار المالك بعد عرض الدليل):
+    // القاعدة تُعلِّن خطأً على أي استدعاء لدالة تحتوي setState من effect، حتى لو وقعت
+    // كل setState بعد await. أثبتنا تجريبيًا (ملف إثبات) أن:
+    //   • `void load()` يفشل دائمًا مهما كان ترتيب العبارات
+    //   • `void (async () => { await load(); })()` ينجح — وهو مطابق سلوكيًا تمامًا
+    // أي إنها إعلان خاطئ على نمط جلب بيانات قياسي، لا خلل سلوكي حقيقي.
+    // نُبقيها ظاهرة (warn) للتدقيق المستمر دون أن تُسدّ CI عند كل push.
+    "react-hooks/set-state-in-effect": "warn",
     "react/no-unescaped-entities": "off",
     "react/display-name": "off",
     "react/prop-types": "off",
