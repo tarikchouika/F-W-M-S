@@ -13,10 +13,11 @@
 // مفاتيح errors.* باللغات الأربع، تُزامَن يدويًا مع src/i18n/dictionaries/*.json
 // (المفاتيح المرادفة: errors.title / errors.platformHint / common.retry /
 // errors.reload / errors.digestLabel — حدّثها مع القواميس معًا في أي تعديل).
-// كشف اللغة: كوكي FWMS_LOCALE ← لغة المتصفح ← العربية (الافتراضية — SPEC §2).
-// مرحلة SSR تُعرض بالافتراض ثم يصحح العميل اللغة بعد الإقلاع (useEffect) — بلا
-// تعارض hydration.
-import { useEffect, useState } from "react";
+// كشف اللغة: كوكي FWMS_LOCALE ← لغة المتصفح ← العربية (الافتراضية — SPEC §2)، عبر
+// useSyncExternalStore (النمط القانوني لقراءة حالة خارجية) — بلا setState داخل
+// effect (react-hooks/set-state-in-effect) وبلا تعارض hydration: لقطة الخادم «ar»
+// ولوحة العميل تُقرأ عند الإقلاع فيرندر الإقلاع نفسه باللغة الصحيحة.
+import { useEffect, useSyncExternalStore } from "react";
 
 type ErrLocale = "ar" | "fr" | "en" | "es";
 
@@ -59,8 +60,9 @@ const ERROR_STRINGS: Record<
   },
 };
 
+const subscribeNoop = () => () => {}; // لا اشتراك — قراءة لمرة العرض (صفحة خطأ لا تعيد الرندر)
+
 function detectLocale(): ErrLocale {
-  if (typeof window === "undefined") return "ar"; // SSR: الافتراضية — يصححها العميل
   try {
     const m = document.cookie.match(/(?:^|;\s*)FWMS_LOCALE=(ar|fr|en|es)(?:;|$)/);
     if (m) return m[1] as ErrLocale;
@@ -83,10 +85,14 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  const [locale, setLocale] = useState<ErrLocale>("ar");
+  // اللغة: لقطة خارجية (كوكي/متصفح) — الخادم «ar» والعميل يقرأها عند الإقلاع
+  const locale = useSyncExternalStore(
+    subscribeNoop,
+    () => detectLocale(),
+    () => "ar" as ErrLocale
+  );
 
   useEffect(() => {
-    setLocale(detectLocale());
     console.error("[FWMS][global-error] خطأ في جذر التخطيط:", error);
   }, [error]);
 
