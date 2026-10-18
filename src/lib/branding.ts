@@ -38,25 +38,38 @@ const NEUTRAL_FALLBACK: PlatformBranding = {
   transferFreeze: false,
 };
 
-/** تحميل هوية المالك الفعالة (كيان واحد — النقل يحدّث الصف نفسه فتبقى FK سليمة) */
+/**
+ * تحميل هوية المالك الفعالة (كيان واحد — النقل يحدّث الصف نفسه فتبقى FK سليمة)
+ *
+ * محصّنة ضد فشل القاعدة (بلاغ المالك 2026-10-19 «صفحة خطأ عند تسجيل الدخول» —
+ * Application error: a server-side exception): دالة عرضٍ هذه — فشل استعلامها
+ * العابر (إقلاع بارد متوازٍ على Vercel مثلًا) لا يجوز أن يعطّل صفحات الدخول
+ * واللوحات بأكملها؛ فالهوية المحايدة المتوقعة أصلًا لقاعدة فارغة هي نفسها
+ * الاحتياط الطبيعي عند الفشل. الخطأ يُسجَّل للسجلات ويتابع كأي عطل تشغيلي.
+ */
 export async function getPlatformBranding(): Promise<PlatformBranding> {
-  const owner = await db.platformOwner.findFirst({ orderBy: { createdAt: "asc" } });
-  if (!owner) return { ...NEUTRAL_FALLBACK };
-  return {
-    id: owner.id,
-    legalName: owner.legalName,
-    displayName: owner.displayName,
-    contactEmail: owner.contactEmail,
-    contactPhone: owner.contactPhone,
-    logoUrl: owner.logoUrl,
-    websiteUrl: owner.websiteUrl,
-    termsUrl: owner.termsUrl,
-    footerText: owner.footerText,
-    defaultLocale: owner.defaultLocale,
-    defaultCurrency: owner.defaultCurrency,
-    modulesJson: owner.modulesJson,
-    transferFreeze: owner.transferFreeze,
-  };
+  try {
+    const owner = await db.platformOwner.findFirst({ orderBy: { createdAt: "asc" } });
+    if (!owner) return { ...NEUTRAL_FALLBACK };
+    return {
+      id: owner.id,
+      legalName: owner.legalName,
+      displayName: owner.displayName,
+      contactEmail: owner.contactEmail,
+      contactPhone: owner.contactPhone,
+      logoUrl: owner.logoUrl,
+      websiteUrl: owner.websiteUrl,
+      termsUrl: owner.termsUrl,
+      footerText: owner.footerText,
+      defaultLocale: owner.defaultLocale,
+      defaultCurrency: owner.defaultCurrency,
+      modulesJson: owner.modulesJson,
+      transferFreeze: owner.transferFreeze,
+    };
+  } catch (e) {
+    console.error("[FWMS][branding] فشل تحميل هوية المالك — الاحتياط المحايد:", e);
+    return { ...NEUTRAL_FALLBACK };
+  }
 }
 
 // ─── تفعيل/تعطيل الوحدات والمسارات بحسب المالك (SPEC §3.2) ────

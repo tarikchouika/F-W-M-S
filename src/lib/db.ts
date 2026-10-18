@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client'
-import { existsSync, copyFileSync } from 'node:fs'
+import { existsSync, copyFileSync, renameSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -45,9 +45,31 @@ function bootstrapServerlessPreview(): void {
     )
     return
   }
+  // النسخ الذرّي (بلاغ المالك 2026-10-19 «صفحة خطأ عند تسجيل الدخول» —
+  // Application error: a server-side exception + Digest): copyFileSync المباشر إلى
+  // الاسم النهائي غير ذرّي — عند إقلاع بارد متوازٍ (عدة lambdas تحمل الصفحات معًا
+  // بعد نشر جديد) ترى lambda ثانية existsSync=target صحيحًا والملف منسوخ نصفه فقط
+  // (733KB تستغرق لحظاتًا قابلة للسباق) فيفتح Prisma صورة قاعدة تالفة ويرمي —
+  // وصفحة /login تلمس القاعدة خلال SSR (getSession/getPlatformBranding) فتنهار
+  // كلها وتظهر صفحة «Application error…» الإنجليزية للمستخدم.
+  // العلاج: النسخ إلى اسم مؤقت فريد (PID+زمن+عشوائية) ثم renameSync — الـ rename
+  // على نفس نظام الملفات ذرّي، فلا يظهر الاسم النهائي للقرّاء إلا مكتملًا تمامًا؛
+  // وتكرار النسخ المتوازي بلا ضرر (الفائز الأخير يبقى وكل النسخ سليمة).
   const target = join(tmpdir(), PREVIEW_RUNTIME_NAME)
   try {
-    if (!existsSync(target)) copyFileSync(snapshot, target)
+    if (existsSync(target)) {
+      // مع النسخ الذرّي: وجود الهدف = جاء عبر rename = مكتمل 100% — استعمله كما هو
+    } else {
+      const stamp = `${process.pid}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+      const tmpPath = `${target}.${stamp}.tmp`
+      copyFileSync(snapshot, tmpPath)
+      try {
+        renameSync(tmpPath, target) // ذرّي — لحظة الظهور = لحظة الاكتمال
+      } catch {
+        // سبقنا إليه فائز آخر بـ rename — نسخته مكتملة بالضرورة؛ نحذف نسختنا الفائضة
+        try { rmSync(tmpPath, { force: true }) } catch { /* يتيمة بلا ضرر */ }
+      }
+    }
     process.env.DATABASE_URL = `file:${target}`
     if (!previewNoticePrinted) {
       previewNoticePrinted = true

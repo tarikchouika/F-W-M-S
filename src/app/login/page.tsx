@@ -20,7 +20,18 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function LoginPage() {
   // مسجَّل الدخول مسبقًا؟ إلى لوحة التحكم مباشرة
-  const session = await getSession();
+  //
+  // محصّنة (بلاغ المالك 2026-10-19 «صفحة خطأ عند تسجيل الدخول» — Application error:
+  // a server-side exception + Digest): getSession تلمس القاعدة خلال SSR — أي فشل
+  // عابر فيها كان يرمي فتنهار صفحة الدخول كلها ويُمنع المستخدم من الدخول أصلًا.
+  // فشل عابر = «لا جلسة» فيُعرض نموذج الدخول (الأصل) بدل صفحة خطأ. لا نلمس
+  // getSession ذاتها: حراسة المسارات الأخرى (API/لوحة) تبقى صريحة كما هي.
+  let session: Awaited<ReturnType<typeof getSession>> = null;
+  try {
+    session = await getSession();
+  } catch (e) {
+    console.error("[FWMS][login] فشل عابر في قراءة الجلسة — نتابع كـ «لا جلسة»:", e);
+  }
   if (session) redirect("/dashboard");
 
   const store = await cookies();
