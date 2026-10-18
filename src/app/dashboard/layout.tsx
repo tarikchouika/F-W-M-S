@@ -6,6 +6,7 @@ import { LocationWatcher } from "@/components/fwms/location-watcher";
 import { CompanySwitcher } from "@/components/fwms/company-switcher";
 import { LogoutButton } from "@/components/fwms/logout-button";
 import { LangSwitcher } from "@/components/fwms/lang-switcher";
+import { ThemeSwitcher } from "@/components/fwms/theme-switcher";
 import { NotificationBell } from "@/components/fwms/notification-bell";
 import { getPlatformBranding, parseModules, isModuleEnabled, MODULE_KEYS } from "@/lib/branding";
 
@@ -77,6 +78,7 @@ export default async function DashboardLayout({
             {/* المرحلة 5: جرس الإشعارات — لكل مستخدم (self.view) — استطلاع 20ث/120ث */}
             <NotificationBell />
             <LangSwitcher />
+            <ThemeSwitcher />
             <div className="hidden items-center gap-2 text-end sm:flex">
               <div className="flex flex-col leading-tight">
                 <span className="text-sm font-semibold text-foreground">{session.name}</span>

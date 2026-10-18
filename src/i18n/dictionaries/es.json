@@ -1355,5 +1355,11 @@
     "platformHint": "Ocurrió un problema temporal al cargar la plataforma. Inténtalo de nuevo; si persiste, contacta con el soporte técnico con el código de error que aparece abajo.",
     "reload": "Recargar la página",
     "digestLabel": "Código de error para soporte"
+  },
+  "theme": {
+    "label": "Tema",
+    "light": "Claro",
+    "dark": "Oscuro",
+    "system": "Sistema"
   }
 }

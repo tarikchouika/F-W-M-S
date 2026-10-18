@@ -1355,5 +1355,11 @@
     "platformHint": "A temporary issue occurred while loading the platform. Please try again; if it keeps happening, contact technical support with the error code below.",
     "reload": "Reload page",
     "digestLabel": "Error code for support"
+  },
+  "theme": {
+    "label": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
   }
 }

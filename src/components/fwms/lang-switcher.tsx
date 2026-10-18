@@ -18,7 +18,13 @@ import { setLocaleAction } from "@/i18n/actions";
 import { locales, localeLabels, type Locale } from "@/i18n/config";
 import { cn } from "@/lib/utils";
 
-export function LangSwitcher({ variant = "ghost" }: { variant?: "ghost" | "outline" | "secondary" }) {
+export function LangSwitcher({
+  variant = "ghost",
+  className,
+}: {
+  variant?: "ghost" | "outline" | "secondary";
+  className?: string;
+}) {
   const { locale, t } = useI18n();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -37,7 +43,7 @@ export function LangSwitcher({ variant = "ghost" }: { variant?: "ghost" | "outli
         <Button
           variant={variant}
           size="sm"
-          className={cn("gap-2 font-medium", isPending && "opacity-60")}
+          className={cn("gap-2 font-medium", isPending && "opacity-60", className)}
           aria-label={t("lang.label")}
           disabled={isPending}
         >

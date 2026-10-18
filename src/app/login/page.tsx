@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { ShieldCheck } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LangSwitcher } from "@/components/fwms/lang-switcher";
+import { ThemeSwitcher } from "@/components/fwms/theme-switcher";
 import { FwmsLogo } from "@/components/fwms/logo";
 import { LoginForm } from "@/components/fwms/login-form";
 import { getSession } from "@/lib/auth/session";
@@ -43,8 +44,10 @@ export default async function LoginPage() {
     <div className="fwms-hero-gradient relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-4 py-10 lg:px-8">
       <div className="fwms-zellige absolute inset-0 opacity-50" aria-hidden />
 
-      <div className="absolute top-4 end-4 z-10">
-        <LangSwitcher variant="secondary" />
+      <div className="absolute top-4 end-4 z-10 flex items-center gap-2">
+        {/* زجاجي فوق التدرّج: يعمل في الوضعين (الفاتح والقاتم) بلا اعتماد على secondary */}
+        <LangSwitcher variant="secondary" className="border-white/25 bg-white/12 text-white backdrop-blur hover:bg-white/20 hover:text-white focus-visible:ring-white/40" />
+        <ThemeSwitcher variant="secondary" className="border-white/25 bg-white/12 text-white backdrop-blur hover:bg-white/20 hover:text-white focus-visible:ring-white/40" />
       </div>
 
       {/* الحاسوب: عمودان — لوحة الهوية + بطاقة الدخول (يُملآن الشاشة بدل ترك مساحة ميتة) — الجوال: مكدّستان في عمود */}
@@ -61,7 +64,8 @@ export default async function LoginPage() {
           </div>
         </div>
 
-        <Card className="w-full max-w-md justify-self-center border-white/20 bg-white/95 shadow-2xl backdrop-blur lg:max-w-none">
+        {/* bg-card/95 بدل أبيض مثبّت: فاتح = أبيض فوق التدرّج، قاتم = أخضر داكن أوضح منه */}
+        <Card className="w-full max-w-md justify-self-center border-white/20 bg-card/95 shadow-2xl backdrop-blur lg:max-w-none">
           <CardHeader className="text-center">
             <CardTitle className="text-xl font-bold text-card-foreground">
               {tServer(dict, "auth.loginTitle")}

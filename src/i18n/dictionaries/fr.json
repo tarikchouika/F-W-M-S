@@ -1355,5 +1355,11 @@
     "platformHint": "Un problème temporaire est survenu lors du chargement de la plateforme. Réessayez ; si le problème persiste, contactez le support technique avec le code d'erreur ci-dessous.",
     "reload": "Rafraîchir la page",
     "digestLabel": "Code d'erreur (support)"
+  },
+  "theme": {
+    "label": "Thème",
+    "light": "Clair",
+    "dark": "Sombre",
+    "system": "Système"
   }
 }

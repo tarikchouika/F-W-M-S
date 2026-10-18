@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Noto_Sans_Arabic } from "next/font/google";
 import { cookies } from "next/headers";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
+import { ThemeProvider } from "next-themes";
 import { I18nProvider } from "@/i18n/provider";
 import { ServiceWorkerRegister } from "@/components/fwms/sw-register";
 import { LOCALE_COOKIE, localeDirection, resolveLocale } from "@/i18n/config";
@@ -37,7 +38,12 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#14532d",
+  // لون شريط المتصفح يتبع مخطط النظام (لا يقرأ localStorage — قيد metadata):
+  // الفاتح أخضر الهوية #14532d (مطابق لـ manifest) والقاتم خلفية .dark (#07100b).
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#14532d" },
+    { media: "(prefers-color-scheme: dark)", color: "#07100b" },
+  ],
   width: "device-width",
   initialScale: 1,
 };
@@ -57,11 +63,15 @@ export default async function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${notoArabic.variable} antialiased bg-background text-foreground`}
       >
-        <I18nProvider locale={locale} dict={dict}>
-          {children}
-        </I18nProvider>
-        <Toaster />
-        <ServiceWorkerRegister />
+        {/* المظهر: next-themes يضبط `.dark` على <html> قبل الرسم الأول (بلا وميض) —
+            <html> يحمل suppressHydrationWarning أصلًا (شرط هذا النمط). */}
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          <I18nProvider locale={locale} dict={dict}>
+            {children}
+          </I18nProvider>
+          <Toaster />
+          <ServiceWorkerRegister />
+        </ThemeProvider>
       </body>
     </html>
   );
