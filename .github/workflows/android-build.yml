@@ -92,6 +92,8 @@ jobs:
       - name: Scaffold app shell (www fallback)
         run: |
           mkdir -p android-shell/www
+          # i18n (بلاغ المالك «خلل في الترجمة»): صفحة الاحتياط كانت عربية حصرًا —
+          # صارت رباعية اللغة بكشف لغة الجهاز (نفس مفاتيح روح القواميس).
           cat > android-shell/www/index.html <<'HTML'
           <!doctype html>
           <html lang="ar" dir="rtl">
@@ -106,9 +108,22 @@ jobs:
             </head>
             <body>
               <h1>FWMS</h1>
-              <p>يتطلب التطبيق اتصالًا بالإنترنت لفتح المنصة.</p>
-              <a href="REPLACE_ME" id="open">فتح المنصة في المتصفح</a>
-              <script>document.getElementById('open').href = location.origin.startsWith('http') ? location.origin : 'REPLACE_ME';</script>
+              <p data-i18n="hint">يتطلب التطبيق اتصالًا بالإنترنت لفتح المنصة.</p>
+              <a href="REPLACE_ME" id="open" data-i18n="open">فتح المنصة في المتصفح</a>
+              <script>
+                var I18N = {
+                  ar: { hint: "يتطلب التطبيق اتصالًا بالإنترنت لفتح المنصة.", open: "فتح المنصة في المتصفح", dir: "rtl" },
+                  fr: { hint: "L'application nécessite une connexion Internet pour ouvrir la plateforme.", open: "Ouvrir la plateforme dans le navigateur", dir: "ltr" },
+                  en: { hint: "The app requires an Internet connection to open the platform.", open: "Open the platform in the browser", dir: "ltr" },
+                  es: { hint: "La aplicación necesita conexión a Internet para abrir la plataforma.", open: "Abrir la plataforma en el navegador", dir: "ltr" }
+                };
+                var nav = (navigator.language || "ar").slice(0, 2).toLowerCase();
+                var s = I18N[nav] || I18N.ar;
+                document.documentElement.lang = nav in I18N ? nav : "ar";
+                document.documentElement.dir = s.dir;
+                document.querySelectorAll("[data-i18n]").forEach(function (el) { el.textContent = s[el.getAttribute("data-i18n")]; });
+                document.getElementById('open').href = location.origin.startsWith('http') ? location.origin : 'REPLACE_ME';
+              </script>
             </body>
           </html>
           HTML

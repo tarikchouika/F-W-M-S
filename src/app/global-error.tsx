@@ -6,6 +6,76 @@
 // exception…» مهما انفجر الموضع، لأن هذا الحد يستبدل الجذر كله — ولذا يجب أن
 // يضم <html> و<body> بنفسه (لا يرث شيئًا). الأنماط الحرجة inline (بلا افتراض
 // جاهزية أي حزمة أو class) — الطبقات التزيينية فوقها فقط.
+//
+// i18n (بلاغ المالك 2026-10-19 «خلل في الترجمة»): هذا الحد معزول بنيويًا —
+// مزوّد اللغة (I18nProvider داخل الـ root layout) مقلوع مع الجذر عند انفجاره،
+// فلا سبيل إلى القواميس المشتركة. الاستثناء الموثق هنا: نسخة مصغرة مضمنة من
+// مفاتيح errors.* باللغات الأربع، تُزامَن يدويًا مع src/i18n/dictionaries/*.json
+// (المفاتيح المرادفة: errors.title / errors.platformHint / common.retry /
+// errors.reload / errors.digestLabel — حدّثها مع القواميس معًا في أي تعديل).
+// كشف اللغة: كوكي FWMS_LOCALE ← لغة المتصفح ← العربية (الافتراضية — SPEC §2).
+// مرحلة SSR تُعرض بالافتراض ثم يصحح العميل اللغة بعد الإقلاع (useEffect) — بلا
+// تعارض hydration.
+import { useEffect, useState } from "react";
+
+type ErrLocale = "ar" | "fr" | "en" | "es";
+
+// مرادفة مفاتيح errors.* في القواميس — استثناء موثق (انظر التعليق أعلاه)
+const ERROR_STRINGS: Record<
+  ErrLocale,
+  { title: string; hint: string; retry: string; reload: string; digest: string; dir: "rtl" | "ltr" }
+> = {
+  ar: {
+    title: "حدث خطأ غير متوقع",
+    hint: "وقعت مشكلة مؤقتة أثناء تحميل المنصة. جرّب إعادة المحاولة — إن تكررت فتواصل مع الدعم الفني مع رمز الخطأ أدناه.",
+    retry: "إعادة المحاولة",
+    reload: "تحديث الصفحة",
+    digest: "رمز الخطأ للدعم",
+    dir: "rtl",
+  },
+  fr: {
+    title: "Une erreur inattendue s'est produite",
+    hint: "Un problème temporaire est survenu lors du chargement de la plateforme. Réessayez ; si le problème persiste, contactez le support technique avec le code d'erreur ci-dessous.",
+    retry: "Réessayer",
+    reload: "Rafraîchir la page",
+    digest: "Code d'erreur (support)",
+    dir: "ltr",
+  },
+  en: {
+    title: "An unexpected error occurred",
+    hint: "A temporary issue occurred while loading the platform. Please try again; if it keeps happening, contact technical support with the error code below.",
+    retry: "Try again",
+    reload: "Reload page",
+    digest: "Error code for support",
+    dir: "ltr",
+  },
+  es: {
+    title: "Ha ocurrido un error inesperado",
+    hint: "Ocurrió un problema temporal al cargar la plataforma. Inténtalo de nuevo; si persiste, contacta con el soporte técnico con el código de error que aparece abajo.",
+    retry: "Reintentar",
+    reload: "Recargar la página",
+    digest: "Código de error para soporte",
+    dir: "ltr",
+  },
+};
+
+function detectLocale(): ErrLocale {
+  if (typeof window === "undefined") return "ar"; // SSR: الافتراضية — يصححها العميل
+  try {
+    const m = document.cookie.match(/(?:^|;\s*)FWMS_LOCALE=(ar|fr|en|es)(?:;|$)/);
+    if (m) return m[1] as ErrLocale;
+  } catch {
+    /* كوكي غير متاح — نكمل إلى لغة المتصفح */
+  }
+  try {
+    const nav = (navigator.language || "ar").slice(0, 2).toLowerCase();
+    if (nav === "ar" || nav === "fr" || nav === "en" || nav === "es") return nav as ErrLocale;
+  } catch {
+    /* متصفح بلا لغة معلنة — الافتراضية */
+  }
+  return "ar";
+}
+
 export default function GlobalError({
   error,
   reset,
@@ -13,12 +83,17 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  if (typeof window !== "undefined") {
+  const [locale, setLocale] = useState<ErrLocale>("ar");
+
+  useEffect(() => {
+    setLocale(detectLocale());
     console.error("[FWMS][global-error] خطأ في جذر التخطيط:", error);
-  }
+  }, [error]);
+
+  const s = ERROR_STRINGS[locale];
 
   return (
-    <html lang="ar" dir="rtl" style={{ height: "100%" }}>
+    <html lang={locale} dir={s.dir} style={{ height: "100%" }}>
       <body
         style={{
           margin: 0,
@@ -52,15 +127,9 @@ export default function GlobalError({
             <path d="M12 17h.01" />
           </svg>
 
-          <h1 style={{ margin: "16px 0 8px", fontSize: 26, fontWeight: 800 }}>
-            حدث خطأ غير متوقع
-          </h1>
-          <p style={{ margin: "0 0 6px", fontSize: 15, lineHeight: 1.8, opacity: 0.9 }}>
-            وقعت مشكلة مؤقتة أثناء تحميل المنصة. جرّب إعادة المحاولة — إن تكررت
-            فتواصل مع الدعم الفني مع رمز الخطأ أدناه.
-          </p>
-          <p dir="ltr" style={{ margin: "0 0 20px", fontSize: 12, opacity: 0.65 }}>
-            An unexpected error occurred. Please try again.
+          <h1 style={{ margin: "16px 0 8px", fontSize: 26, fontWeight: 800 }}>{s.title}</h1>
+          <p style={{ margin: "0 0 20px", fontSize: 15, lineHeight: 1.8, opacity: 0.9 }}>
+            {s.hint}
           </p>
 
           <button
@@ -78,21 +147,51 @@ export default function GlobalError({
               boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
             }}
           >
-            إعادة المحاولة
+            {s.retry}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            style={{
+              padding: "10px 24px",
+              fontSize: 14,
+              fontWeight: 600,
+              color: "#fff",
+              background: "transparent",
+              border: "1px solid rgba(255,255,255,0.35)",
+              borderRadius: 10,
+              cursor: "pointer",
+              marginInlineStart: 10,
+            }}
+          >
+            {s.reload}
           </button>
 
           {error.digest ? (
-            <p
+            <p dir="ltr" style={{ margin: "20px 0 0", fontSize: 11, opacity: 0.55, fontFamily: "monospace" }}>
+              {s.digest}: {error.digest}
+            </p>
+          ) : null}
+
+          {process.env.NODE_ENV === "development" && error.message ? (
+            <pre
               dir="ltr"
               style={{
-                marginTop: 18,
-                fontFamily: "ui-monospace, monospace",
+                margin: "16px 0 0",
+                maxWidth: 440,
+                maxHeight: 120,
+                overflow: "auto",
+                textAlign: "left",
                 fontSize: 11,
-                opacity: 0.6,
+                opacity: 0.75,
+                background: "rgba(0,0,0,0.3)",
+                padding: 12,
+                borderRadius: 8,
               }}
             >
-              Error digest: {error.digest}
-            </p>
+              {error.message}
+            </pre>
           ) : null}
         </div>
       </body>

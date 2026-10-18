@@ -220,7 +220,7 @@ export function MyAttendanceView({ today }: { today: string }) {
       const reasonKey = REASON_KEYS[code] ?? "common.operationFailed";
       let detail = t(reasonKey);
       if (payload?.distanceM != null && payload?.radiusM != null) {
-        detail = `${detail} — ${t("myAttendance.distanceDetail")} ${Math.round(payload.distanceM)} م / ${t("myAttendance.radiusLabel")} ${payload.radiusM} م`;
+        detail = `${detail} — ${t("myAttendance.distanceDetail")} ${Math.round(payload.distanceM)} ${t("notifications.presenceMeters")} / ${t("myAttendance.radiusLabel")} ${payload.radiusM} ${t("notifications.presenceMeters")}`;
       }
       setLastResult({ ok: false, title: t("myAttendance.rejectedTitle"), detail });
       toast({ variant: "destructive", description: t(reasonKey) });
@@ -312,7 +312,7 @@ export function MyAttendanceView({ today }: { today: string }) {
               <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                 <Badge variant="secondary" className="gap-1">
                   <MapPin className="size-3" aria-hidden />
-                  {t("myAttendance.radiusLabel")}: {selectedSite.radiusM} م
+                  {t("myAttendance.radiusLabel")}: {selectedSite.radiusM} {t("notifications.presenceMeters")}
                 </Badge>
                 <Badge variant="outline" className="gap-1">
                   {POLICY_KEYS[selectedSite.policy] ? t(POLICY_KEYS[selectedSite.policy]) : selectedSite.policy}
@@ -423,7 +423,7 @@ export function MyAttendanceView({ today }: { today: string }) {
                       </TableCell>
                       <TableCell className="text-sm">{e.site?.name ?? "—"}</TableCell>
                       <TableCell className="whitespace-nowrap text-xs tabular-nums" dir="ltr">
-                        {e.distanceM != null ? `${Math.round(e.distanceM)} م` : "—"}
+                        {e.distanceM != null ? `${Math.round(e.distanceM)} ${t("notifications.presenceMeters")}` : "—"}
                         {e.insideFence && <span className="ms-1 text-emerald-600 dark:text-emerald-400">✓</span>}
                       </TableCell>
                       <TableCell className="space-x-1 whitespace-nowrap">

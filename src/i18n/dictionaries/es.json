@@ -1348,5 +1348,12 @@
     "activate": "Activar",
     "you": "Tú",
     "user": "Usuario"
+  },
+  "errors": {
+    "title": "Ha ocurrido un error inesperado",
+    "pageHint": "Ocurrió un problema temporal al cargar esta página; no se debe a nada que hayas introducido. Inténtalo de nuevo; si persiste, contacta con el soporte técnico con el código de error que aparece abajo.",
+    "platformHint": "Ocurrió un problema temporal al cargar la plataforma. Inténtalo de nuevo; si persiste, contacta con el soporte técnico con el código de error que aparece abajo.",
+    "reload": "Recargar la página",
+    "digestLabel": "Código de error para soporte"
   }
 }

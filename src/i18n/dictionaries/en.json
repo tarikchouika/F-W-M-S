@@ -1348,5 +1348,12 @@
     "activate": "Activate",
     "you": "You",
     "user": "User"
+  },
+  "errors": {
+    "title": "An unexpected error occurred",
+    "pageHint": "A temporary issue occurred while loading this page — it is not caused by anything you entered. Please try again; if it keeps happening, contact technical support with the error code below.",
+    "platformHint": "A temporary issue occurred while loading the platform. Please try again; if it keeps happening, contact technical support with the error code below.",
+    "reload": "Reload page",
+    "digestLabel": "Error code for support"
   }
 }

@@ -1348,5 +1348,12 @@
     "activate": "Activer",
     "you": "Vous",
     "user": "Utilisateur"
+  },
+  "errors": {
+    "title": "Une erreur inattendue s'est produite",
+    "pageHint": "Un problème temporaire est survenu lors du chargement de cette page — il ne provient pas de votre saisie. Réessayez ; si le problème persiste, contactez le support technique avec le code d'erreur ci-dessous.",
+    "platformHint": "Un problème temporaire est survenu lors du chargement de la plateforme. Réessayez ; si le problème persiste, contactez le support technique avec le code d'erreur ci-dessous.",
+    "reload": "Rafraîchir la page",
+    "digestLabel": "Code d'erreur (support)"
   }
 }

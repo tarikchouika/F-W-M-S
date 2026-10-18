@@ -7,26 +7,38 @@ import { getDictionary, tServer } from "@/i18n/get-dictionary";
 import { verifyDocumentByRef } from "@/lib/reports/generate";
 import { getPlatformBranding } from "@/lib/branding";
 
-export const metadata: Metadata = {
-  title: "FWMS — التحقق من مستند",
-  robots: { index: false, follow: false },
-};
-
 type Props = {
   params: Promise<{ ref: string }>;
   searchParams: Promise<{ h?: string; lang?: string }>;
 };
 
+/** لغة الصفحة من معامل lang ثم كوكي FWMS_LOCALE — نفس أولوية الصفحة نفسها */
+async function resolvePageLocale(searchParams: { h?: string; lang?: string }) {
+  const { lang } = searchParams;
+  const store = await cookies();
+  const cookieLocale = resolveLocale(store.get(LOCALE_COOKIE)?.value);
+  return lang === "ar" || lang === "fr" || lang === "en" || lang === "es" ? lang : cookieLocale;
+}
+
+/** i18n (بلاغ المالك 2026-10-19 «خلل في الترجمة»): عنوان التبويب كان عربيًا مثبتًا
+ *  لكل اللغات — صار من القاموس بلغة الزائر (نمط صفحة الدخول نفسه) */
+export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
+  const sp = await searchParams;
+  const dict = getDictionary(await resolvePageLocale(sp));
+  return {
+    title: tServer(dict, "reports.verify.title"),
+    robots: { index: false, follow: false },
+  };
+}
+
+
 /** صفحة عامة بلا مصادقة: طرف ثالث يمسح QR من قسيمة ورقية ويتحقق من أصالتها (SPEC §4.4.1)
  *  تعرض الحد الأدنى الآمن: الأصالة والمرجع والجهة المصدرة — بلا أي مبلغ */
 export default async function VerifyPage({ params, searchParams }: Props) {
   const { ref } = await params;
-  const { h, lang } = await searchParams;
+  const { h } = await searchParams;
 
-  const store = await cookies();
-  const cookieLocale = resolveLocale(store.get(LOCALE_COOKIE)?.value);
-  const locale =
-    lang === "ar" || lang === "fr" || lang === "en" || lang === "es" ? lang : cookieLocale;
+  const locale = await resolvePageLocale(await searchParams);
   const dict = getDictionary(locale);
   const t = (key: string, params_?: Record<string, string | number>) => tServer(dict, key, params_);
   const dir = localeDirection[locale];

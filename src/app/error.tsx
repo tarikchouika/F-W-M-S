@@ -5,8 +5,14 @@
 // صفحة Next.js الافتراضية الإنجليزية «Application error: a server-side exception has
 // occurred … Digest: N» — انظر بلا الدخول إلى المنصة أصلًا. هذا الحد يلتقط أي خطأ
 // في أي صفحة تحت الجذر (عدا أخطاء الـ root layout نفسها — يلتقطها global-error.tsx)
-// ويعرض صفحة عربية أنيقة بهوية FWMS مع إعادة المحاولة بدل الرفض الكامل.
+// ويعرض صفحة أنيقة بهوية FWMS مع إعادة المحاولة بدل الرفض الكامل.
+//
+// i18n (بلاغ المالك 2026-10-19 «خلل في الترجمة»): النصوص كلها من القواميس الأربع
+// (ar/fr/en/es) عبر useI18n — الحد يُعرض داخل الـ root layout فيظل مزوّد اللغة
+// متاحًا له (الأخطاء التي تقلع الجذر كله يعالجها global-error.tsx بنسخته المضمنة).
+// الاتجاه (rtl/ltr) واللغة من المزوّد نفسه — لا نصوص مثبتة في الكود إطلاقًا.
 import { useEffect } from "react";
+import { useI18n } from "@/i18n/provider";
 
 export default function ErrorPage({
   error,
@@ -15,15 +21,17 @@ export default function ErrorPage({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const { t, locale, dir } = useI18n();
+
   useEffect(() => {
-    // الخطأ يُسجَّل دائمًا للسجلات (Vercel) — الزر «التفاصيل» أدناه للبيئة التطويرية فقط
+    // الخطأ يُسجَّل دائمًا للسجلات (Vercel) — التفاصيل أدناه للبيئة التطويرية فقط
     console.error("[FWMS][error-boundary] خطأ عرض غير ملتقط:", error);
   }, [error]);
 
   return (
     <div
-      dir="rtl"
-      lang="ar"
+      dir={dir}
+      lang={locale}
       className="fwms-hero-gradient relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-4 py-10"
       style={{
         background:
@@ -53,14 +61,10 @@ export default function ErrorPage({
 
         <div className="space-y-2">
           <h1 className="text-balance text-2xl font-bold text-white sm:text-3xl">
-            حدث خطأ غير متوقع
+            {t("errors.title")}
           </h1>
           <p className="text-pretty text-sm leading-relaxed text-white/85 sm:text-base">
-            وقعت مشكلة مؤقتة أثناء تحميل هذه الصفحة، وليست من إدخالك شيئًا.
-            جرّب إعادة المحاولة — إن تكررت فتواصل مع الدعم الفني مع رمز الخطأ أدناه.
-          </p>
-          <p dir="ltr" className="text-xs text-white/60">
-            An unexpected error occurred while loading this page. Please try again.
+            {t("errors.pageHint")}
           </p>
         </div>
 
@@ -70,20 +74,20 @@ export default function ErrorPage({
             onClick={reset}
             className="rounded-lg bg-white px-6 py-2.5 text-sm font-bold text-primary shadow-lg transition-colors hover:bg-white/90"
           >
-            إعادة المحاولة
+            {t("common.retry")}
           </button>
           <button
             type="button"
             onClick={() => window.location.reload()}
             className="rounded-lg border border-white/30 bg-transparent px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/10"
           >
-            تحديث الصفحة
+            {t("errors.reload")}
           </button>
         </div>
 
         {error.digest ? (
           <p dir="ltr" className="font-mono text-[11px] text-white/55">
-            Error digest: {error.digest}
+            {t("errors.digestLabel")}: {error.digest}
           </p>
         ) : null}
 

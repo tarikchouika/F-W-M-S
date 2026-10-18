@@ -268,7 +268,7 @@ export function AttendanceManager({ today, canReview }: { today: string; canRevi
                       </TableCell>
                       <TableCell className="text-sm">{e.site?.name ?? "—"}</TableCell>
                       <TableCell className="whitespace-nowrap text-xs tabular-nums" dir="ltr">
-                        {e.distanceM != null ? `${Math.round(e.distanceM)} م` : "—"}
+                        {e.distanceM != null ? `${Math.round(e.distanceM)} ${t("notifications.presenceMeters")}` : "—"}
                         {e.insideFence
                           ? <span className="ms-1 text-emerald-600 dark:text-emerald-400">✓</span>
                           : <span className="ms-1 text-destructive">✗</span>}
