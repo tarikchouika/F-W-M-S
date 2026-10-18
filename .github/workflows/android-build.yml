@@ -218,14 +218,24 @@ jobs:
       - name: Build release APK
         working-directory: android-shell/android
         run: |
+          # بلا android.injected.build.abi: الخاصية تنقل المخرجات إلى apk/<abi>/release/
+          # وتغلاف webview لا يحوي مكتبات native — لا فائدة حجمية منها.
           chmod +x gradlew
-          ./gradlew assembleRelease --no-daemon -Pandroid.injected.build.abi=arm64-v8a
-          ls -la app/build/outputs/apk/release/
+          ./gradlew assembleRelease --no-daemon
+          echo "→ مخرجات البناء:"
+          find app/build/outputs -name "*.apk" -type f -exec ls -la {} \;
 
       - name: Collect APK (stable name for the permanent link)
         run: |
+          # جمع حتمي بـ find — لا افتراض لمسار مخرجات محدد
+          APK="$(find android-shell/android/app/build/outputs -name '*.apk' -type f | head -1)"
+          if [ -z "$APK" ]; then
+            echo "✗ لم يُعثر على أي APK في مخرجات البناء"
+            exit 1
+          fi
           mkdir -p dist
-          cp android-shell/android/app/build/outputs/apk/release/app-release.apk dist/FWMS.apk
+          cp "$APK" dist/FWMS.apk
+          echo "→ المصدر: $APK"
           ls -la dist/
           sha256sum dist/FWMS.apk
 
