@@ -1,11 +1,25 @@
-# FWMS — بناء تطبيق أندرويد تلقائيًا (المرحلة 9 — v0.10.0)
+# FWMS — بناء تطبيق أندرويد تلقائيًا + إصدار Release برابط دائم
 # ---------------------------------------------------------------------------
-# طلب المالك 2026-10-18: «يجب إنشاء سير عمل ليُنشئ تطبيق أندرويد بشكل آلي على غيتهاب».
-# الاستراتيجية: غلاف Capacitor (webview) يشير إلى نشر Cloudflare الحي (fwms-dg8.pages.dev)
-# — نفس الكود وسلوك واحد (SPEC §7)، لا نسخة أندرويد منفصلة تُصان يدويًا.
-# التوقيع: توكنات المستودع السرية إن وُجدت (ANDROID_KEYSTORE_BASE64 ...) — وإلا وُلِّد
-# مفتاح جديد رُفع ك artifact «android-keystore-INITIAL» يحفظه المالك كي لا يتبدل التوقيع.
-# المشغلات: يدوي (workflow_dispatch) + عند كل وسم v* (يصدر إصدار GitHub Release بالتطبيق).
+# طلب المالك 2026-10-19: «يجب أن يشتغل سير بناء ملف apk بشكل آلي كلما نُشرت
+# نسخة محسّنة أو أي تحديث، وينشئ رابطًا دائمًا لتحميل آخر نسخة».
+#
+# الاستراتيجية (كما وُثّقت في v0.10.0): غلاف Capacitor (webview) يشير إلى نشر
+# Cloudflare الحي (fwms-dg8.pages.dev) — نفس الكود وسلوك واحد (SPEC §7)،
+# لا نسخة أندرويد منفصلة تُصان يدويًا.
+#
+# المشغّلات: كل push إلى main (أي تحديث) + كل وسم v* + تشغيل يدوي (مع app_url).
+#
+# الإصدار: يُقرأ من src/lib/version.ts حصرًا (المصدر الوحيد للمنصة).
+#   - الإصدار نفسه بعدّة pushes = تحديث نفس الـ Release وأصوله (clobber).
+#   - رفع الإصدار = Release/وسم جديد يصير «الأحدث» تلقائيًا (--latest).
+#
+# الرابط الدائم لآخر نسخة (اسم أصل ثابت — لا يتغير أبدًا):
+#   https://github.com/tarikchouika/F-W-M-S/releases/latest/download/FWMS.apk
+#
+# التوقيع: أسرار المستودع الأربعة (ANDROID_KEYSTORE_*) — مفتاح واحد ثابت عبر
+# كل البناءات (يُمكّن التحديث فوق التثبيتات القائمة). وإن غابت الأسرار وُلِّد
+# مفتاح ابتدائي يُرفع artifact «android-keystore-INITIAL» (سلوك احتياطي غير
+# مستحسن — يكسر استمرارية التوقيع).
 name: Android App Build
 
 on:
@@ -16,14 +30,19 @@ on:
         required: false
         default: "https://fwms-dg8.pages.dev"
   push:
-    tags:
-      - "v*"
+    branches: [main]
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-apk-release
+  cancel-in-progress: true
 
 env:
-  DEFAULT_APP_URL: "https://fwms-dg8.pages.dev"
   APP_NAME: "FWMS"
   PACKAGE_ID: "ma.fwms.app"
-  KEYSTORE_FILE: "android.keystore"
   KEY_ALIAS: "fwms-release"
 
 jobs:
@@ -43,6 +62,25 @@ jobs:
         with:
           distribution: "temurin"
           java-version: "17"
+
+      - name: Read app version (src/lib/version.ts — single source)
+        id: version
+        run: |
+          APP_VERSION=$(node -e "const s=require('fs').readFileSync('src/lib/version.ts','utf8');const m=s.match(/APP_VERSION\s*=\s*['\"]([^'\"]+)['\"]/);if(!m){console.error('APP_VERSION not found in src/lib/version.ts');process.exit(1)}console.log(m[1])")
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          if [ "$APP_VERSION" != "$PKG_VERSION" ]; then
+            echo "::warning::version.ts=$APP_VERSION != package.json=$PKG_VERSION — يُعتمد version.ts (المصدر الوحيد)."
+          fi
+          VERSION_CODE=$(printf '%s\n' "$APP_VERSION" | awk -F. '{printf "%d\n", $1*1000000 + $2*10000 + $3*100}')
+          {
+            echo "app_version=$APP_VERSION"
+            echo "version_code=$VERSION_CODE"
+          } >> "$GITHUB_OUTPUT"
+          {
+            echo "APP_VERSION=$APP_VERSION"
+            echo "FWMS_VERSION_CODE=$VERSION_CODE"
+          } >> "$GITHUB_ENV"
+          echo "→ الإصدار: $APP_VERSION (versionCode $VERSION_CODE)"
 
       - name: Show environment
         run: |
@@ -103,40 +141,46 @@ jobs:
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
+          # المفتاح وkeystore.properties داخل مشروع android/ (جذر rootProject)
+          # حتى يُحلّ storeFile صحيحًا من rootProject.file() في build.gradle.
           if [ -n "$ANDROID_KEYSTORE_BASE64" ] && [ -n "$ANDROID_KEYSTORE_PASSWORD" ]; then
-            echo "→ استخدام مفتاح التوقيع من أسرار المستودع"
-            echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$KEYSTORE_FILE"
-            printf 'storeFile=%s\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' \
-              "$KEYSTORE_FILE" "$ANDROID_KEYSTORE_PASSWORD" "${ANDROID_KEY_ALIAS:-$KEY_ALIAS}" "${ANDROID_KEY_PASSWORD:-$ANDROID_KEYSTORE_PASSWORD}" \
+            echo "→ استخدام مفتاح التوقيع الثابت من أسرار المستودع"
+            printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/android.keystore
+            printf 'storeFile=android.keystore\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' \
+              "$ANDROID_KEYSTORE_PASSWORD" "${ANDROID_KEY_ALIAS:-$KEY_ALIAS}" "${ANDROID_KEY_PASSWORD:-$ANDROID_KEYSTORE_PASSWORD}" \
               > android/keystore.properties
             echo "KEYSTORE_FROM_SECRET=true" >> "$GITHUB_ENV"
           else
-            echo "→ توليد مفتاح توقيع ابتدائي (احفظه كأسرار المستودع لتثبيت التوقيع)"
+            echo "→ ⚠ غياب الأسرار: توليد مفتاح ابتدائي (غير مستحسن — يكسر استمرارية التوقيع)"
             STOREPASS="Fwms$(openssl rand -hex 8)"
             keytool -genkeypair -v \
-              -storetype PKCS12 -keystore "$KEYSTORE_FILE" -storepass "$STOREPASS" \
+              -storetype PKCS12 -keystore android/android.keystore -storepass "$STOREPASS" \
               -alias "$KEY_ALIAS" -keypass "$STOREPASS" -keyalg RSA -keysize 2048 -validity 10000 \
               -dname "CN=FWMS, OU=Field Workforce, O=FWMS, L=Casablanca, C=MA" >/dev/null 2>&1
-            printf 'storeFile=%s\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' \
-              "$KEYSTORE_FILE" "$STOREPASS" "$KEY_ALIAS" "$STOREPASS" \
+            printf 'storeFile=android.keystore\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' \
+              "$STOREPASS" "$KEY_ALIAS" "$STOREPASS" \
               > android/keystore.properties
             echo "KEYSTORE_FROM_SECRET=false" >> "$GITHUB_ENV"
           fi
 
-      - name: Wire release signing into Gradle
+      - name: Wire release signing + version into Gradle
         working-directory: android-shell/android
         run: |
           cat >> app/build.gradle <<'GRADLE'
-          // CI signing (injected) — يقرأ android/keystore.properties
+          // CI signing + version (injected) — يقرأ android/keystore.properties
           def ksProps = new Properties()
           def ksFile = rootProject.file('keystore.properties')
           if (ksFile.exists()) {
             ksProps.load(new FileInputStream(ksFile))
           }
           android {
+            defaultConfig {
+              versionCode __VC__
+              versionName "__VN__"
+            }
             signingConfigs {
               release {
-                storeFile file(ksProps['storeFile'])
+                storeFile rootProject.file(ksProps['storeFile'] ?: 'android.keystore')
                 storePassword ksProps['storePassword']
                 keyAlias ksProps['keyAlias']
                 keyPassword ksProps['keyPassword']
@@ -149,6 +193,9 @@ jobs:
             }
           }
           GRADLE
+          sed -i "s/__VC__/${FWMS_VERSION_CODE:-1}/; s/__VN__/${APP_VERSION:-0.0.0}/" app/build.gradle
+          echo "→ آخر 25 سطرًا من app/build.gradle:"
+          tail -25 app/build.gradle
 
       - name: Build release APK
         working-directory: android-shell/android
@@ -157,11 +204,12 @@ jobs:
           ./gradlew assembleRelease --no-daemon -Pandroid.injected.build.abi=arm64-v8a
           ls -la app/build/outputs/apk/release/
 
-      - name: Rename APK
+      - name: Collect APK (stable name for the permanent link)
         run: |
           mkdir -p dist
-          cp android-shell/android/app/build/outputs/apk/release/app-release.apk "dist/FWMS-${GITHUB_REF_NAME:-manual}.apk"
+          cp android-shell/android/app/build/outputs/apk/release/app-release.apk dist/FWMS.apk
           ls -la dist/
+          sha256sum dist/FWMS.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
@@ -170,21 +218,21 @@ jobs:
           path: dist/*.apk
           if-no-files-found: error
 
-      - name: Upload initial keystore (first run only)
+      - name: Upload initial keystore (fallback only)
         if: env.KEYSTORE_FROM_SECRET == 'false'
         uses: actions/upload-artifact@v4
         with:
           name: android-keystore-INITIAL
           path: |
-            android-shell/android.keystore
+            android-shell/android/android.keystore
             android-shell/android/keystore.properties
           if-no-files-found: error
 
-      - name: Instructions summary
+      - name: Instructions summary (fallback only)
         if: env.KEYSTORE_FROM_SECRET == 'false'
         run: |
           cat >> "$GITHUB_STEP_SUMMARY" <<'MD'
-          ## 🔑 مفتاح توقيع ابتدائي
+          ## مفتاح توقيع ابتدائي
           وُلِّد مفتاح توقيع جديد لهذا البناء ورفع ضمن artifact `android-keystore-INITIAL`.
           لتثبيت توقيع التطبيق عبر التحديثات (وإلا رُفض التثبيت فوق النسخ السابقة):
           1. نزّل الـ artifact وفك الضغط.
@@ -193,11 +241,31 @@ jobs:
              (قيمها داخل keystore.properties المرفوع).
           MD
 
-      - name: Create GitHub Release (tags only)
-        if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: dist/*.apk
-          generate_release_notes: true
-          draft: false
-          prerelease: false
+      - name: Publish GitHub Release (tag v{version} + stable asset)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APP_VERSION: ${{ steps.version.outputs.app_version }}
+        run: |
+          TAG="v$APP_VERSION"
+          PERMALINK="https://github.com/tarikchouika/F-W-M-S/releases/latest/download/FWMS.apk"
+          NOTES="تطبيق أندرويد FWMS — غلاف Capacitor يشير إلى النشر الحي (fwms-dg8.pages.dev): كود واحد وسلوك واحد (SPEC §7).
+
+          الرابط الدائم لآخر نسخة (لا يتغير أبدًا):
+          $PERMALINK
+
+          - الإصدار: v$APP_VERSION (versionCode $FWMS_VERSION_CODE)
+          - البناء من commit: ${GITHUB_SHA::7} بتاريخ $(date -u '+%Y-%m-%d %H:%M UTC')
+          - التوقيع: $([ "$KEYSTORE_FROM_SECRET" = "true" ] && echo 'مفتاح ثابت من أسرار المستودع' || echo 'مفتاح ابتدائي مؤقت (غير مستحبن)')"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "→ الإصدار $TAG قائم — تحديث أصوله بنسخة هذا البناء (--clobber)"
+            gh release edit "$TAG" --title "FWMS $APP_VERSION — Android" --notes "$NOTES" --latest || true
+          else
+            echo "→ إنشاء الإصدار $TAG"
+            gh release create "$TAG" \
+              --title "FWMS $APP_VERSION — Android" \
+              --notes "$NOTES" \
+              --target "$GITHUB_SHA" \
+              --latest
+          fi
+          gh release upload "$TAG" dist/FWMS.apk --clobber
+          echo "✓ الرابط الدائم لآخر نسخة: $PERMALINK"
