@@ -38,6 +38,9 @@
 - **صفحة الخطأ حتميًا (الدفعة التشخيصية):** زرع صفحة ترمي استثناء → بناء → فحص 4 لغات → نصوص واتجاهات صحيحة 4/4 → إزالة → بناء نظيف. (التفصيل أعلاه.)
 - **الأسرار:** تحديث GitHub API استجابة 204 للأربعة (محدث لا منشأ — القيم السابقة استُبدلت)، والتوليد تحقق بقراءة `keytool -list` (المالك/الصلاحية/البصمة أعلاه) قبل الاعتماد.
 - **جولة CI أولى (التقطها الباب):** فشل lint بقاعدة `react-hooks/set-state-in-effect` في global-error.tsx (setState داخل useEffect لكشف اللغة) — أُصلح معماريًا بـ`useSyncExternalStore` (لقطة خادم «ar» + لوحة عميل تقرأ الكوكي/المتصفح عند الإقلاع — بلا setState وبدون تعارض hydration وبلا وميض تصحيح). بعدها: lint نظيف على كل الملفات المعدلة + tsc 131=131 + بناء 79/79 محليًا.
+- **حيًا عبر البوابة بعد الدفع (fwms-dg8.pages.dev):** `/api/health` = `0.10.3/database:ok` · **الخلل الأصلي مُصلح قياسًا:** `/verify/TEST?lang=fr` عنوان تبويبها «Vérification d'un document | FWMS» (كان عربيًا مثبتًا) و`?lang=en` «Document verification | FWMS» · الصفحات سليمة (`/` 200 · `/login` 200 · `/dashboard` 307 لمحاولة إعادة التوجيه غير المصادَق — سلوك سليم) · البوابة نفسها ok.
+- **السيران أخضران (الالتزام 6c7689a):** CI ✓ (lint+build+i18n) و**Android App Build ✓** (BUILD SUCCESSFUL في 1m41s + `validateSigningRelease` + «استخدام مفتاح التوقيع الثابت من أسرار المستودع» `KEYSTORE_FROM_SECRET=true`) · الإصدار `v0.10.3` منشور «الأحدث» بأصل `FWMS.apk` ثابت (2,980,133 بايت).
+- **التوقيع الجديد مُثبت داخل APK المنشور نفسه (البرهان القاطع):** نُزّل من الرابط الدائم (`releases/latest/download/FWMS.apk`) وفُحص بـ`keytool -printcert -jarfile`: **Owner/Issuer: `CN=Tarik Chouika, OU=FWMS Platform Owner, O=tarikchouika, L=Casablanca, C=MA`** · **Valid: 2026-10-18 → 2056-10-18** · **SHA256: `73:E0:5F:...:D5:49`** — مطابقة حرفية للمفتاح المولّد في هذه الجولة.
 
 
 ## [0.10.2] — 2026-10-19 — إصلاح «صفحة خطأ عند تسجيل الدخول» (Application error: a server-side exception): نسخ ذرّي لقاعدة المعاينة + تحصين طبقة العرض + حدود أخطاء عربية
