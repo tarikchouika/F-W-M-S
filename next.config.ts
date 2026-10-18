@@ -27,6 +27,14 @@ const nextConfig: NextConfig = {
   // تتبع ملفات standalone: الحزم المحمّلة ديناميكيًا (createRequire/dynamic import)
   // لا تراها أداة التتبع تلقائيًا — تُضمَّن صراحة مع شجراتها
   outputFileTracingIncludes: {
+    // لقطة قاعدة المعاينة (Vercel — docs/DEPLOYMENT.md §2): كل مسار يلمس القاعدة
+    // يضمّها في حزمته — على Vercel تُحزَّم الدوال كلٌّ على حدة، فلا يكفي تضمينها
+    // لمسار واحد. تُنسخ عند الإقلاع إلى /tmp (src/lib/db.ts). خارج Vercel لا تُستعمل.
+    "/": ["./infra/vercel/preview.db"],
+    "/login": ["./infra/vercel/preview.db"],
+    "/dashboard/**": ["./infra/vercel/preview.db"],
+    "/verify/**": ["./infra/vercel/preview.db"],
+    "/api/**": ["./infra/vercel/preview.db"],
     "/api/reports/**": [
       "./node_modules/@react-pdf/renderer/**",
       "./node_modules/@react-pdf/font/**",

@@ -3,7 +3,9 @@
 // FWMS — مبدّل اللغة (أربع لغات، SPEC §2): إجراء خادمي يضبط cookie ثم يجدد العرض
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
-import { Languages, Check } from "lucide-react";
+// أيقونة Globe محايدة لغويًا: أيقونة lucide «Languages» السابقة ترسم حرفًا صينيًا (文) بجانب حرف A —
+// بدت للباحث كلمة صينية غريبة في الواجهة (بلاغ المالك 2026-10-18)؛ الكرة الأرضية اصطلاح عالمي محايد.
+import { Globe, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -39,7 +41,7 @@ export function LangSwitcher({ variant = "ghost" }: { variant?: "ghost" | "outli
           aria-label={t("lang.label")}
           disabled={isPending}
         >
-          <Languages className="size-4" aria-hidden />
+          <Globe className="size-4" aria-hidden />
           <span className="hidden sm:inline">{localeLabels[locale]}</span>
           <span className="sm:hidden">{locale.toUpperCase()}</span>
         </Button>

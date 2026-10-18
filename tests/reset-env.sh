@@ -25,7 +25,12 @@ echo "✓ بذور كاملة"
 
 pkill -f "next dev" 2>/dev/null || true
 sleep 2
-setsid -f $RUNTIME next dev -p "$PORT" > dev.log 2>&1 < /dev/null
+# درس 2026-10-18 (جلسة 0.9.2): التركيب القديم `setsid -f $RUNTIME next dev` كان يكرر
+# كلمة «next» مع قيم node («Invalid project directory …/next») — التركيب صريح لكل وسيلة:
+case "$RUNTIME" in
+  node*) setsid -f node node_modules/next/dist/bin/next dev -p "$PORT" > dev.log 2>&1 < /dev/null ;;
+  *) setsid -f $RUNTIME next dev -p "$PORT" > dev.log 2>&1 < /dev/null ;;
+esac
 
 for i in 1 2 3; do
   sleep 13
@@ -37,7 +42,10 @@ for i in 1 2 3; do
   echo "  محاولة $i — إعادة تشغيل (درس بداية Prisma الباردة)"
   pkill -f "next dev" 2>/dev/null || true
   sleep 2
-  setsid -f $RUNTIME next dev -p "$PORT" > dev.log 2>&1 < /dev/null
+  case "$RUNTIME" in
+    node*) setsid -f node node_modules/next/dist/bin/next dev -p "$PORT" > dev.log 2>&1 < /dev/null ;;
+    *) setsid -f $RUNTIME next dev -p "$PORT" > dev.log 2>&1 < /dev/null ;;
+  esac
 done
 echo "✗ الخادم لم يجهز"
 exit 1

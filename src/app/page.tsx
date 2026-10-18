@@ -12,7 +12,9 @@ import {
   Cloud,
   Database,
   ScrollText,
-  Languages,
+  // Globe بدل Languages: أيقونة lucide «Languages» ترسم حرفًا صينيًا (文) بجانب A —
+  // استُبدلت في كل المواضع بعد بلاغ المالك 2026-10-18 (كلمة صينية تظهر في الواجهة).
+  Globe,
   ArrowLeft,
   ArrowRight,
   LogIn,
@@ -45,7 +47,7 @@ const TECH: Feature[] = [
   { titleKey: "landing.techItem1Title", descKey: "landing.techItem1Desc", icon: Cloud },
   { titleKey: "landing.techItem2Title", descKey: "landing.techItem2Desc", icon: Database },
   { titleKey: "landing.techItem3Title", descKey: "landing.techItem3Desc", icon: ScrollText },
-  { titleKey: "landing.techItem4Title", descKey: "landing.techItem4Desc", icon: Languages },
+  { titleKey: "landing.techItem4Title", descKey: "landing.techItem4Desc", icon: Globe },
 ];
 
 function SectionHeading({ titleKey, subtitleKey }: { titleKey: string; subtitleKey?: string }) {

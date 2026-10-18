@@ -15,8 +15,22 @@ export type SessionPayload = {
   issuedAt: number; // ثوانٍ Unix — يُقارن مع sessionsInvalidatedAt عند التحقق
 };
 
+// معاينة سحابية (Vercel فقط — docs/DEPLOYMENT.md §2): عند غياب AUTH_SECRET على نشر
+// المعاينة كان الدخول يفشل 500 (توقيع الجلسة يرمي) حتى بعد إصلاح القاعدة — بلاغ
+// المالك 2026-10-18. هذا الاحتياط يعمل حصرًا عندما VERCEL=1 ولا يمسّ الهاتف/التطوير.
+// ⚠️ مفتاح عرض معلن للنشر التجريبي فقط: أي استخدام إنتاجي سحابي يجب أن يضبط AUTH_SECRET
+// حقيقيًا من لوحة Vercel (openssl rand -hex 32) — عندها لا يُلمس هذا المسار إطلاقًا.
+const PREVIEW_FALLBACK_SECRET = "fwms-preview-demo-secret-not-for-production-use";
+
 function getSecretKey(): Uint8Array {
-  const secret = process.env.AUTH_SECRET;
+  let secret = process.env.AUTH_SECRET;
+  if ((!secret || secret.length < 16) && process.env.VERCEL === "1") {
+    console.warn(
+      "[FWMS][preview] AUTH_SECRET غير مضبوط على هذا النشر — استخدام مفتاح معاينة تجريبي. " +
+        "اضبط AUTH_SECRET حقيقيًا (openssl rand -hex 32) قبل أي استخدام إنتاجي سحابي.",
+    );
+    secret = PREVIEW_FALLBACK_SECRET;
+  }
   if (!secret || secret.length < 16) {
     throw new Error("AUTH_SECRET مفقود أو قصير جدًا — راجع .env.example");
   }
