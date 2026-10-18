@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth/session";
-import { DashboardSidebar } from "@/components/fwms/dashboard-sidebar";
+import { DashboardSidebar, MobileNav } from "@/components/fwms/dashboard-sidebar";
+import { LocationWatcher } from "@/components/fwms/location-watcher";
 import { CompanySwitcher } from "@/components/fwms/company-switcher";
 import { LogoutButton } from "@/components/fwms/logout-button";
 import { LangSwitcher } from "@/components/fwms/lang-switcher";
@@ -47,13 +48,31 @@ export default async function DashboardLayout({
   const hiddenKeys = MODULE_KEYS.filter((k) => !isModuleEnabled(modules, k))
     .flatMap((k) => Object.entries(NAV_MODULE_OF).filter(([, mod]) => mod === k).map(([nav]) => nav));
 
+  // المرحلة 9: هل المستخدم شخص ميداني (عضو فريق أو قائده)؟ — إذا فنعّل مراقب الموقع
+  // (يبث موقعه أثناء فتح اللوحة ليُخطر قائد فريقه آنيًا عند دخول/مغادرة المنطقة)
+  const [memberCount, ledCount] = await Promise.all([
+    db.workerGroupMember.count({
+      where: { companyId: session.companyId, userId: session.sub, status: "active", group: { status: "active" } },
+    }),
+    db.workerGroup.count({ where: { companyId: session.companyId, leaderUserId: session.sub, status: "active" } }),
+  ]);
+  const isFieldUser = memberCount > 0 || ledCount > 0;
+
   return (
     <div className="flex min-h-screen flex-col bg-background md:flex-row">
+      {/* سطح المكتب: شريط جانبي ثابت — الجوال (v0.10.0): زر قائمة في الترويسة يفتح Sheet */}
       <DashboardSidebar role={session.role} brandName={branding.displayName} hiddenKeys={hiddenKeys} />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-40 flex h-14 items-center justify-between gap-2 border-b border-border/60 bg-background/90 px-3 backdrop-blur-md sm:px-5">
-          <CompanySwitcher companies={companies} activeId={session.companyId} />
+        <header className="sticky top-0 z-40 flex h-14 items-center justify-between gap-2 border-b border-border/60 bg-background/90 px-2 backdrop-blur-md sm:px-5">
+          <div className="flex min-w-0 items-center gap-1.5">
+            <div className="md:hidden">
+              <MobileNav role={session.role} brandName={branding.displayName} hiddenKeys={hiddenKeys} />
+            </div>
+            <div className="min-w-0">
+              <CompanySwitcher companies={companies} activeId={session.companyId} />
+            </div>
+          </div>
           <div className="flex items-center gap-1.5 sm:gap-2">
             {/* المرحلة 5: جرس الإشعارات — لكل مستخدم (self.view) — استطلاع 20ث/120ث */}
             <NotificationBell />
@@ -72,6 +91,7 @@ export default async function DashboardLayout({
 
         <main className="flex-1 p-4 sm:p-6">{children}</main>
       </div>
+      {isFieldUser && <LocationWatcher />}
     </div>
   );
 }

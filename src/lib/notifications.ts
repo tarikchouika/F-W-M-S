@@ -10,6 +10,8 @@ export const NOTIFICATION_TYPES = [
   "shift_replacement_assigned", // وردية تغطية أُسندت إليك
   "payslip_approved", // كشف أجرك للفترة اعتُمد وجاهز في «أجوري» (المرحلة 6أ/6ب)
   "declaration_review_requested", // تصريح CNSS/DGI جاهز لمراجعتك (المرحلة 6ج — للمحاسب)
+  "team_member_left_zone", // (المرحلة 9) عضو فريقك غادر منطقة الفريق أثناء الجلسة
+  "team_member_entered_zone", // (المرحلة 9) عضو عاد إلى منطقة الفريق
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
@@ -33,10 +35,18 @@ export type DeclarationReviewPayload = {
   periodKey: string;
 };
 
+export type TeamPresencePayload = {
+  memberName: string;
+  groupName: string;
+  zoneRadiusM: number;
+  distanceM: number;
+  at: string; // ISO
+};
+
 export type NotificationRecord = {
   id: string;
   type: string;
-  payload: ReplacementPayload | PayslipApprovedPayload | null;
+  payload: ReplacementPayload | PayslipApprovedPayload | DeclarationReviewPayload | TeamPresencePayload | null;
   readAt: string | null;
   createdAt: string;
 };
@@ -46,7 +56,7 @@ export async function createNotification(input: {
   companyId: string;
   userId: string;
   type: NotificationType;
-  payload: ReplacementPayload | PayslipApprovedPayload | DeclarationReviewPayload;
+  payload: ReplacementPayload | PayslipApprovedPayload | DeclarationReviewPayload | TeamPresencePayload;
 }): Promise<string | null> {
   try {
     const record = await db.notification.create({
@@ -109,10 +119,10 @@ export async function markNotificationsRead(
   return result.count;
 }
 
-function safeParse(json: string | null): ReplacementPayload | null {
+function safeParse(json: string | null): ReplacementPayload | TeamPresencePayload | null {
   if (!json) return null;
   try {
-    return JSON.parse(json) as ReplacementPayload;
+    return JSON.parse(json) as ReplacementPayload | TeamPresencePayload;
   } catch {
     return null;
   }
@@ -135,7 +145,7 @@ function vapidConfig(): { publicKey: string; privateKey: string; subject: string
 export async function dispatchWebPush(
   userId: string,
   type: string,
-  payload: ReplacementPayload | PayslipApprovedPayload | DeclarationReviewPayload,
+  payload: ReplacementPayload | PayslipApprovedPayload | DeclarationReviewPayload | TeamPresencePayload,
 ): Promise<{ sent: number; deactivated: number }> {
   const cfg = vapidConfig();
   const devices = await db.device.findMany({ where: { userId, isActive: true }, take: 20 });

@@ -42,9 +42,13 @@ export async function getSession(): Promise<
 
   if (!membership || !membership.user.isActive) return null;
 
-  // إبطال حقيقي للجلسات: رمز صدر قبل علامة الإبطال (خروج/تدوير) يُرفض
+  // إبطال حقيقي للجلسات: رمز صدر قبل علامة الإبطال (خروج/تدوير) يُرفض.
+  // دقة iat ثانية واحدة (معيار JWT) والعلامة بالمللي ثانية — نقارن على حدود الثانية
+  // كي لا تُرفض جلسة صدرت في نفس ثانية الإبطال بعده (سباق اختبار المرحلة 8 2026-10-18:
+  // دخول المالك الجديد بعد النقل مباشرة كان يُرفض ظلمًا). هامش السماح ≤ ثانية والتعطيل
+  // الحتمي يبقى عبر isActive فوق.
   const invalidatedAt = membership.user.sessionsInvalidatedAt;
-  if (invalidatedAt && raw.issuedAt * 1000 < invalidatedAt.getTime()) return null;
+  if (invalidatedAt && raw.issuedAt * 1000 < Math.floor(invalidatedAt.getTime() / 1000) * 1000) return null;
 
   return {
     ...raw,

@@ -28,10 +28,10 @@ model PlatformOwner {
   defaultCurrency String   @default("MAD")
   // ── المرحلة 8 (SPEC §3.2: التخصيص white-label + نقل الملكية) — ملكية التغيير: المساعد الأول
   // ⚠️ بانتظار migration موقّعة (مع المعلقة للمرحلة 7) — راجع docs/WORKLOG.md
-  websiteUrl      String?  // موقع المالك (تخصيص الهوية)
-  termsUrl        String?  // شروط الاستخدام (إعداد تخصيص — SPEC §3.2)
-  footerText      String?  // تذييل التقارير والوثائق (إعداد تخصيص — SPEC §3.2)
-  modulesJson     String?  // تفعيل/تعطيل الوحدات والمسارات بحسب المالك (JSON) — null = الكل مفعّل
+  websiteUrl      String? // موقع المالك (تخصيص الهوية)
+  termsUrl        String? // شروط الاستخدام (إعداد تخصيص — SPEC §3.2)
+  footerText      String? // تذييل التقارير والوثائق (إعداد تخصيص — SPEC §3.2)
+  modulesJson     String? // تفعيل/تعطيل الوحدات والمسارات بحسب المالك (JSON) — null = الكل مفعّل
   transferFreeze  Boolean  @default(false) // تجميد مؤقت للتغييرات الإدارية أثناء نقل الملكية (SPEC §3.2 خطوة 1)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -99,16 +99,23 @@ model User {
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
-  memberships       UserMembership[]
-  grants            AccountantGrant[]
-  auditActions      AuditLog[]
-  workerShifts      Shift[]           @relation("ShiftWorker")
-  workerRecurrences ShiftRecurrence[] @relation("RecurrenceWorker")
-  attendanceEvents  AttendanceEvent[] @relation("AttendanceWorker")
-  notifications     Notification[]    @relation("NotificationRecipient")
-  pushDevices       Device[]          @relation("DeviceOwner")
-  employeeProfiles  EmployeeProfile[] @relation("EmployeeProfileUser")
-  payslips          Payslip[]         @relation("PayslipWorker")
+  memberships         UserMembership[]
+  grants              AccountantGrant[]
+  auditActions        AuditLog[]
+  workerShifts        Shift[]                @relation("ShiftWorker")
+  workerRecurrences   ShiftRecurrence[]      @relation("RecurrenceWorker")
+  attendanceEvents    AttendanceEvent[]      @relation("AttendanceWorker")
+  notifications       Notification[]         @relation("NotificationRecipient")
+  pushDevices         Device[]               @relation("DeviceOwner")
+  employeeProfiles    EmployeeProfile[]      @relation("EmployeeProfileUser")
+  payslips            Payslip[]              @relation("PayslipWorker")
+  ledGroups           WorkerGroup[]          @relation("GroupLeader")
+  groupMemberships    WorkerGroupMember[]    @relation("GroupMember")
+  locationPings       MemberLocationPing[]   @relation("LocationReporter")
+  sentVoices          VoiceMessage[]         @relation("VoiceSender")
+  receivedVoices      VoiceMessage[]         @relation("VoiceRecipient")
+  grantedDelegations  PermissionDelegation[] @relation("DelegationGrantor")
+  receivedDelegations PermissionDelegation[] @relation("DelegationGrantee")
 
   @@index([isActive])
 }
@@ -217,25 +224,120 @@ model Site {
   shifts               Shift[]
   shiftRecurrences     ShiftRecurrence[]
   attendanceEvents     AttendanceEvent[]
+  groups               WorkerGroup[]        @relation("GroupSite")
 
   @@index([companyId, status])
   @@index([companyId, branchId])
   @@index([companyId, projectId])
 }
 
-/// مجموعة عمال (SPEC §5: worker_groups) — تُستخدم في الجدولة والتغطية (المرحلة 3+)
+/// مجموعة عمال = فريق ميداني (SPEC §5: worker_groups) — تُستخدم في الجدولة والتغطية (المرحلة 3+)
+/// المرحلة 9 (v0.10.0): قائد الفريق + النوع (عادي/احتياطي) + منطقة جغرافية للفريق
+/// (حدود المساحة الجغرافية المحددة للفريق — طلب المالك 2026-10-18) + أعضاء صريحون
 model WorkerGroup {
-  id          String   @id @default(cuid())
-  companyId   String
-  name        String
-  description String?
-  status      String   @default("active") // active | archived
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String   @id @default(cuid())
+  companyId    String
+  name         String
+  description  String?
+  status       String   @default("active") // active | archived
+  kind         String   @default("regular") // regular | reserve — فرق الإحتياط (يعيّنها الأدمن)
+  leaderUserId String? // مسؤول الفريق — يُخطر آنيًا عند دخول/مغادرة الأعضاء منطقة الفريق
+  siteId       String? // موقع العمل المرجعي — المنطقة الجغرافية تُشتق منه إن لم تُحدد مباشرة
+  zoneLat      Float? // مركز منطقة الفريق — إن خلا الحقلان استُخدم موقع الموقع المرجعي
+  zoneLng      Float?
+  zoneRadiusM  Int?     @default(150) // نصف قطر منطقة الفريق (م) — أوسع من نطاق التحقق (50م) لأنه متابعة لا تسجيل حضور
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  company Company @relation(fields: [companyId], references: [id])
+  company Company             @relation(fields: [companyId], references: [id])
+  leader  User?               @relation("GroupLeader", fields: [leaderUserId], references: [id])
+  site    Site?               @relation("GroupSite", fields: [siteId], references: [id])
+  members WorkerGroupMember[]
 
   @@index([companyId, status])
+  @@index([companyId, kind])
+  @@index([leaderUserId])
+}
+
+/// عضوية عامل/حرفي/تقني في فريق (المرحلة 9) — دورة حياة بالإزالة المؤرخة (نمط UserMembership)
+/// لا قيد فريد مركّب: الإضافة تتحقق في الخدمة من عدم وجود عضوية سارية (وإلا تعارضت مع الإزالة/الإعادة)
+model WorkerGroupMember {
+  id          String    @id @default(cuid())
+  companyId   String
+  groupId     String
+  userId      String
+  jobTitleKey String? // مسمى وظيفي داخل الفريق من الكتالوج (اختياري — المهنة الأساسية في الملف)
+  status      String    @default("active") // active | removed
+  addedAt     DateTime  @default(now())
+  addedBy     String? // من أضافه (تدقيق)
+  removedAt   DateTime?
+
+  group WorkerGroup @relation(fields: [groupId], references: [id])
+  user  User        @relation("GroupMember", fields: [userId], references: [id])
+
+  @@index([groupId, status])
+  @@index([companyId, userId, status])
+}
+
+/// نبضة موقع آنية لعضو فريق (المرحلة 9) — المراقبة الحية للوجود داخل/خارج منطقة الفريق
+/// المصدر: مراقب المتصفح أثناء فتح اللوحة (watcher) أو إرسال يدوي — لا تتبع خلفي (خصوصية)
+model MemberLocationPing {
+  id         String   @id @default(cuid())
+  companyId  String
+  groupId    String? // الفريق الذي أُرسلت النبضة في سياقه (فريق المتصل للمراقبة)
+  userId     String
+  lat        Float
+  lng        Float
+  accuracyM  Float?
+  source     String   @default("watcher") // watcher | manual
+  reportedAt DateTime @default(now())
+
+  user User @relation("LocationReporter", fields: [userId], references: [id])
+
+  @@index([companyId, userId, reportedAt])
+  @@index([groupId, reportedAt])
+}
+
+/// رسالة صوتية مباشرة (المرحلة 9) — عزل الفرق: تخزَّن بنطاق فريق المُرسل،
+/// ولا تُقرأ إلا لطرفيها ومن يملك صلاحية الإشراف (سوبر/أدمن/كوأدمن)
+model VoiceMessage {
+  id          String    @id @default(cuid())
+  companyId   String
+  groupId     String?   // فريق السياق (بلا فريق = رسالة إشرافية مباشرة من الإدارة لمستخدم بلا فريق) — رسائل الأعضاء محصورة في فريق مشترك حصرًا
+  senderId    String
+  recipientId String
+  durationSec Int       @default(0)
+  mime        String    @default("audio/webm")
+  sizeBytes   Int       @default(0)
+  audio       Bytes // المحتوى الثنائي (SQLite BLOB) — مقاطع قصيرة ≤ 120ث
+  listenedAt  DateTime? // وقت استماع المستقبِل (أول تشغيل)
+  createdAt   DateTime  @default(now())
+
+  sender    User @relation("VoiceSender", fields: [senderId], references: [id])
+  recipient User @relation("VoiceRecipient", fields: [recipientId], references: [id])
+
+  @@index([companyId, groupId, createdAt])
+  @@index([recipientId, listenedAt])
+}
+
+/// تفويض صلاحية (المرحلة 9) — السوبر أدمن وحده يفوّض؛ يمنح صلاحية فوق دور المنحوح له
+/// حتى انتهاء الصلاحية أو سحبها — تحقق دائم في الخادم عند كل فعل حساس
+model PermissionDelegation {
+  id         String    @id @default(cuid())
+  companyId  String
+  grantorId  String // السوبر أدمن المفوِّض
+  granteeId  String // المستخدم المنحوح له
+  permission String // من PERMISSIONS (rbac.ts) — القابلة للتفويض موثقة في delegations.ts
+  note       String?
+  grantedAt  DateTime  @default(now())
+  expiresAt  DateTime? // null = بلا انتهاء
+  revokedAt  DateTime?
+
+  grantor User @relation("DelegationGrantor", fields: [grantorId], references: [id])
+  grantee User @relation("DelegationGrantee", fields: [granteeId], references: [id])
+
+  @@index([companyId, granteeId])
+  @@index([companyId, grantorId])
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -378,17 +480,17 @@ model AttendanceEvent {
 
 /// إعدادات الشركة (SPEC §11): قيم العمل بقيم افتراضية مغربية
 model CompanySettings {
-  id                    String   @id @default(cuid())
-  companyId             String   @unique
-  workWeekHours         Int      @default(44)
-  restDay               Int      @default(5) // 0=الأحد … 5=الجمعة
-  monthlyHoursDivisor   Int      @default(191)
-  overtimeCapAnnual     Int? // اختياري (SPEC §11.4)
-  showWagesToSupervisor Boolean  @default(false)
-  dualApprovalEnabled   Boolean  @default(false)
-  showEmployerShareToEmployee Boolean @default(false) // إظهار حصة المشغّل في قسيمة العامل (SPEC §4.4.1: الافتراضي الإخفاء)
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  id                          String   @id @default(cuid())
+  companyId                   String   @unique
+  workWeekHours               Int      @default(44)
+  restDay                     Int      @default(5) // 0=الأحد … 5=الجمعة
+  monthlyHoursDivisor         Int      @default(191)
+  overtimeCapAnnual           Int? // اختياري (SPEC §11.4)
+  showWagesToSupervisor       Boolean  @default(false)
+  dualApprovalEnabled         Boolean  @default(false)
+  showEmployerShareToEmployee Boolean  @default(false) // إظهار حصة المشغّل في قسيمة العامل (SPEC §4.4.1: الافتراضي الإخفاء)
+  createdAt                   DateTime @default(now())
+  updatedAt                   DateTime @updatedAt
 
   company Company @relation(fields: [companyId], references: [id])
 }
@@ -540,6 +642,8 @@ model EmployeeProfile {
   hireDate        DateTime? // لعلاوة الأقدمية لاحقًا (تحتاج مراجعة محاسب — SPEC §11.6)
   cin             String? // رقم البطاقة الوطنية — إلزامي للتصاريح الرسمية (SPEC §4.6: رفض الملف بدونه)
   cnssNumber      String? // رقم CNSS للعامل — إلزامي لتصريح Damancom (SPEC §4.6)
+  jobTitleKey     String? // المسمى الوظيفي من الكتالوج المعتمد (المرحلة 9) — مهنة الشخص الأساسية
+  jobTitleCustom  String? // مسمى حر خارج الكتالوج — يُعرض بجانب المسمى الرسمي إن وُجد
   status          String    @default("active") // active | archived
   notes           String?
   createdAt       DateTime  @default(now())

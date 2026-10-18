@@ -10,6 +10,13 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(self.clients.claim());
 });
 
+// معالج fetch عابر (pass-through) — مطلوب لمعيار PWA القابل للتثبيت (TWA/أندرويد،
+// المرحلة 9) بلا أي تخزين مؤقت: الصفحات دائمًا من الشبكة (لا نسخ قديمة أبدًا —
+// علاج جذر لبلاغ «نسخة قديمة غير مكتملة» 2026-10-18).
+self.addEventListener("fetch", (event) => {
+  event.respondWith(fetch(event.request));
+});
+
 self.addEventListener("push", (event) => {
   let payload = null;
   try {
@@ -21,19 +28,30 @@ self.addEventListener("push", (event) => {
   const data = payload ?? {};
   const p = data.payload ?? {};
   // نص عربي احتياطي — المتصفح لا يملك قواميس i18n؛ النص الأساسي يُبنى في التطبيق نفسه
-  const title = data.type === "shift_replacement_assigned" ? "FWMS — وردية تغطية" : "FWMS";
-  const body =
-    data.type === "shift_replacement_assigned" && p.siteName
+  let title = "FWMS";
+  let body = "لديك إشعار جديد في FWMS";
+  if (data.type === "shift_replacement_assigned") {
+    title = "FWMS — وردية تغطية";
+    body = p.siteName
       ? `أُسندت إليك وردية تغطية في «${p.siteName}» ${p.localDate ?? ""} ${p.startLabel ?? ""}–${p.endLabel ?? ""}`
-      : "لديك إشعار جديد في FWMS";
+      : body;
+  } else if (data.type === "team_member_left_zone") {
+    title = "FWMS — مغادرة منطقة الفريق";
+    body = p.memberName
+      ? `غادر «${p.memberName}» منطقة الفريق «${p.groupName ?? ""}» (على بعد ~${Math.round(p.distanceM ?? 0)} م من مركزها)`
+      : body;
+  } else if (data.type === "team_member_entered_zone") {
+    title = "FWMS — عودة إلى منطقة الفريق";
+    body = p.memberName ? `عاد «${p.memberName}» إلى منطقة الفريق «${p.groupName ?? ""}»` : body;
+  }
 
   event.waitUntil(
     self.registration.showNotification(title, {
       body,
-      icon: "/favicon.ico",
-      badge: "/favicon.ico",
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
       tag: data.type ?? "fwms", // دمج المتكرر من نفس النوع
-      data: { url: "/dashboard/my-schedule" },
+      data: { url: data.type === "team_member_left_zone" || data.type === "team_member_entered_zone" ? "/dashboard/team-presence" : "/dashboard/my-schedule" },
     }),
   );
 });

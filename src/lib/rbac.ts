@@ -9,11 +9,19 @@ export function isRole(value: string): value is Role {
   return (ROLES as readonly string[]).includes(value);
 }
 
-/** الصلاحيات المنطقية للمنصة — تُوسَّع مع المراحل التالية */
+/** الصلاحيات المنطقية للمنصة — تُوسَّع مع المراحل التالية
+ *  المرحلة 9 (v0.10.0): users.create (تسجيل الحسابات — للسوبر أدمن حصرًا بطبعه، ويُفوَّض)،
+ *  teams.manage (إدارة الفرق: أعضاء/قائد/احتياط)، voice.use/voice.admin (الرسائل الصوتية)،
+ *  location.view (المواقع الأنية). التفويض فوق الدور عبر delegations.ts (السوبر أدمن وحده). */
 export const PERMISSIONS = [
-  "platform.manage", // إدارة الشركات والمالك وإعدادات النظام
+  "platform.manage", // إدارة الشركات والمالك وإعدادات النظام — لا تُفوَّض (روح الملكية)
   "company.manage", // إدارة فروع/مواقع/مشاريع الشركة
-  "users.manage", // إدارة مستخدمي الشركة
+  "users.manage", // إدارة مستخدمي الشركة (تعديل/تعطيل) — إنشاء الحسابات users.create
+  "users.create", // تسجيل حسابات المستخدمين — السوبر أدمن وحده بطبعه (قاعدة المالك 2026-10-18) ويُفوَّض
+  "teams.manage", // إدارة الفرق: إضافة/إزالة أعضاء، تعيين قائد، تحديد فرق الإحتياط
+  "voice.use", // الرسائل الصوتية داخل فريقه (لكل مستخدم) — العزل بين الفرق في الخادم
+  "voice.admin", // الرسائل الصوتية عبر جميع الفرق والمستخدمين (سوبر/أدمن/كوأدمن)
+  "location.view", // الاطلاع على الموقع الأني للأعضاء (سوبر/أدمن/كوأدمن — قادة الفرق ضمن فريقهم بالخدمة)
   "payroll.view", // عرض كشوف الأجور
   "payroll.approve", // اعتماد كشوف الأجور النهائية
   "payroll.verify", // توثيق قواعد الأجور (المحاسب — المرحلة 6أ/6ب: يمنع الاعتماد قبلها)
@@ -26,7 +34,9 @@ export const PERMISSIONS = [
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
-/** مصفوفة الأدوار ← الصلاحيات (SPEC §3) */
+/** مصفوفة الأدوار ← الصلاحيات (SPEC §3)
+ *  المرحلة 9: voice.use للجميع، وvoice.admin/location.view/teams.manage للإدارة؛
+ *  users.create للسوبر أدمن حصرًا (يُفوَّض عبر delegations.ts عند الحاجة). */
 const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   super_admin: [...PERMISSIONS],
   accountant: [
@@ -35,11 +45,16 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "declarations.review",
     "declarations.export",
     "audit.view",
+    "voice.use",
     "self.view",
   ],
   admin: [
     "company.manage",
     "users.manage",
+    "teams.manage",
+    "voice.use",
+    "voice.admin",
+    "location.view",
     "payroll.view",
     "payroll.approve",
     "audit.view",
@@ -47,8 +62,8 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "scheduling.manage",
     "self.view",
   ],
-  co_admin: ["attendance.manage", "scheduling.manage", "self.view"],
-  employee: ["self.view"],
+  co_admin: ["attendance.manage", "scheduling.manage", "voice.use", "voice.admin", "location.view", "self.view"],
+  employee: ["self.view", "voice.use"],
 };
 
 export function roleHas(role: string, permission: Permission): boolean {

@@ -13,6 +13,11 @@ export async function GET() {
 
     const groups = await db.workerGroup.findMany({
       where: { companyId: session!.companyId },
+      include: {
+        leader: { select: { id: true, fullName: true } },
+        site: { select: { id: true, name: true, latitude: true, longitude: true } },
+        members: { where: { status: "active" }, select: { userId: true } },
+      },
       orderBy: { createdAt: "desc" },
     });
 
@@ -23,6 +28,15 @@ export async function GET() {
         name: g.name,
         description: g.description,
         status: g.status,
+        kind: g.kind,
+        leaderUserId: g.leaderUserId,
+        leaderName: g.leader?.fullName ?? null,
+        siteId: g.siteId,
+        siteName: g.site?.name ?? null,
+        memberCount: g.members.length,
+        zone: g.zoneLat != null && g.zoneLng != null
+          ? { lat: g.zoneLat, lng: g.zoneLng, radiusM: g.zoneRadiusM ?? 150 }
+          : null,
         createdAt: g.createdAt,
       })),
     });

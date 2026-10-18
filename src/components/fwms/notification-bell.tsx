@@ -27,10 +27,18 @@ type PayslipApprovedPayload = {
   refNumber: string;
 };
 
+type TeamPresencePayload = {
+  memberName: string;
+  groupName: string;
+  zoneRadiusM: number;
+  distanceM: number;
+  at: string;
+};
+
 type NotificationRow = {
   id: string;
   type: string;
-  payload: ReplacementPayload | PayslipApprovedPayload | null;
+  payload: ReplacementPayload | PayslipApprovedPayload | TeamPresencePayload | null;
   readAt: string | null;
   createdAt: string;
 };
@@ -155,6 +163,14 @@ export function NotificationBell() {
     if (n.type === "payslip_approved" && n.payload) {
       const p = n.payload as PayslipApprovedPayload;
       return `${t("notifications.payslipLine1")} ${p.periodLabel} — ${t("notifications.payslipLine2")} ${p.refNumber}`;
+    }
+    if (n.type === "team_member_left_zone" && n.payload) {
+      const p = n.payload as TeamPresencePayload;
+      return `${t("notifications.presenceLeftLine1")} «${p.memberName}» ${t("notifications.presenceLeftLine2")} «${p.groupName}» — ~${Math.round(p.distanceM)} ${t("notifications.presenceMeters")}`;
+    }
+    if (n.type === "team_member_entered_zone" && n.payload) {
+      const p = n.payload as TeamPresencePayload;
+      return `${t("notifications.presenceReturnedLine1")} «${p.memberName}» ${t("notifications.presenceReturnedLine2")} «${p.groupName}»`;
     }
     return t("notifications.unknownType");
   }

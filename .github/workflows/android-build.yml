@@ -1,0 +1,203 @@
+# FWMS — بناء تطبيق أندرويد تلقائيًا (المرحلة 9 — v0.10.0)
+# ---------------------------------------------------------------------------
+# طلب المالك 2026-10-18: «يجب إنشاء سير عمل ليُنشئ تطبيق أندرويد بشكل آلي على غيتهاب».
+# الاستراتيجية: غلاف Capacitor (webview) يشير إلى نشر Cloudflare الحي (fwms-dg8.pages.dev)
+# — نفس الكود وسلوك واحد (SPEC §7)، لا نسخة أندرويد منفصلة تُصان يدويًا.
+# التوقيع: توكنات المستودع السرية إن وُجدت (ANDROID_KEYSTORE_BASE64 ...) — وإلا وُلِّد
+# مفتاح جديد رُفع ك artifact «android-keystore-INITIAL» يحفظه المالك كي لا يتبدل التوقيع.
+# المشغلات: يدوي (workflow_dispatch) + عند كل وسم v* (يصدر إصدار GitHub Release بالتطبيق).
+name: Android App Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      app_url:
+        description: "عنوان نشر الواجهة (افتراضي: بوابة Cloudflare)"
+        required: false
+        default: "https://fwms-dg8.pages.dev"
+  push:
+    tags:
+      - "v*"
+
+env:
+  DEFAULT_APP_URL: "https://fwms-dg8.pages.dev"
+  APP_NAME: "FWMS"
+  PACKAGE_ID: "ma.fwms.app"
+  KEYSTORE_FILE: "android.keystore"
+  KEY_ALIAS: "fwms-release"
+
+jobs:
+  build:
+    name: Build APK (Capacitor)
+    runs-on: ubuntu-latest
+    env:
+      APP_URL: ${{ github.event.inputs.app_url || 'https://fwms-dg8.pages.dev' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
+      - name: Show environment
+        run: |
+          echo "APP_URL=$APP_URL"
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          node --version
+          java -version
+
+      - name: Scaffold app shell (www fallback)
+        run: |
+          mkdir -p android-shell/www
+          cat > android-shell/www/index.html <<'HTML'
+          <!doctype html>
+          <html lang="ar" dir="rtl">
+            <head>
+              <meta charset="utf-8" />
+              <meta name="viewport" content="width=device-width, initial-scale=1" />
+              <title>FWMS</title>
+              <style>
+                body { margin:0; min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; font-family:system-ui,sans-serif; background:#f8faf6; color:#14532d; text-align:center; }
+                a { color:#14532d; font-weight:700; }
+              </style>
+            </head>
+            <body>
+              <h1>FWMS</h1>
+              <p>يتطلب التطبيق اتصالًا بالإنترنت لفتح المنصة.</p>
+              <a href="REPLACE_ME" id="open">فتح المنصة في المتصفح</a>
+              <script>document.getElementById('open').href = location.origin.startsWith('http') ? location.origin : 'REPLACE_ME';</script>
+            </body>
+          </html>
+          HTML
+          sed -i "s|REPLACE_ME|$APP_URL|g" android-shell/www/index.html
+
+      - name: Install Capacitor (no project deps touched)
+        run: npm install --no-save @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
+
+      - name: Init Capacitor + add Android platform
+        working-directory: android-shell
+        run: |
+          npx cap init "$APP_NAME" "$PACKAGE_ID" --web-dir=www --non-interactive || npx cap init "$APP_NAME" "$PACKAGE_ID" --web-dir=www
+          # التطبيق يشير إلى النشر الحي مباشرة (server.url) — www مجرد احتياط بلا اتصال
+          node -e "
+            const fs = require('fs');
+            const cfg = JSON.parse(fs.readFileSync('capacitor.config.json', 'utf8'));
+            cfg.server = { url: process.env.APP_URL, cleartext: false };
+            cfg.android = { allowMixedContent: false };
+            cfg.androidScheme = 'https';
+            fs.writeFileSync('capacitor.config.json', JSON.stringify(cfg, null, 2));
+            console.log(JSON.stringify(cfg, null, 2));
+          "
+          npx cap add android
+
+      - name: Prepare signing keystore
+        working-directory: android-shell
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ] && [ -n "$ANDROID_KEYSTORE_PASSWORD" ]; then
+            echo "→ استخدام مفتاح التوقيع من أسرار المستودع"
+            echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$KEYSTORE_FILE"
+            printf 'storeFile=%s\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' \
+              "$KEYSTORE_FILE" "$ANDROID_KEYSTORE_PASSWORD" "${ANDROID_KEY_ALIAS:-$KEY_ALIAS}" "${ANDROID_KEY_PASSWORD:-$ANDROID_KEYSTORE_PASSWORD}" \
+              > android/keystore.properties
+            echo "KEYSTORE_FROM_SECRET=true" >> "$GITHUB_ENV"
+          else
+            echo "→ توليد مفتاح توقيع ابتدائي (احفظه كأسرار المستودع لتثبيت التوقيع)"
+            STOREPASS="Fwms$(openssl rand -hex 8)"
+            keytool -genkeypair -v \
+              -storetype PKCS12 -keystore "$KEYSTORE_FILE" -storepass "$STOREPASS" \
+              -alias "$KEY_ALIAS" -keypass "$STOREPASS" -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname "CN=FWMS, OU=Field Workforce, O=FWMS, L=Casablanca, C=MA" >/dev/null 2>&1
+            printf 'storeFile=%s\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' \
+              "$KEYSTORE_FILE" "$STOREPASS" "$KEY_ALIAS" "$STOREPASS" \
+              > android/keystore.properties
+            echo "KEYSTORE_FROM_SECRET=false" >> "$GITHUB_ENV"
+          fi
+
+      - name: Wire release signing into Gradle
+        working-directory: android-shell/android
+        run: |
+          cat >> app/build.gradle <<'GRADLE'
+          // CI signing (injected) — يقرأ android/keystore.properties
+          def ksProps = new Properties()
+          def ksFile = rootProject.file('keystore.properties')
+          if (ksFile.exists()) {
+            ksProps.load(new FileInputStream(ksFile))
+          }
+          android {
+            signingConfigs {
+              release {
+                storeFile file(ksProps['storeFile'])
+                storePassword ksProps['storePassword']
+                keyAlias ksProps['keyAlias']
+                keyPassword ksProps['keyPassword']
+              }
+            }
+            buildTypes {
+              release {
+                signingConfig signingConfigs.release
+              }
+            }
+          }
+          GRADLE
+
+      - name: Build release APK
+        working-directory: android-shell/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon -Pandroid.injected.build.abi=arm64-v8a
+          ls -la app/build/outputs/apk/release/
+
+      - name: Rename APK
+        run: |
+          mkdir -p dist
+          cp android-shell/android/app/build/outputs/apk/release/app-release.apk "dist/FWMS-${GITHUB_REF_NAME:-manual}.apk"
+          ls -la dist/
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fwms-android-apk
+          path: dist/*.apk
+          if-no-files-found: error
+
+      - name: Upload initial keystore (first run only)
+        if: env.KEYSTORE_FROM_SECRET == 'false'
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-keystore-INITIAL
+          path: |
+            android-shell/android.keystore
+            android-shell/android/keystore.properties
+          if-no-files-found: error
+
+      - name: Instructions summary
+        if: env.KEYSTORE_FROM_SECRET == 'false'
+        run: |
+          cat >> "$GITHUB_STEP_SUMMARY" <<'MD'
+          ## 🔑 مفتاح توقيع ابتدائي
+          وُلِّد مفتاح توقيع جديد لهذا البناء ورفع ضمن artifact `android-keystore-INITIAL`.
+          لتثبيت توقيع التطبيق عبر التحديثات (وإلا رُفض التثبيت فوق النسخ السابقة):
+          1. نزّل الـ artifact وفك الضغط.
+          2. أضف في أسرار المستودع: `ANDROID_KEYSTORE_BASE64` (محتوى android.keystore بـ base64)
+             و`ANDROID_KEYSTORE_PASSWORD` و`ANDROID_KEY_ALIAS` و`ANDROID_KEY_PASSWORD`
+             (قيمها داخل keystore.properties المرفوع).
+          MD
+
+      - name: Create GitHub Release (tags only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.apk
+          generate_release_notes: true
+          draft: false
+          prerelease: false

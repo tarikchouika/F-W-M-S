@@ -1,8 +1,9 @@
 "use client";
 
-// FWMS — مدير مجموعات العمال (المرحلة 2): قائمة + إنشاء/تعديل/أرشفة/استعادة
+// FWMS — مدير مجموعات العمال = الفرق الميدانية (المرحلة 2 + المرحلة 9):
+// قائمة + إنشاء/تعديل/أرشفة/استعادة + إعداد الفريق (القائد/النوع/المنطقة/الأعضاء)
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { UsersRound, Plus, Pencil, Archive, ArchiveRestore, Search, LoaderCircle } from "lucide-react";
+import { UsersRound, Plus, Pencil, Archive, ArchiveRestore, Search, LoaderCircle, UserCog } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,12 +15,20 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/provider";
 import { PageHeader, StatusBadge, ConfirmAction, ListState, formatDate, apiRequest, apiErrorMessage } from "@/components/fwms/org-bits";
+import { TeamSetup } from "@/components/fwms/team-setup";
 
 type GroupRow = {
   id: string;
   name: string;
   description: string | null;
   status: string;
+  kind: string;
+  leaderUserId: string | null;
+  leaderName: string | null;
+  siteId: string | null;
+  siteName: string | null;
+  memberCount: number;
+  zone: { lat: number; lng: number; radiusM: number } | null;
   createdAt: string;
 };
 
@@ -41,6 +50,9 @@ export function GroupsManager() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<GroupForm>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
+
+  // إعداد الفريق (المرحلة 9)
+  const [teamSetupId, setTeamSetupId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -176,6 +188,15 @@ export function GroupsManager() {
                     <TableRow key={row.id}>
                       <TableCell>
                         <p className="font-semibold">{row.name}</p>
+                        <div className="mt-1 flex flex-wrap items-center gap-1">
+                          {row.kind === "reserve" && <Badge variant="outline" className="h-4 px-1 text-[10px]">{t("groups.kindReserve")}</Badge>}
+                          {row.status === "active" && (
+                            <span className="text-[11px] text-muted-foreground/80">
+                              {t("groups.membersCount", { count: row.memberCount })}
+                              {row.leaderName ? ` · ${t("presence.leader")}: ${row.leaderName}` : ""}
+                            </span>
+                          )}
+                        </div>
                         <p className="text-[11px] text-muted-foreground/80">{formatDate(row.createdAt, locale)}</p>
                       </TableCell>
                       <TableCell className="max-w-72 text-xs text-muted-foreground">
@@ -184,6 +205,12 @@ export function GroupsManager() {
                       <TableCell><StatusBadge status={row.status} /></TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
+                          {row.status === "active" && (
+                            <Button variant="outline" size="sm" className="h-8 gap-1.5 px-2 text-xs" onClick={() => setTeamSetupId(row.id)}>
+                              <UserCog className="size-3.5" aria-hidden />
+                              <span className="hidden sm:inline">{t("groups.teamSetup")}</span>
+                            </Button>
+                          )}
                           <Button variant="ghost" size="icon" className="size-8" onClick={() => openEdit(row)} aria-label={t("common.edit")}>
                             <Pencil className="size-4" aria-hidden />
                           </Button>
@@ -235,6 +262,22 @@ export function GroupsManager() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* إعداد الفريق (المرحلة 9) — قائد/نوع/منطقة/أعضاء */}
+      <Dialog open={teamSetupId !== null} onOpenChange={(o) => !o && setTeamSetupId(null)}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{t("groups.teamSetup")}</DialogTitle>
+            <DialogDescription>{t("groups.teamSetupHint")}</DialogDescription>
+          </DialogHeader>
+          {teamSetupId && (
+            <TeamSetup
+              groupId={teamSetupId}
+              onSaved={() => void load()}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>

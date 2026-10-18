@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getSession } from "@/lib/auth/session";
 import { db } from "@/lib/db";
+import { APP_VERSION } from "@/lib/version";
 import { LOCALE_COOKIE, resolveLocale } from "@/i18n/config";
 import { getDictionary, tServer } from "@/i18n/get-dictionary";
 
@@ -156,12 +157,14 @@ export default async function DashboardPage() {
         </CardContent>
       </Card>
 
-      {/* ملاحظة المرحلة */}
+      {/* ملاحظة المرحلة — المنصة مكتملة، والإصدار يُعرض ديناميكيًا من version.ts حصرًا
+          (علاج خلل «أنت تستخدم الإصدار 0.7.0» المتقادم الذي أوهم المالك بأن المنصة غير مكتملة) */}
       <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/40 dark:text-amber-200">
         <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
         <p>
           <strong className="font-bold">{t("dashboard.phaseNoteTitle")}:</strong>{" "}
-          {t("dashboard.phaseNoteBody")}
+          {t("dashboard.phaseNoteBody")}{" "}
+          <span dir="ltr" className="font-bold">v{APP_VERSION}</span>
         </p>
       </div>
     </div>

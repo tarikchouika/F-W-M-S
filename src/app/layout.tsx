@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { I18nProvider } from "@/i18n/provider";
+import { ServiceWorkerRegister } from "@/components/fwms/sw-register";
 import { LOCALE_COOKIE, localeDirection, resolveLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 
@@ -31,7 +32,8 @@ export const metadata: Metadata = {
   description:
     "منصة مغربية متعددة الشركات لإدارة العمالة الميدانية: حضور جغرافي، جدولة، أجور بقواعد مدونة الشغل (CNSS/AMO/IR)، وتصاريح رسمية — بأربع لغات.",
   keywords: ["FWMS", "workforce", "Morocco", "CNSS", "AMO", "IR", "geofencing", "payroll"],
-  icons: { icon: "/logo.svg" },
+  manifest: "/manifest.json",
+  icons: { icon: "/logo.svg", apple: "/icons/apple-touch-icon.png" },
 };
 
 export const viewport: Viewport = {
@@ -59,6 +61,7 @@ export default async function RootLayout({
           {children}
         </I18nProvider>
         <Toaster />
+        <ServiceWorkerRegister />
       </body>
     </html>
   );
