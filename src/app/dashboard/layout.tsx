@@ -30,8 +30,6 @@ const NAV_MODULE_OF: Record<string, string> = {
 export default async function DashboardLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  // ⚠️ مؤقت تشخيصي (يُزال بعد قراءة الخطأ) — يعرض الخطأ الحقيقي في نص الصفحة
-  try {
   // حارس الوصول: لا لوحة بلا جلسة سارية (SPEC §3: التحقق في الخادم دائمًا)
   const session = await getSession();
   if (!session) redirect("/login");
@@ -96,14 +94,4 @@ export default async function DashboardLayout({
       {isFieldUser && <LocationWatcher />}
     </div>
   );
-  } catch (e: unknown) {
-    const digest = (e as { digest?: unknown })?.digest;
-    if (typeof digest === "string" && digest.startsWith("NEXT_REDIRECT")) throw e; // redirect ليس خطأ
-    const msg = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
-    return (
-      <pre style={{ direction: "ltr", padding: 16, fontFamily: "monospace", whiteSpace: "pre-wrap" }}>
-        FWMS-DIAG dashboard/layout: {msg}{"\n"}env={"{"}VERCEL:{process.env.VERCEL}, DB:{(process.env.DATABASE_URL ?? "(unset)").slice(0, 60)}{"}"}
-      </pre>
-    ) as never;
-  }
 }

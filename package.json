@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "bun --bun next dev -p 3000 2>&1 | tee dev.log",
-    "build": "next build && cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/ && mkdir -p .next/standalone/src/lib && cp -r src/lib/reports .next/standalone/src/lib/ && cp -r src/i18n .next/standalone/src/ && for m in @react-pdf/renderer @react-pdf/font @react-pdf/layout @react-pdf/render @react-pdf/pdfkit @react-pdf/image @react-pdf/primitives @react-pdf/reconciler @react-pdf/stylesheet @react-pdf/svg @react-pdf/types @react-pdf/textkit @react-pdf/fns @react-pdf/hyphenate @react-pdf/paginate fontkit pdfkit @swc/helpers brotli clone dfa fast-deep-equal restructure tiny-inflate unicode-properties unicode-trie yoga-layout yoga-wasm-web qrcode; do mkdir -p \".next/standalone/node_modules/$(dirname $m)\" && rm -rf \".next/standalone/node_modules/$m\" && cp -r \"node_modules/$m\" \".next/standalone/node_modules/$m\" 2>/dev/null || true; done && for m in @img/*; do [ -d \"node_modules/$m\" ] || continue; mkdir -p \".next/standalone/node_modules/$(dirname $m)\" && rm -rf \".next/standalone/node_modules/$m\" && cp -r \"node_modules/$m\" \".next/standalone/node_modules/$m\" || true; done",
+    "build": "prisma generate && next build && cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/ && mkdir -p .next/standalone/src/lib && cp -r src/lib/reports .next/standalone/src/lib/ && cp -r src/i18n .next/standalone/src/ && for m in @react-pdf/renderer @react-pdf/font @react-pdf/layout @react-pdf/render @react-pdf/pdfkit @react-pdf/image @react-pdf/primitives @react-pdf/reconciler @react-pdf/stylesheet @react-pdf/svg @react-pdf/types @react-pdf/textkit @react-pdf/fns @react-pdf/hyphenate @react-pdf/paginate fontkit pdfkit @swc/helpers brotli clone dfa fast-deep-equal restructure tiny-inflate unicode-properties unicode-trie yoga-layout yoga-wasm-web qrcode; do mkdir -p \".next/standalone/node_modules/$(dirname $m)\" && rm -rf \".next/standalone/node_modules/$m\" && cp -r \"node_modules/$m\" \".next/standalone/node_modules/$m\" 2>/dev/null || true; done && for m in @img/*; do [ -d \"node_modules/$m\" ] || continue; mkdir -p \".next/standalone/node_modules/$(dirname $m)\" && rm -rf \".next/standalone/node_modules/$m\" && cp -r \"node_modules/$m\" \".next/standalone/node_modules/$m\" || true; done",
     "start": "NODE_ENV=production bun .next/standalone/server.js 2>&1 | tee server.log",
     "lint": "eslint .",
     "check:i18n": "node scripts/check-i18n-parity.mjs",
@@ -16,7 +16,8 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
-    "db:reset": "prisma migrate reset"
+    "db:reset": "prisma migrate reset",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
