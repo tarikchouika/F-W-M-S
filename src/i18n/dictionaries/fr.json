@@ -128,7 +128,8 @@
     "platform": "Propriété de la plateforme",
     "teamPresence": "Présence des équipes",
     "voice": "Messages vocaux",
-    "openMenu": "Ouvrir le menu"
+    "openMenu": "Ouvrir le menu",
+    "welcomeWithName": "Bonjour, {name}"
   },
   "companies": {
     "title": "Sociétés",
@@ -867,7 +868,8 @@
       "assignment_exists": "Affectation déjà existante",
       "worker_not_in_company": "Travailleur hors de cette société",
       "forbidden": "Non autorisé"
-    }
+    },
+    "contributionsPlaceholder": "[{\"key\":\"mutuelle_employee\",\"side\":\"employee\",\"label\":\"Mutuelle complémentaire\",\"rateBp\":10000,\"basis\":\"gross\",\"order\":45}]"
   },
   "specRegistry": {
     "title": "Registre des spécifications",
@@ -1354,12 +1356,19 @@
     "pageHint": "Un problème temporaire est survenu lors du chargement de cette page — il ne provient pas de votre saisie. Réessayez ; si le problème persiste, contactez le support technique avec le code d'erreur ci-dessous.",
     "platformHint": "Un problème temporaire est survenu lors du chargement de la plateforme. Réessayez ; si le problème persiste, contactez le support technique avec le code d'erreur ci-dessous.",
     "reload": "Rafraîchir la page",
-    "digestLabel": "Code d'erreur (support)"
+    "digestLabel": "Code d'erreur (support)",
+    "notFoundTitle": "Page introuvable",
+    "notFoundHint": "L'adresse demandée n'existe pas ou a été déplacée — vérifiez le lien ou revenez à la page d'accueil.",
+    "notFoundAction": "Retour à l'accueil"
   },
   "theme": {
     "label": "Thème",
     "light": "Clair",
     "dark": "Sombre",
     "system": "Système"
+  },
+  "meta": {
+    "title": "FWMS — Gestion de la main-d'œuvre terrain",
+    "description": "Plateforme marocaine multi-entreprises pour la main-d'œuvre de terrain : présence géolocalisée, planification, paie selon le code du travail (CNSS/AMO/IR) et déclarations officielles — en quatre langues."
   }
 }

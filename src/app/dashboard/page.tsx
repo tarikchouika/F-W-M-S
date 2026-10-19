@@ -34,7 +34,8 @@ export default async function DashboardPage() {
   const cookieStore = await cookies();
   const locale = resolveLocale(cookieStore.get(LOCALE_COOKIE)?.value);
   const dict = getDictionary(locale);
-  const t = (key: string) => tServer(dict, key);
+  // (بلاغ «خلل الترجمة» 2026-10-19): الاستيفاء صار داخل القاموس — لا فاصلة عربية مثبتة
+  const t = (key: string, params?: Record<string, string | number>) => tServer(dict, key, params);
 
   const isSuper = session.role === "super_admin";
   const isCompanyScoped = !isSuper;
@@ -78,7 +79,9 @@ export default async function DashboardPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            {t("dashboard.welcome")}، {session.name}
+            {/* نص التحية من القاموس بالكامل (أهلاً، {name} / Bonjour, {name}) —
+                الفاصلة كانت «،» عربية مثبتة لكل اللغات */}
+            {t("dashboard.welcomeWithName", { name: session.name })}
           </h1>
           <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
             {/* كل (وسم + قيمة) في مجموعة واحدة حتى تنزاح ككتلة متماسكة على الجوال */}

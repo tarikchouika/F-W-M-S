@@ -466,10 +466,13 @@ export async function executeTransfer(
     });
 
     // د3) حساب super_admin الابتدائي للمالك الجديد + عضويته في كل شركة نشطة
+    // (بلاغ «خلل الترجمة» 2026-10-19): كان الاسم المولّد «مالك المنصة — س» عربيًّا
+    // مثبتًا لكل اللغات — صار اسم العرض كما أدخله المالك الجديد (الدور يظهر مترجمًا
+    // في الواجهة من مصفوفة الأدوار — لا حاجة لبادئة لغوية داخل بيانات المستخدم).
     const newAdmin = await tx.user.create({
       data: {
         email: row.newOwnerInitialAdminEmail,
-        fullName: `مالك المنصة — ${row.newOwnerDisplayName}`,
+        fullName: row.newOwnerDisplayName,
         passwordHash: tempHash,
         locale: owner.defaultLocale,
         isActive: true,

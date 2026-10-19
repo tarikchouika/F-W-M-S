@@ -10,16 +10,29 @@ import { LoginForm } from "@/components/fwms/login-form";
 import { getSession } from "@/lib/auth/session";
 import { getPlatformBranding } from "@/lib/branding";
 import { APP_VERSION } from "@/lib/version";
-import { LOCALE_COOKIE, resolveLocale } from "@/i18n/config";
+import { LOCALE_COOKIE, localeDirection, resolveLocale } from "@/i18n/config";
 import { getDictionary, tServer } from "@/i18n/get-dictionary";
+import { LangParamSync } from "@/components/fwms/lang-param-sync";
 
-export async function generateMetadata(): Promise<Metadata> {
+type LoginProps = {
+  searchParams: Promise<{ lang?: string }>;
+};
+
+/** لغة صفحة الدخول من معامل lang ثم كوكي FWMS_LOCALE — نفس أولوية صفحة /verify
+ *  (v0.10.3). بلاغ «خلل الترجمة» 2026-10-19: /login?lang=fr كان يُعرض عربيًّا. */
+async function resolvePageLocale(searchParams: { lang?: string }) {
+  const { lang } = searchParams;
   const store = await cookies();
-  const dict = getDictionary(resolveLocale(store.get(LOCALE_COOKIE)?.value));
+  const cookieLocale = resolveLocale(store.get(LOCALE_COOKIE)?.value);
+  return lang === "ar" || lang === "fr" || lang === "en" || lang === "es" ? lang : cookieLocale;
+}
+
+export async function generateMetadata({ searchParams }: LoginProps): Promise<Metadata> {
+  const dict = getDictionary(await resolvePageLocale(await searchParams));
   return { title: tServer(dict, "auth.loginTitle") };
 }
 
-export default async function LoginPage() {
+export default async function LoginPage({ searchParams }: LoginProps) {
   // مسجَّل الدخول مسبقًا؟ إلى لوحة التحكم مباشرة
   //
   // محصّنة (بلاغ المالك 2026-10-19 «صفحة خطأ عند تسجيل الدخول» — Application error:
@@ -35,14 +48,21 @@ export default async function LoginPage() {
   }
   if (session) redirect("/dashboard");
 
-  const store = await cookies();
-  const dict = getDictionary(resolveLocale(store.get(LOCALE_COOKIE)?.value));
+  const pageLocale = await resolvePageLocale(await searchParams);
+  const dict = getDictionary(pageLocale);
   // هوية مالك المنصة (white-label — SPEC §3.2): الاسم المعروض من القاعدة لا ثابت كود
   const branding = await getPlatformBranding();
 
   return (
-    <div className="fwms-hero-gradient relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-4 py-10 lg:px-8">
+    <div
+      dir={localeDirection[pageLocale]}
+      className="fwms-hero-gradient relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-4 py-10 lg:px-8"
+    >
       <div className="fwms-zellige absolute inset-0 opacity-50" aria-hidden />
+
+      {/* لغة الرابط (?lang=) تُطبّق على الكوكي مرة واحدة فيتحدّث نموذج الدخول (عميل) —
+          لا شيء يُعرض من هذا المكوّن */}
+      <LangParamSync paramLocale={pageLocale} />
 
       <div className="absolute top-4 end-4 z-10 flex items-center gap-2">
         {/* زجاجي فوق التدرّج: يعمل في الوضعين (الفاتح والقاتم) بلا اعتماد على secondary */}

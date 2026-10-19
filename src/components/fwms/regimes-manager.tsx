@@ -501,7 +501,7 @@ export function RegimesManager({ role }: { role: string }) {
                 className="min-h-24 font-mono text-xs"
                 value={form.contributionsJson}
                 onChange={(e) => setForm({ ...form, contributionsJson: e.target.value })}
-                placeholder='[{"key":"mutuelle_employee","side":"employee","label":"تأمين تكميلي","rateBp":10000,"basis":"gross","order":45}]'
+                placeholder={t("regimes.contributionsPlaceholder")}
               />
               <p className="text-xs text-muted-foreground">{t("regimes.contributionsHint")}</p>
             </div>

@@ -128,7 +128,8 @@
     "platform": "Platform ownership",
     "teamPresence": "Team presence",
     "voice": "Voice messages",
-    "openMenu": "Open menu"
+    "openMenu": "Open menu",
+    "welcomeWithName": "Hello, {name}"
   },
   "companies": {
     "title": "Companies",
@@ -867,7 +868,8 @@
       "assignment_exists": "Assignment already exists",
       "worker_not_in_company": "Worker not in this company",
       "forbidden": "Forbidden"
-    }
+    },
+    "contributionsPlaceholder": "[{\"key\":\"mutuelle_employee\",\"side\":\"employee\",\"label\":\"Complementary health cover\",\"rateBp\":10000,\"basis\":\"gross\",\"order\":45}]"
   },
   "specRegistry": {
     "title": "Specification registry",
@@ -1354,12 +1356,19 @@
     "pageHint": "A temporary issue occurred while loading this page — it is not caused by anything you entered. Please try again; if it keeps happening, contact technical support with the error code below.",
     "platformHint": "A temporary issue occurred while loading the platform. Please try again; if it keeps happening, contact technical support with the error code below.",
     "reload": "Reload page",
-    "digestLabel": "Error code for support"
+    "digestLabel": "Error code for support",
+    "notFoundTitle": "Page not found",
+    "notFoundHint": "The requested address does not exist or has moved — check the link or go back to the home page.",
+    "notFoundAction": "Back to home"
   },
   "theme": {
     "label": "Theme",
     "light": "Light",
     "dark": "Dark",
     "system": "System"
+  },
+  "meta": {
+    "title": "FWMS — Field Workforce Management",
+    "description": "Moroccan multi-tenant platform for field workforce: geofenced attendance, scheduling, payroll under the labour code (CNSS/AMO/IR), and official declarations — in four languages."
   }
 }

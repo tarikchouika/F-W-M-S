@@ -7,7 +7,7 @@ import { ThemeProvider } from "next-themes";
 import { I18nProvider } from "@/i18n/provider";
 import { ServiceWorkerRegister } from "@/components/fwms/sw-register";
 import { LOCALE_COOKIE, localeDirection, resolveLocale } from "@/i18n/config";
-import { getDictionary } from "@/i18n/get-dictionary";
+import { getDictionary, tServer } from "@/i18n/get-dictionary";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,17 +25,23 @@ const notoArabic = Noto_Sans_Arabic({
   weight: ["400", "500", "700"],
 });
 
-export const metadata: Metadata = {
-  title: {
-    default: "FWMS — نظام إدارة القوى العاملة الميدانية",
-    template: "%s | FWMS",
-  },
-  description:
-    "منصة مغربية متعددة الشركات لإدارة العمالة الميدانية: حضور جغرافي، جدولة، أجور بقواعد مدونة الشغل (CNSS/AMO/IR)، وتصاريح رسمية — بأربع لغات.",
-  keywords: ["FWMS", "workforce", "Morocco", "CNSS", "AMO", "IR", "geofencing", "payroll"],
-  manifest: "/manifest.json",
-  icons: { icon: "/logo.svg", apple: "/icons/apple-touch-icon.png" },
-};
+// i18n (بلاغ المالك «خلل الترجمة» 2026-10-19 — الجولة الثانية): العنوان الافتراضي والوصف
+// كانا عربيين مثبتين لكل اللغات — صارا من القاموس بلغة الزائر (كوكي FWMS_LOCALE).
+// generateMetadata بدل metadata الثابتة — نفس نمط كل صفحات المنصة.
+export async function generateMetadata(): Promise<Metadata> {
+  const store = await cookies();
+  const dict = getDictionary(resolveLocale(store.get(LOCALE_COOKIE)?.value));
+  return {
+    title: {
+      default: tServer(dict, "meta.title"),
+      template: "%s | FWMS",
+    },
+    description: tServer(dict, "meta.description"),
+    keywords: ["FWMS", "workforce", "Morocco", "CNSS", "AMO", "IR", "geofencing", "payroll"],
+    manifest: "/manifest.json",
+    icons: { icon: "/logo.svg", apple: "/icons/apple-touch-icon.png" },
+  };
+}
 
 export const viewport: Viewport = {
   // لون شريط المتصفح يتبع مخطط النظام (لا يقرأ localStorage — قيد metadata):

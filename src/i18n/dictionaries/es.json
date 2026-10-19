@@ -128,7 +128,8 @@
     "platform": "Propiedad de la plataforma",
     "teamPresence": "Presencia de equipos",
     "voice": "Mensajes de voz",
-    "openMenu": "Abrir el menú"
+    "openMenu": "Abrir el menú",
+    "welcomeWithName": "Hola, {name}"
   },
   "companies": {
     "title": "Empresas",
@@ -867,7 +868,8 @@
       "assignment_exists": "Asignación ya existente",
       "worker_not_in_company": "Trabajador fuera de esta empresa",
       "forbidden": "Prohibido"
-    }
+    },
+    "contributionsPlaceholder": "[{\"key\":\"mutuelle_employee\",\"side\":\"employee\",\"label\":\"Mutual complementaria\",\"rateBp\":10000,\"basis\":\"gross\",\"order\":45}]"
   },
   "specRegistry": {
     "title": "Registro de especificaciones",
@@ -1354,12 +1356,19 @@
     "pageHint": "Ocurrió un problema temporal al cargar esta página; no se debe a nada que hayas introducido. Inténtalo de nuevo; si persiste, contacta con el soporte técnico con el código de error que aparece abajo.",
     "platformHint": "Ocurrió un problema temporal al cargar la plataforma. Inténtalo de nuevo; si persiste, contacta con el soporte técnico con el código de error que aparece abajo.",
     "reload": "Recargar la página",
-    "digestLabel": "Código de error para soporte"
+    "digestLabel": "Código de error para soporte",
+    "notFoundTitle": "Página no encontrada",
+    "notFoundHint": "La dirección solicitada no existe o fue movida — revise el enlace o vuelva a la página de inicio.",
+    "notFoundAction": "Volver al inicio"
   },
   "theme": {
     "label": "Tema",
     "light": "Claro",
     "dark": "Oscuro",
     "system": "Sistema"
+  },
+  "meta": {
+    "title": "FWMS — Gestión de la mano de obra de campo",
+    "description": "Plataforma marroquí multiempresa para la mano de obra de campo: asistencia geolocalizada, planificación, nóminas según el código de trabajo (CNSS/AMO/IR) y declaraciones oficiales — en cuatro idiomas."
   }
 }

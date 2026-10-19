@@ -10,12 +10,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth/session";
-import { AccessError } from "@/lib/rbac";
+import { AccessError, roleHas, ROLES } from "@/lib/rbac";
 import { hasPermission } from "@/lib/delegations";
 import { hashPassword } from "@/lib/auth/password";
 import { writeAudit } from "@/lib/audit";
 import { isJobTitleKey } from "@/lib/job-titles";
-import { ROLES } from "@/lib/rbac";
 
 function randomInitialPassword(): string {
   const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
@@ -30,6 +29,14 @@ export async function GET() {
   try {
     const session = await getSession();
     if (!session) throw new AccessError(401, "unauthenticated");
+
+    // (تفتيش المالك 2026-10-19 «تفحص جميع وظائف المنصة وصلاحيات المستخدمين»):
+    // كان GET يكشف كل مستخدمي الشركة (بريد/هاتف/دور/آخر دخول) لأي حساب مسجل الدخول
+    // — بما فيه العامل الميداني. القاعدة 4: التحقق من الصلاحيات في الخادم دائمًا.
+    // المستهلك الوحيد لهذا المسار صفحة «المستخدمون» (users.manage بطبعه أو بتفويض).
+    if (!roleHas(session.role, "users.manage") && !(await hasPermission(session, "users.manage"))) {
+      throw new AccessError(403, "forbidden");
+    }
 
     const memberships = await db.userMembership.findMany({
       where: { companyId: session.companyId, revokedAt: null },

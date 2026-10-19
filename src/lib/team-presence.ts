@@ -160,8 +160,12 @@ export async function recordPingAndEvaluate(input: {
   });
 
   const next = { lat: input.lat, lng: input.lng, reportedAt: new Date() };
+  // (بلاغ «خلل الترجمة» 2026-10-19): كان البديل «عضو» عربيًّا مثبتًا في إشعارات
+  // القادة لكل اللغات — صار البريد محايدًا لغويًا (fullName إلزامي في المخطط فالبديل
+  // نظري لا يكاد يقع، لكن بقاؤه عربيًّا كان خرقًا للقاعدة 1).
   const memberName =
-    (await db.user.findUnique({ where: { id: input.userId }, select: { fullName: true } }))?.fullName ?? "عضو";
+    (await db.user.findUnique({ where: { id: input.userId }, select: { fullName: true, email: true } }))
+      ?.fullName ?? "member";
 
   const evaluations: PingEvaluation[] = [];
   const seen = new Set<string>();
