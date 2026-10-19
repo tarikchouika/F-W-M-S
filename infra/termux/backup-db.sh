@@ -6,6 +6,9 @@
 #   - دوران: 7 يومية + 4 أسبوعية + 6 شهرية
 # الاستخدام: infra/termux/backup-db.sh [--no-rotate]
 set -euo pipefail
+# صلاحيات مقيّدة لكل ما يُنشأ هنا (القاعدة والنسخ) — كانت 644 (يقرأها أي مستخدم
+# على الجهاز). الفحص الأمني 2026-10-19.
+umask 077
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 ENV_FILE="$REPO_DIR/.env"
@@ -59,10 +62,13 @@ log "✔ بنيوي: $TABLES_BK جدول (القاعدة: $TABLES_DB)"
 #    الحدود المطبَّقة (أفقية باليوم): تدقيق 365 · نطاقات 90 · إشعارات 90 · رسائل صوتية 180.
 #    التوثيق (الوثائق) لا تُمسّ — لها قيمة قانونية.
 if [[ "${FWMS_PRUNE:-1}" == "1" ]]; then
+  # ⚠️ التواريخ في Prisma/SQLite مخزَّنة كأعداد صحيحة (epoch ms) لا نصوص — المقارنة
+  # النصية (datetime('now',...)) تُرجع TRUE لكل صف (في SQLite يُصنَّف INTEGER قبل
+  # TEXT ⇒ كل الأعداد أصغر نصًا) ⇒ كانت ستمسح السجل كاملًا. مِقياس epoch ms هو الصحيح.
   prune() { # $1=الجدول $2=العمود الزمني $3=عدد الأيام
     local tbl="$1" col="$2" days="$3" deleted
-    deleted="$(sqlite3 "$DB_PATH" "DELETE FROM \"$tbl\" WHERE \"$col\" < datetime('now','-${days} days');" 2>&1)" || deleted="0 (خطأ: $deleted)"
-    log "  ♻️ احتفاظ: $tbl (>${days} يومًا على $col) — ${deleted}"
+    deleted="$(sqlite3 "$DB_PATH" "DELETE FROM \"$tbl\" WHERE \"$col\" < CAST(strftime('%s','now','-${days} days') AS INTEGER)*1000;" 2>&1)" || deleted="0 (خطأ: $deleted)"
+    log "  ♻️ احتفاظ: $tbl (>${days} يومًا على $col) — حُذف ${deleted:-0} صفًا"
   }
   prune AuditLog createdAt 365
   prune MemberLocationPing reportedAt 90
