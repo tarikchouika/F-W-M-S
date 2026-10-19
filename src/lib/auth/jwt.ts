@@ -15,24 +15,22 @@ export type SessionPayload = {
   issuedAt: number; // ثوانٍ Unix — يُقارن مع sessionsInvalidatedAt عند التحقق
 };
 
-// معاينة سحابية (Vercel فقط — docs/DEPLOYMENT.md §2): عند غياب AUTH_SECRET على نشر
-// المعاينة كان الدخول يفشل 500 (توقيع الجلسة يرمي) حتى بعد إصلاح القاعدة — بلاغ
-// المالك 2026-10-18. هذا الاحتياط يعمل حصرًا عندما VERCEL=1 ولا يمسّ الهاتف/التطوير.
-// ⚠️ مفتاح عرض معلن للنشر التجريبي فقط: أي استخدام إنتاجي سحابي يجب أن يضبط AUTH_SECRET
-// حقيقيًا من لوحة Vercel (openssl rand -hex 32) — عندها لا يُلمس هذا المسار إطلاقًا.
-const PREVIEW_FALLBACK_SECRET = "fwms-preview-demo-secret-not-for-production-use";
-
+// 🔒 لا مفتاح احتياطي — إطلاقًا (فحص أمني 2026-10-19)
+// -----------------------------------------------------------------------------
+// كان هنا مفتاح احتياطي معلن في الشيفرة ("معاينة تجريبية") يُستعمل تلقائيًا
+// حين يغيب AUTH_SECRET على نشر VERCEL=1. الأثر المثبَّت حيًّا: نشر Vercel
+// (fwms-dg8.pages.dev) قبل إصلاحه وقّع جلسات بمفتاح عام ⇒ تجاوز مصادقة كامل
+// (انتحال مالك المنصة بلا كلمة مرور). السبب الجذري: مشروع Vercel لم يكن عليه
+// أي متغيّر بيئة إطلاقًا (envs: [] — مُثبت بـ API).
+// القاعدة الآن: لا سر افتراضي البتة. غياب المفتاح = فشل صريح (fail-fast) لا
+// «وضع عرض» يُنتج جلسات يمكن تزويرها.ضبط المفتاح: openssl rand -hex 32 ⇒ 64 محرفًا.
 function getSecretKey(): Uint8Array {
-  let secret = process.env.AUTH_SECRET;
-  if ((!secret || secret.length < 16) && process.env.VERCEL === "1") {
-    console.warn(
-      "[FWMS][preview] AUTH_SECRET غير مضبوط على هذا النشر — استخدام مفتاح معاينة تجريبي. " +
-        "اضبط AUTH_SECRET حقيقيًا (openssl rand -hex 32) قبل أي استخدام إنتاجي سحابي.",
+  const secret = process.env.AUTH_SECRET;
+  if (!secret || secret.length < 32) {
+    throw new Error(
+      "AUTH_SECRET مفقود أو قصير جدًا (المطلوب ≥32 محرفًا) — راجع .env.example " +
+        "(openssl rand -hex 32). لا يوجد مفتاح احتياطي عمدًا (فحص أمني 2026-10-19).",
     );
-    secret = PREVIEW_FALLBACK_SECRET;
-  }
-  if (!secret || secret.length < 16) {
-    throw new Error("AUTH_SECRET مفقود أو قصير جدًا — راجع .env.example");
   }
   return new TextEncoder().encode(secret);
 }
