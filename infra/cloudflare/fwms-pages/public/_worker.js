@@ -41,6 +41,12 @@ const worker = {
     headers.set("host", ORIGIN);
     headers.set("x-forwarded-host", url.hostname);
     headers.set("x-forwarded-proto", "https");
+    // عنوان العميل الحقيقي (فحص أمني 2026-10-19) — ترويسة مخصّصة يقرأها التطبيق
+    // (لأن cloudflared/الوسطاء يعيدون كتابة X-Forwarded-For). تُعاد كتابتها دائمًا
+    // فلا ينتحلها عميل.
+    const clientIp = request.headers.get("cf-connecting-ip") || "";
+    headers.set("x-fwms-client-ip", clientIp);
+    if (clientIp) headers.set("x-forwarded-for", clientIp);
     // نقل حتمي غير مضغوط من الأصل — يمنع ازدواجية ترميز المحتوى عبر البوابة
     // (CF يعيد الضغط تلقائيًا عند الخروج نحو المتصفح بما يقبله)
     headers.set("accept-encoding", "identity");

@@ -56,6 +56,33 @@ const nextConfig: NextConfig = {
   // ومنع التأطير والتخمين بنوع المحتوى وسياسة الإحالة الصارمة
   poweredByHeader: false,
   async headers() {
+    // سياسة أمن المحتوى (CSP) — فحص أمني 2026-10-19
+    // ─────────────────────────────────────────────────────────────────────
+    // لماذا CSP ثابتة (لا nonce)؟ نسخة nonce الموثّقة في Next تتطلّب تصييرًا
+    // ديناميكيًا لكل صفحة، وهي تكسر: (1) سمات style="" المضمّنة (الواجهة تستعملها
+    // كثيرًا) ما لم يُضَف 'unsafe-inline'|style-src (فينهار الـnonce نفسه)،
+    // (2) الصفحات الساكنة (القانونية/الدليل) لا تُصيَّر ديناميكيًا ⇒ لا يُحقن
+    // nonce في سكربتاتها ⇒ يُحجب السكربت. لذلك: CSP ثابتة تحجب المصادر
+    // الخارجية والمحقنات والـbase tag والتأطير وتسريب النماذج، وتترك
+    // 'unsafe-inline' للسكربتات المضمّنة التي يولّدها Next/React.
+    // ملاحظة: 'unsafe-eval' للتطوير فقط (React يحتاجه في dev) — الإنتاج بلاه.
+    const isDev = process.env.NODE_ENV !== "production";
+    const csp = [
+      "default-src 'self'",
+      "base-uri 'self'",
+      "object-src 'none'",
+      "frame-ancestors 'none'",
+      "form-action 'self'",
+      `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob: https:",
+      "font-src 'self' data:",
+      "connect-src 'self' https: wss:",
+      "media-src 'self' blob: data:",
+      "worker-src 'self' blob:",
+      "manifest-src 'self'",
+      "upgrade-insecure-requests",
+    ].join("; ");
     return [
       {
         source: "/:path*",
@@ -68,6 +95,7 @@ const nextConfig: NextConfig = {
             key: "Strict-Transport-Security",
             value: "max-age=31536000; includeSubDomains",
           },
+          { key: "Content-Security-Policy", value: csp },
         ],
       },
     ];

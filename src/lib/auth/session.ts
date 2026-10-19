@@ -101,9 +101,16 @@ export async function issueSession(
 /** بيانات الطلب للتدقيق */
 export async function requestMeta(): Promise<{ ip: string | null; userAgent: string | null }> {
   const h = await headers();
+  // عنوان العميل الحقيقي: البوابة العامة (Cloudflare Worker) تضعه في x-fwms-client-ip
+  // من CF-Connecting-IP وتعيد كتابته دائمًا — فلا ينتحله عميل عبر المسار العام.
+  // التتابع: x-fwms-client-ip (بوابتنا) ← x-forwarded-for (النفق/المستضيف) ← x-real-ip.
+  // فحوص 2026-10-19: عبر المسار العام كان السجل يكتب 127.0.0.1 (cloudflared يعيد كتابة
+  // X-Forwarded-For) ⇒ سجل التدقيق بلا قيمة جنائية + حدّ معدل الدخول كلي لكل بريد.
   const ip =
-    h.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    h.get("x-real-ip") ??
+    h.get("x-fwms-client-ip")?.split(",")[0]?.trim() ||
+    h.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    h.get("x-real-ip") ||
     null;
-  return { ip, userAgent: h.get("user-agent") };
+  const userAgent = h.get("user-agent");
+  return { ip, userAgent };
 }

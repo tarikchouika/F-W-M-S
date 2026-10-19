@@ -99,3 +99,31 @@ export const db =
   })
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = db
+
+// ─────────────────────────────────────────────────────────────────────────────
+// WAL — قارئ/كاتب متوازيان (فحص السعة 2026-10-19)
+// ─────────────────────────────────────────────────────────────────────────────
+// القياس على قاعدة الإنتاج: journal_mode=delete ⇒ الكتابة تسدّ كل القراءات
+// (لا يوجد سجل WAL) ويبقى كاتب SQLite واحدًا ⇒ سقف ~38 كتابة/ث وp50 ينمو خطيًا
+// مع التزامن. WAL يجعل القراءات لا تُحجب بالكتابة والعكس، ويخفّض تكلفة
+// المزامنة (فحص واحد بدل fsync مزدوج).
+// الوضع دائم في ملف القاعدة (لا متغيّر جلسة) ⇒ يُطبَّق مرة واحدة عند الإقلاع.
+// synchronous يبقى FULL (سلامة قصوى) — تغييره إلى NORMAL قرار منفصل يحتاج اختبارًا.
+if (process.env.NODE_ENV === 'production') {
+  const enableWal = (attempt: number) => {
+    db.$queryRawUnsafe('PRAGMA journal_mode=WAL;')
+      .then((rows) => {
+        const mode = (rows as unknown as Array<{ journal_mode?: string }>)[0]?.journal_mode;
+        console.warn(`[FWMS][db] journal_mode = ${mode ?? 'unknown'}`);
+      })
+      .catch((e) => {
+        // قد يفشل إن كان هناك معاملة مفتوحة على اتصال آخر ⇒ إعادة محاولة واحدة
+        if (attempt < 2) {
+          setTimeout(() => enableWal(attempt + 1), 500);
+          return;
+        }
+        console.warn('[FWMS][db] تعذّر تفعيل WAL:', e instanceof Error ? e.message : e);
+      });
+  };
+  enableWal(1);
+}

@@ -52,7 +52,32 @@ if [[ "$TABLES_BK" -lt "$TABLES_DB" ]]; then
 fi
 log "✔ بنيوي: $TABLES_BK جدول (القاعدة: $TABLES_DB)"
 
-# 5) الدوران (إلا بطلب صريح)
+# 5) سياسة الاحتفاظ (فحص السعة 2026-10-19) — قبل الدوران
+#    السبب: لا سياسة احتفاظ ⇒ نمو بلا حدّ:
+#      AuditLog ≈ 280 بايت/سطر (200k سطر ≈ 55MB) · MemberLocationPing ينمو
+#      مع كل نبضة موقع · VoiceMessage يحمل صوتًا (حتى 2.5MB لكل رسالة).
+#    الحدود المطبَّقة (أفقية باليوم): تدقيق 365 · نطاقات 90 · إشعارات 90 · رسائل صوتية 180.
+#    التوثيق (الوثائق) لا تُمسّ — لها قيمة قانونية.
+if [[ "${FWMS_PRUNE:-1}" == "1" ]]; then
+  prune() { # $1=الجدول $2=العمود الزمني $3=عدد الأيام
+    local tbl="$1" col="$2" days="$3" deleted
+    deleted="$(sqlite3 "$DB_PATH" "DELETE FROM \"$tbl\" WHERE \"$col\" < datetime('now','-${days} days');" 2>&1)" || deleted="0 (خطأ: $deleted)"
+    log "  ♻️ احتفاظ: $tbl (>${days} يومًا على $col) — ${deleted}"
+  }
+  prune AuditLog createdAt 365
+  prune MemberLocationPing reportedAt 90
+  prune Notification createdAt 90
+  prune VoiceMessage createdAt 180
+fi
+
+# 6) صلاحيات مقيّدة (600) لملف القاعدة ونسخها — الملف يحوي بصمات كلمات المرور
+chmod 600 "$DB_PATH" 2>/dev/null || true
+for f in "$DB_PATH"-wal "$DB_PATH"-shm; do [[ -f "$f" ]] && chmod 600 "$f"; done
+chmod 700 "$BACKUP_DIR" 2>/dev/null || true
+find "$BACKUP_DIR" -maxdepth 1 -name '*.db' -exec chmod 600 {} + 2>/dev/null || true
+log "✔ الصلاحيات: القاعدة والنسخ = 600 (كانت 644 — قابلة للقراءة من أي مستخدم على الجهاز)"
+
+# 7) الدوران (إلا بطلب صريح)
 if [[ "${1:-}" != "--no-rotate" ]]; then
   rotate() { # $1=اللاحقة $2=العدد المسموح
     local pat="$BACKUP_DIR/fwms-*-$1.db"

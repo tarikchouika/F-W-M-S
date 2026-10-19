@@ -16,6 +16,14 @@ const loginSchema = z.object({
 // لكل (بريد + IP) — يحمي من تخمين كلمات المرور عبر المنفذ العام للنفق
 const LOGIN_RATE_LIMIT = 10;
 const LOGIN_RATE_WINDOW_MS = 60_000;
+// دلاء إضافية (فحص أمني 2026-10-19): البوابة العامة كانت تُسقط عنوان العميل
+// الحقيقي (cloudflared يعيد كتابة X-Forwarded-For ⇒ 127.0.0.1) فكان الدلو
+// القائم (بريد+IP) كليًا لكل بريد ⇒ (1) مهاجم من أي IP يُقفل حساب الضحية
+// (lockout DoS) و(2) مهاجم موزّع يفلت من الحدّ. الدلاء الثلاثة تُغلق الطرفين:
+//  - لكل بريد وحده: يبقى الحدّ حتى لو تدوّر عنوان المهاجم (distributed brute force)
+//  - لكل IP وحده: يمنع رشّ محاولات على حسابات كثيرة من مصدر واحد
+const LOGIN_EMAIL_LIMIT = 20;
+const LOGIN_IP_LIMIT = 120;
 
 export async function POST(req: NextRequest) {
   try {
@@ -28,14 +36,17 @@ export async function POST(req: NextRequest) {
     // تحديد المعدل قبل أي استعلام (بالمفتاح المركّب بريد+IP كي لا يُخنَق مستخدم
     // شرعي خلف NAT واحد بسبب مجرم واحد) — رسالة الخطأ نفسها للخارج
     const meta0 = await requestMeta();
-    const rl = rateLimit(
-      `login:${parsed.data.email.toLowerCase()}:${meta0.ip ?? "unknown"}`,
-      LOGIN_RATE_LIMIT,
-      LOGIN_RATE_WINDOW_MS
-    );
-    if (!rl.allowed) {
-      const res = NextResponse.json({ error: "rate_limited", retryAfterMs: rl.retryAfterMs }, { status: 429 });
-      res.headers.set("Retry-After", String(Math.ceil(rl.retryAfterMs / 1000)));
+    const emailKey = parsed.data.email.toLowerCase();
+    const ipKey = meta0.ip ?? "unknown";
+    const buckets = [
+      { rl: rateLimit(`login:${emailKey}:${ipKey}`, LOGIN_RATE_LIMIT, LOGIN_RATE_WINDOW_MS), retryAfterMs: 0 },
+      { rl: rateLimit(`login-email:${emailKey}`, LOGIN_EMAIL_LIMIT, LOGIN_RATE_WINDOW_MS), retryAfterMs: 0 },
+      { rl: rateLimit(`login-ip:${ipKey}`, LOGIN_IP_LIMIT, LOGIN_RATE_WINDOW_MS), retryAfterMs: 0 },
+    ];
+    const blocked = buckets.find((b) => !b.rl.allowed);
+    if (blocked) {
+      const res = NextResponse.json({ error: "rate_limited", retryAfterMs: blocked.rl.retryAfterMs }, { status: 429 });
+      res.headers.set("Retry-After", String(Math.ceil(blocked.rl.retryAfterMs / 1000)));
       return res;
     }
 

@@ -5,6 +5,14 @@ import { z } from "zod";
 import { getSession } from "@/lib/auth/session";
 import { AccessError } from "@/lib/rbac";
 import { recordPingAndEvaluate } from "@/lib/team-presence";
+import { rateLimit } from "@/lib/rate-limit";
+
+// تحديد معدل النبضات (فحص أمني 2026-10-19): المسار يكتب صفًا في كل طلب
+// (MemberLocationPing) ⇒ أمطار النبضات تستهلك كاتب SQLite الوحيد (~38 كتابة/ث)
+// وتضخّم الجدول بلا حدّ. المراقب (watcher) يرسل كل 15-60 ثانية ⇒ 120/دقيقة
+// هامش واسع فوق السلوك الطبيعي.
+const PING_RATE_LIMIT = 120;
+const PING_RATE_WINDOW_MS = 60_000;
 
 const pingSchema = z.object({
   lat: z.number().min(-90).max(90),
@@ -17,6 +25,14 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getSession();
     if (!session) throw new AccessError(401, "unauthenticated");
+
+    const rl = rateLimit(`location-pings:${session.sub}`, PING_RATE_LIMIT, PING_RATE_WINDOW_MS);
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: "rate_limited", retryAfterMs: rl.retryAfterMs },
+        { status: 429, headers: { "Retry-After": String(Math.ceil(rl.retryAfterMs / 1000)) } },
+      );
+    }
 
     const parsed = pingSchema.safeParse(await req.json().catch(() => null));
     if (!parsed.success) {

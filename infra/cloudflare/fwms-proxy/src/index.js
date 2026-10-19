@@ -14,6 +14,15 @@ const handler = {
 		headers.set("host", url.hostname);
 		headers.set("x-forwarded-host", url.hostname);
 		headers.set("x-forwarded-proto", "https");
+		// عنوان العميل الحقيقي (فحص أمني 2026-10-19): نفق cloudflared يعيد كتابة
+		// X-Forwarded-For بعنوانه الداخلي (127.0.0.1) ⇒ كان سجل التدقيق بلا قيمة
+		// جنائية + حدّ معدل الدخول كلي لكل بريد (lockout DoS). نضع العنوان
+		// الحقيقي في ترويسة مخصّصة يقرأها التطبيق، ونُعيد كتابتها دائمًا حتى
+		// لا ينتحلها عميل (قيمة العميل تُستبدل دائمًا بـ CF-Connecting-IP).
+		const clientIp = request.headers.get("cf-connecting-ip") || "";
+		headers.set("x-fwms-client-ip", clientIp);
+		// ونُبقي X-Forwarded-For الأصلي كما هو (مرجع احتياطي للتطبيق)
+		if (clientIp) headers.set("x-forwarded-for", clientIp);
 
 		try {
 			return await env.FWMS.fetch(

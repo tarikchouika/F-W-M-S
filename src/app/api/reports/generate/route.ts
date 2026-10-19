@@ -5,6 +5,14 @@ import { AccessError } from "@/lib/rbac";
 import { generateReport, requireSession, ReportDataError } from "@/lib/reports/generate";
 import { isReportFormat, isReportKind } from "@/lib/reports/types";
 import { isLocale } from "@/i18n/config";
+import { rateLimit } from "@/lib/rate-limit";
+
+// تحديد معدل التوليد (فحص أمني 2026-10-19): توليد المستند يكلّف 11-17 ثانية من
+// المعالجة (react-pdf + خطوط + sharp) على خادم الهاتف. بلا حدّ، 4 طلبات متزامنة
+// كافية لإسقاط الخدمة: القياس أعاد /api/health من 141 req/s إلى 1.7 req/s
+// (p95 = 26s). الحدّ مُوزَّع على المستخدم لا على العملية الواحدة.
+const REPORT_RATE_LIMIT = 10;
+const REPORT_RATE_WINDOW_MS = 60_000;
 
 const generateSchema = z.object({
   kind: z.string().refine(isReportKind, "bad_kind"),
@@ -19,6 +27,13 @@ const generateSchema = z.object({
 export async function POST(req: NextRequest) {
   try {
     const session = await requireSession();
+    const rl = rateLimit(`reports:${session.sub}`, REPORT_RATE_LIMIT, REPORT_RATE_WINDOW_MS);
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: "rate_limited", retryAfterMs: rl.retryAfterMs },
+        { status: 429, headers: { "Retry-After": String(Math.ceil(rl.retryAfterMs / 1000)) } },
+      );
+    }
     const body = await req.json().catch(() => null);
     const parsed = generateSchema.safeParse(body);
     if (!parsed.success) {

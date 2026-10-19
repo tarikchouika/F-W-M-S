@@ -483,6 +483,11 @@ model AttendanceEvent {
   @@index([companyId, siteId, occurredAt])
   @@index([companyId, status, occurredAt])
   @@index([type, occurredAt])
+  // فحص السعة 2026-10-19: استعلام نطاق الحضور (companyId + occurredAt range)
+  // كان يستعمل فهرس companyId+status+occurredAt فيرتب كل صفوف الشركة
+  // (USE TEMP B-TREE FOR ORDER BY) ⇒ قياس A/B: 10.3 ⇒ 24.8 req/s بعد هذا الفهرس
+  // (p50 905ms ⇒ 400ms) على 100k صف حضور.
+  @@index([companyId, occurredAt])
 }
 
 // ─────────────────────────────────────────────────────────────

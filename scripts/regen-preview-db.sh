@@ -21,6 +21,16 @@ trap 'rm -f "$TMP_DB" "$TMP_DB-journal" "$TMP_DB-wal" "$TMP_DB-shm"' EXIT
 echo "→ تطبيق migrations على قاعدة مؤقتة..."
 DATABASE_URL="file:$TMP_DB" node_modules/.bin/prisma migrate deploy
 
+# كلمة مرور البذور: قوية ومولَّدة (فحص أمني 2026-10-19) — كلمة البذور
+# الافتراضية عامة في مستودع عام ⇒ أي نشر يحملها مكشوف بلا تقنية.
+# تُولَّد هنا وتُطبع مرة واحدة (المالك يحتاجها للدخول إلى معاينة Vercel).
+if [ -z "${SEED_DEMO_PASSWORD:-}" ]; then
+  SEED_DEMO_PASSWORD="$(head -c 24 /dev/urandom | od -An -tx1 | tr -d ' \n')"
+  export SEED_DEMO_PASSWORD
+  echo "→ كلمة مرور البذور المولَّدة: $SEED_DEMO_PASSWORD"
+  echo "   (احفظها — لقطة المعاينة تحمل بصمتها؛ لقطة جديدة = كلمة جديدة)"
+fi
+
 echo "→ تشغيل بذور العرض الكاملة..."
 DATABASE_URL="file:$TMP_DB" bun prisma/seeds/seed.ts
 

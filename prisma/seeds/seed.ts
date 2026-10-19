@@ -8,7 +8,13 @@ import { seedRegimes } from "./regimes";
 
 const db = new PrismaClient();
 
-const DEMO_PASSWORD = "Fwms#2026"; // تجريبي فقط — يُستبدل في الإنتاج
+// كلمة المرور التجريبية الموحّدة.
+// ⚠️ القيمة الافتراضية عامة في مستودع عام ⇒ أي كلمة مرور مشتقّة منها تُعدّ
+// "معروفة للعامة" ولا يجوز اعتمادها على أي نشر عام (فحص أمني 2026-10-19:
+// القيمة الافتراضية كانت تعمل على الإنتاج!). تجاوزها بـ SEED_DEMO_PASSWORD:
+//   SEED_DEMO_PASSWORD='...' bun prisma/seeds/seed.ts
+// (لقطة معاينة Vercel تُولَّد بكلمة قوية عبر scripts/regen-preview-db.sh).
+const DEMO_PASSWORD = process.env.SEED_DEMO_PASSWORD ?? "Fwms#2026"; // تجريبي فقط — يُستبدل في الإنتاج
 
 async function main() {
   console.log("🌱 FWMS seed — المرحلة 0–1 ...");

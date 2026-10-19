@@ -60,6 +60,23 @@ async function call(
   return { status: res.status, json, text };
 }
 
+// كل قيود التدقيق (عقد v0.11.0: ترقيم صفحات page/pageSize بحدّ pageSize=100
+// وpage≤500 — الاستعلام القديم ?limit=200 لم يعد مدعومًا ⇒ أعاد أول صفحة فقط
+// (25 صفًا) فبدت قيود أقدم «مفقودة» في فحص سلامة السجل. خطأ في الاختبار لا في
+// التطبيق: commit 5470403 (v0.11.0) هو من استبدل عقد الاستعلام ولم يحدّث الاختبار.
+async function fetchAllAudit(jar: Jar): Promise<any[]> {
+  const all: any[] = [];
+  for (let page = 1; page <= 50; page++) {
+    const r = await call(jar, "GET", `/api/audit?page=${page}&pageSize=100`);
+    if (r.status !== 200) break;
+    const logs: any[] = r.json?.logs ?? [];
+    all.push(...logs);
+    const total: number = r.json?.total ?? all.length;
+    if (logs.length === 0 || all.length >= total) break;
+  }
+  return all;
+}
+
 const OWNER = "owner@fwms.local";
 const NEW_ADMIN_EMAIL = "newowner@test.ma";
 
@@ -140,9 +157,9 @@ r = await call(owner, "GET", "/api/platform/ownership");
 ok(r.json?.owner?.displayName === "منصة الأمان التجريبية", "identity: الاسم المعروض محدَّث");
 ok(r.json?.owner?.footerText === "تذييل مالك الاختبار", "identity: تذييل التقارير محدَّث");
 ok(r.json?.owner?.websiteUrl === "https://owner.example", "identity: الموقع محدَّث");
-r = await call(owner, "GET", "/api/audit?limit=200");
+const auditLogsOwner = await fetchAllAudit(owner);
 ok(
-  (r.json?.logs ?? []).some((l: any) => l.action === "platform.owner.updated"),
+  auditLogsOwner.some((l: any) => l.action === "platform.owner.updated"),
   "identity: محدَّث في سجل التدقيق"
 );
 console.log("✓ white-label: تحديث الهوية + تدقيق + رفض الفاسد");
@@ -174,8 +191,8 @@ ok(r.status === 201 && r.json?.version === 1 && r.json?.reused === false, "repor
 const v1Doc = r.json;
 
 // لقطة سجل التدقيق قبل النقل (لإثبات سلامته بعد النقل)
-r = await call(owner, "GET", "/api/audit?limit=200");
-const auditBefore = (r.json?.logs ?? []).map((l: any) => l.id);
+const auditLogsBeforeTransfer = await fetchAllAudit(owner);
+const auditBefore = auditLogsBeforeTransfer.map((l: any) => l.id);
 ok(auditBefore.length >= 5, "audit: سجل قبل النقل غير فارغ", auditBefore.length);
 console.log(`✓ دورة أجور معتمدة + قسيمة v1 + لقطة تدقيق (${auditBefore.length} قيدًا)`);
 
@@ -382,8 +399,7 @@ console.log("✓ المالك الجديد: دخول + ملكية كاملة + �
 
 // ── 10) سجل التدقيق سليم (لا يُفقد شيء — القديم كامل + حدث النقل) ─
 if (newOwner) {
-  r = await call(newOwner, "GET", "/api/audit?limit=200");
-  const logsAfter = r.json?.logs ?? [];
+  const logsAfter = await fetchAllAudit(newOwner);
   const idsAfter = new Set(logsAfter.map((l: any) => l.id));
   const preserved = auditBefore.filter((id: string) => idsAfter.has(id));
   ok(preserved.length === auditBefore.length, `audit: كل قيود ما قبل النقل محفوظة (${preserved.length}/${auditBefore.length})`);

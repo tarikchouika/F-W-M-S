@@ -251,7 +251,10 @@ async function main() {
 
   // ═══ 7) الإصدار الموحّد ═══
   const health = await call(null, "/api/health");
-  ok(health.body?.version === "0.10.0", "health يعرض الإصدار الموحّد 0.10.0", health.body?.version);
+  // الإصدار يأتي من src/lib/version.ts (الحقيقة الوحيدة) — لا رقم مثبّت هنا:
+  // كان "0.10.0" مثبّتًا فسقط الفحص عند كل إصدار جديد (0.11.0).
+  const APP_VERSION = (await import("../src/lib/version")).APP_VERSION as string;
+  ok(health.body?.version === APP_VERSION, `health يعرض الإصدار الموحّد ${APP_VERSION}`, health.body?.version);
 
   // ═══ النتيجة ═══
   console.log("════════════════════════════════════");
