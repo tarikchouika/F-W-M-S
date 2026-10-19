@@ -50,6 +50,7 @@
 
 - **النمط:** Pages Advanced Mode — `_worker.js` (في `infra/cloudflare/fwms-pages/`) يعالج كل الطلبات بوصفه بوابة عكسية إلى أصل Node سليم. تشغيل التطبيق نفسه على workerd غير ممكن (Prisma+SQLite ملفي، bcrypt، sharp، عامل العرض الابنة) — البوابة تحفظ «كود واحد وسلوك واحد» (SPEC §7).
 - **الأصل الحالي:** `https://fwms-orpin.vercel.app` (نشر تلقائي من `main` — v0.9.2+). **التبديل إلى بوابة الهاتف** بعد إعادة بنائه إلى ≥0.9.2: غيّر `ORIGIN` في `public/_worker.js` إلى `fwms.tarikc.workers.dev` وأعد النشر (قبل ذلك يبقى الهاتف على أيقونة `文` القديمة — لا تُبَدِّل).
+- **إجراءات الخادم خلف البوابة (درس 2026-10-19 — جولة v0.10.5):** Vercel يستبدل ترويسة `x-forwarded-host` الواردة بقيمته، فلا يرى التطبيق المضيف العام ⇒ حماية CSRF في Next ترفض كل إجراء خادمي عبر البوابة (500/E80) — ومنه مبدّل اللغة. العلاج: `experimental.serverActions.allowedOrigins` في `next.config.ts` يضم `fwms-dg8.pages.dev`. **أي نطاق عام جديد أمام التطبيق (نطاق مخصص للبوابة مثلًا) يجب إضافته إلى القائمة نفسها** — وإلا انكسرت كل الإجراءات الخادمية عليه بصمت.
 - **النشر:** `cd infra/cloudflare/fwms-pages && npx wrangler pages deploy public --project-name=fwms --branch=main` — التوكن عبر `CLOUDFLARE_API_TOKEN` حصرًا (متغير بيئة — لا يُكتب في أي ملف).
 - **التحقق (§5):** `/_gateway/health` (البوابة ذاتها) ثم `/api/health` ثم `/login` 200 ثم دخول فعلي — كلها مُثبتة حيًّا يوم الإنشاء.
 

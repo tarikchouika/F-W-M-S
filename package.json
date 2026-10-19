@@ -1,6 +1,6 @@
 {
   "name": "fwms",
-  "version": "0.10.4",
+  "version": "0.10.5",
   "private": true,
   "prisma": {
     "seed": "bun prisma/seeds/seed.ts"

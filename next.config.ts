@@ -2,6 +2,22 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  // إجراءات الخادم خلف بوابة عكسية (بلاغ المالك 2026-10-19 «خلل في تغيير لغة الموقع» — الجولة الرابعة):
+  // حماية CSRF في Next تقارن ترويسة Origin مع x-forwarded-host ثم Host. بوابة Pages
+  // (fwms-dg8.pages.dev) تعيد كتابة Host إلى أصل Vercel، وVercel بدوره يستبدل
+  // x-forwarded-host بقيمته هو — فلا يرى التطبيق المضيف العام أبدًا ⇒ كل POST لإجراء
+  // خادمي يُرفض بخطأ E80 «Invalid Server Actions request» (500) — ومنه setLocaleAction
+  // فلا تتبدل اللغة إطلاقًا عبر البوابة مهما صحّ الكود. allowedOrigins هي الآلية الموثّقة
+  // في Next لهذه الحالة بالضبط («reverse proxy in front of your app») — تُقبل هذه المضيفين
+  // كأصول صالحة، وتبقى الأصول الأجنبية مرفوضة (الأمان محفوظ).
+  // عند إضافة نطاق مخصص للبوابة مستقبلًا: أضفه هنا أيضًا (راجع docs/DEPLOYMENT.md §3.2).
+  // ملاحظة: بوابة الهاتف (fwms.tarikc.workers.dev) لا تحتاج إدراجًا — تمرر Host العام كما
+  // هو فيتطابق مع Origin أصلًا.
+  experimental: {
+    serverActions: {
+      allowedOrigins: ["fwms-dg8.pages.dev"],
+    },
+  },
   // ترويسات أمنية (SPEC §6 + docs/SECURITY.md — المرحلة 8): HSTS (النفق/الوكيل HTTPS دائمًا)
   // ومنع التأطير والتخمين بنوع المحتوى وسياسة الإحالة الصارمة
   poweredByHeader: false,
