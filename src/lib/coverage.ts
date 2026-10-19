@@ -3,6 +3,7 @@
 // zod في الخادم دائمًا (SPEC §6)؛ التخزين UTC والعرض بتوقيت الشركة (AGENTS §1.7)
 import { z } from "zod";
 import { db } from "@/lib/db";
+import { localizedName } from "@/lib/localized-name";
 import type { SessionPayload } from "@/lib/auth/jwt";
 import { coAdminSiteScope } from "@/lib/attendance-service";
 import { findShiftConflicts, minutesInZone, minutesToLabel } from "@/lib/scheduling";
@@ -42,7 +43,8 @@ export type CoverageShiftRow = {
 
 export async function getCoverageBoard(
   session: SessionPayload & { companyTimezone: string },
-  localDate: string
+  localDate: string,
+  locale: string | null = null
 ): Promise<{ date: string; shifts: CoverageShiftRow[] }> {
   const siteScope = await coAdminSiteScope(session);
 
@@ -106,7 +108,7 @@ export async function getCoverageBoard(
       status: s.status,
       source: s.source,
       worker: s.worker ? { id: s.worker.id, fullName: s.worker.fullName } : null,
-      site: { id: s.site.id, name: s.site.name },
+      site: { id: s.site.id, name: localizedName(s.site, locale, "name") },
       template: s.template ? { id: s.template.id, name: s.template.name } : null,
       attendance,
       absentLikely,
@@ -136,7 +138,8 @@ export type AvailableWorkerRow = {
  */
 export async function getAvailableWorkers(
   session: SessionPayload & { companyTimezone: string },
-  shiftId: string
+  shiftId: string,
+  locale: string | null = null
 ): Promise<{ shift: { id: string; siteName: string; startLabel: string; endLabel: string }; workers: AvailableWorkerRow[] }> {
   const shift = await db.shift.findFirst({
     where: {
@@ -196,7 +199,7 @@ export async function getAvailableWorkers(
       sameDayShifts: sameDay.map((s) => ({
         startLabel: minutesToLabel(minutesInZone(s.startsAt, tz)),
         endLabel: minutesToLabel(minutesInZone(s.endsAt, tz)),
-        siteName: s.site.name,
+        siteName: localizedName(s.site, locale, "name"),
       })),
       conflict: null,
     });
@@ -205,7 +208,7 @@ export async function getAvailableWorkers(
   return {
     shift: {
       id: shift.id,
-      siteName: shift.site.name,
+      siteName: localizedName(shift.site, locale, "name"),
       startLabel: minutesToLabel(minutesInZone(shift.startsAt, tz)),
       endLabel: minutesToLabel(minutesInZone(shift.endsAt, tz)),
     },
@@ -228,7 +231,8 @@ export type ReplaceResult = {
  */
 export async function replaceShiftWorker(
   session: SessionPayload & { companyTimezone: string },
-  input: z.infer<typeof replaceSchema>
+  input: z.infer<typeof replaceSchema>,
+  locale: string | null = null
 ): Promise<ReplaceResult> {
   const shift = await db.shift.findFirst({
     where: { id: input.shiftId, companyId: session.companyId },
@@ -287,7 +291,7 @@ export async function replaceShiftWorker(
 
   const tz = session.companyTimezone;
   const payload: ReplacementPayload = {
-    siteName: shift.site.name,
+    siteName: localizedName(shift.site, locale, "name"),
     localDate: shift.localDate,
     startLabel: minutesToLabel(minutesInZone(shift.startsAt, tz)),
     endLabel: minutesToLabel(minutesInZone(shift.endsAt, tz)),
@@ -322,14 +326,14 @@ export async function replaceShiftWorker(
       workerUserId: shift.workerUserId,
       workerName: shift.worker?.fullName,
       source: shift.source,
-      siteName: shift.site.name,
+      siteName: localizedName(shift.site, locale, "name"),
       localDate: shift.localDate,
     },
     after: {
       workerUserId: input.replacementUserId,
       workerName: membership.user.fullName,
       source: "replacement",
-      siteName: shift.site.name,
+      siteName: localizedName(shift.site, locale, "name"),
       localDate: shift.localDate,
       notificationId,
     },

@@ -2,13 +2,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth/session";
+import { localizedName, localizeRow, localizeNested } from "@/lib/localized-name";
+import { getUiLocale } from "@/i18n/ui-locale";
 import { requirePermission, AccessError } from "@/lib/rbac";
 import { writeAudit } from "@/lib/audit";
 import { branchCreateSchema, emptyToNull } from "@/lib/organization";
+import { namesColumnValue } from "@/lib/localized-name";
 
 export async function GET() {
   try {
     const session = await getSession();
+    const locale = await getUiLocale();
     requirePermission(session, "company.manage");
 
     const branches = await db.branch.findMany({
@@ -23,7 +27,8 @@ export async function GET() {
       count: branches.length,
       branches: branches.map((b) => ({
         id: b.id,
-        name: b.name,
+        name: localizedName(b, locale, "name"), baseName: b.name,
+        names: b.names,
         code: b.code,
         city: b.city,
         address: b.address,
@@ -55,6 +60,7 @@ export async function POST(req: NextRequest) {
       data: {
         companyId: session!.companyId, // من الجلسة لا من العميل (SPEC §3.1)
         name: parsed.data.name,
+        names: namesColumnValue(parsed.data.names),
         code: emptyToNull(parsed.data.code),
         city: emptyToNull(parsed.data.city),
         address: emptyToNull(parsed.data.address),

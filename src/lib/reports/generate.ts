@@ -399,8 +399,12 @@ async function renderViaWorker(
   const jobPath = join(os.tmpdir(), `fwms-report-${jobId}.json`);
   const outPath = join(os.tmpdir(), `fwms-report-${jobId}.bin`);
 
+  // .cjs المترجم أولاً (يعمل تحت node وbun معًا — علاج فشل التوليد على Vercel)،
+  // ثم المصدر .ts (يعمل تحت bun حصرًا — وضع dev).
   const workerCandidates = [
+    join(process.cwd(), "src", "lib", "reports", "render-worker.cjs"),
     join(process.cwd(), "src", "lib", "reports", "render-worker.ts"),
+    join(process.cwd(), "..", "src", "lib", "reports", "render-worker.cjs"),
     join(process.cwd(), "..", "src", "lib", "reports", "render-worker.ts"),
   ];
   const workerPath = workerCandidates.find((c) => existsSync(c));

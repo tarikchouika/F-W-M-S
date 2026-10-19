@@ -3,10 +3,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth/session";
+import { localizedName, localizeRow, localizeNested } from "@/lib/localized-name";
+import { getUiLocale } from "@/i18n/ui-locale";
 import { requirePermission, AccessError } from "@/lib/rbac";
 import { writeAudit } from "@/lib/audit";
 import { isPlatformFrozen } from "@/lib/branding";
 import { companyCreateSchema, emptyToNull } from "@/lib/organization";
+import { namesColumnValue } from "@/lib/localized-name";
 
 function fail(error: unknown) {
   if (error instanceof AccessError) {
@@ -19,6 +22,7 @@ function fail(error: unknown) {
 export async function GET() {
   try {
     const session = await getSession();
+    const locale = await getUiLocale();
     requirePermission(session, "platform.manage");
 
     const companies = await db.company.findMany({
@@ -37,7 +41,8 @@ export async function GET() {
       count: companies.length,
       companies: companies.map((c) => ({
         id: c.id,
-        legalName: c.legalName,
+        legalName: localizedName(c, locale, "legalName"), baseName: c.legalName,
+        names: c.names,
         tradeName: c.tradeName,
         taxId: c.taxId,
         cnssNumber: c.cnssNumber,
@@ -69,7 +74,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "invalid_input" }, { status: 400 });
     }
 
-    const { legalName, tradeName, taxId, cnssNumber, locale, timezone } = parsed.data;
+    const { legalName, tradeName, taxId, cnssNumber, locale, timezone, names } = parsed.data;
 
     // إنشاء الشركة + إعداداتها الافتراضية (SPEC §11) + سياسة تحقق GPS (SPEC §4.2)
     // + عضوية super_admin للمنشئ كي يستطيع التبديل إليها صراحة (SPEC §3.1)
@@ -77,6 +82,7 @@ export async function POST(req: NextRequest) {
       const created = await tx.company.create({
         data: {
           legalName,
+          names: namesColumnValue(names),
           tradeName: emptyToNull(tradeName),
           taxId: emptyToNull(taxId),
           cnssNumber: emptyToNull(cnssNumber),

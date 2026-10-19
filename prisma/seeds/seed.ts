@@ -36,6 +36,13 @@ async function main() {
       platformOwnerId: owner.id,
       legalName: "شركة الأمن والنظافة التجريبية SARL",
       tradeName: "Demo Security & Cleaning",
+      // أسماء محلية رباعية (علاج بلاغ 2026-10-19: أسماء عربية في واجهة لاتينية = خلل)
+      names: JSON.stringify({
+        ar: "شركة الأمن والنظافة التجريبية SARL",
+        fr: "SARL Sécurité & Nettoyage Démo",
+        en: "Demo Security & Cleaning SARL",
+        es: "SARL Seguridad y Limpieza Demo",
+      }),
       taxId: "001234567000089",
       cnssNumber: "1234567",
       locale: "ar",
@@ -134,6 +141,12 @@ async function main() {
       id: "branch-demo-casa",
       companyId: company.id,
       name: "فرع الدار البيضاء — أنفا",
+      names: JSON.stringify({
+        ar: "فرع الدار البيضاء — أنفا",
+        fr: "Agence Casablanca — Anfa",
+        en: "Casablanca Branch — Anfa",
+        es: "Sucursal Casablanca — Anfa",
+      }),
       code: "CASA-01",
       city: "الدار البيضاء",
       address: "شارع الزرقطوني، الدار البيضاء",
@@ -148,6 +161,12 @@ async function main() {
       companyId: company.id,
       branchId: branch.id,
       name: "مشروع برج الأعمال الزجاجي",
+      names: JSON.stringify({
+        ar: "مشروع برج الأعمال الزجاجي",
+        fr: "Projet Tour d'Affaires en Verre",
+        en: "Glass Business Tower Project",
+        es: "Proyecto Torre de Negocios de Cristal",
+      }),
       code: "PRJ-2026-001",
       startsAt: new Date("2026-01-05T00:00:00Z"),
       endsAt: new Date("2027-06-30T00:00:00Z"),
@@ -156,9 +175,24 @@ async function main() {
 
   // مواقع بإحداثيات حقيقية تقريبية بالدار البيضاء — معيار القبول: موقع بنصف قطر يظهر على الخريطة
   const demoSites = [
-    { id: "site-demo-gate", name: "موقع الحراسة — البوابة الرئيسية", address: "مدخل البرج، شارع الزرقطوني", latitude: 33.5731, longitude: -7.5898, radiusM: 60 },
-    { id: "site-demo-mall", name: "موقع النظافة — المركز التجاري", address: "Anfa Place، الدار البيضاء", latitude: 33.5922, longitude: -7.632, radiusM: 80 },
-    { id: "site-demo-garden", name: "موقع البستنة — حديقة الجامعة العربية", address: "الدار البيضاء", latitude: 33.5913, longitude: -7.6189, radiusM: 50 },
+    {
+      id: "site-demo-gate",
+      name: "موقع الحراسة — البوابة الرئيسية",
+      names: JSON.stringify({ ar: "موقع الحراسة — البوابة الرئيسية", fr: "Site Sécurité — Portail Principal", en: "Security Site — Main Gate", es: "Sitio de Seguridad — Portal Principal" }),
+      address: "مدخل البرج، شارع الزرقطوني", latitude: 33.5731, longitude: -7.5898, radiusM: 60,
+    },
+    {
+      id: "site-demo-mall",
+      name: "موقع النظافة — المركز التجاري",
+      names: JSON.stringify({ ar: "موقع النظافة — المركز التجاري", fr: "Site Nettoyage — Centre Commercial", en: "Cleaning Site — Shopping Center", es: "Sitio de Limpieza — Centro Comercial" }),
+      address: "Anfa Place، الدار البيضاء", latitude: 33.5922, longitude: -7.632, radiusM: 80,
+    },
+    {
+      id: "site-demo-garden",
+      name: "موقع البستنة — حديقة الجامعة العربية",
+      names: JSON.stringify({ ar: "موقع البستنة — حديقة الجامعة العربية", fr: "Site Espaces Verts — Jardin de l'Université Arabe", en: "Landscaping Site — Arab University Garden", es: "Sitio de Jardinería — Jardín de la Universidad Árabe" }),
+      address: "الدار البيضاء", latitude: 33.5913, longitude: -7.6189, radiusM: 50,
+    },
   ];
   for (const s of demoSites) {
     await db.site.upsert({

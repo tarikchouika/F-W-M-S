@@ -45,6 +45,8 @@ model Company {
   platformOwnerId String?
   legalName       String
   tradeName       String?
+  /// أسماء محلية اختيارية JSON {ar,fr,en,es} — العرض بحسب لغة الواجهة وإلا الاسم الأساسي
+  names             String?
   taxId           String? // ICE
   cnssNumber      String?
   locale          String   @default("ar")
@@ -166,6 +168,9 @@ model Branch {
   id        String   @id @default(cuid())
   companyId String
   name      String
+
+  /// أسماء محلية اختيارية JSON {ar,fr,en,es} — العرض بحسب لغة الواجهة وإلا الاسم الأساسي
+  names             String?
   code      String?
   city      String?
   address   String?
@@ -186,6 +191,9 @@ model Project {
   companyId String
   branchId  String?
   name      String
+
+  /// أسماء محلية اختيارية JSON {ar,fr,en,es} — العرض بحسب لغة الواجهة وإلا الاسم الأساسي
+  names             String?
   code      String?
   status    String    @default("active") // active | archived
   startsAt  DateTime?
@@ -209,6 +217,9 @@ model Site {
   branchId  String?
   projectId String?
   name      String
+
+  /// أسماء محلية اختيارية JSON {ar,fr,en,es} — العرض بحسب لغة الواجهة وإلا الاسم الأساسي
+  names             String?
   address   String?
   latitude  Float // [-90, 90]
   longitude Float // [-180, 180]

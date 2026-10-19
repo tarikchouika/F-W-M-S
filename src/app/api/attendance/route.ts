@@ -3,6 +3,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth/session";
+import { localizedName, localizeRow, localizeNested } from "@/lib/localized-name";
+import { getUiLocale } from "@/i18n/ui-locale";
 import { requirePermission, AccessError } from "@/lib/rbac";
 import { coAdminSiteScope } from "@/lib/attendance-service";
 import { addDaysToLocalDate, todayInZone, zonedToUtc } from "@/lib/scheduling";
@@ -11,6 +13,7 @@ import { ATTENDANCE_STATUSES, ATTENDANCE_TYPES } from "@/lib/geofence";
 export async function GET(req: NextRequest) {
   try {
     const session = await getSession();
+    const locale = await getUiLocale();
     requirePermission(session, "attendance.manage");
 
     const url = new URL(req.url);
@@ -48,7 +51,7 @@ export async function GET(req: NextRequest) {
       orderBy: [{ occurredAt: "desc" }, { recordedAt: "desc" }],
       include: {
         worker: { select: { id: true, fullName: true } },
-        site: { select: { id: true, name: true } },
+        site: { select: { id: true, name: true, names: true } },
       },
       take: 500,
     });
@@ -79,7 +82,7 @@ export async function GET(req: NextRequest) {
         occurredAt: e.occurredAt,
         recordedAt: e.recordedAt,
         worker: e.worker ? { id: e.worker.id, fullName: e.worker.fullName } : null,
-        site: e.site ? { id: e.site.id, name: e.site.name } : null,
+        site: e.site ? { id: e.site.id, name: localizedName(e.site, locale, "name") } : null,
         shiftId: e.shiftId,
         distanceM: e.distanceM,
         accuracyM: e.accuracyM,

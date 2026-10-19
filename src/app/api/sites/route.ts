@@ -3,6 +3,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth/session";
+import { namesColumnValue } from "@/lib/localized-name";
+import { localizedName, localizeRow, localizeNested } from "@/lib/localized-name";
+import { getUiLocale } from "@/i18n/ui-locale";
 import { requirePermission, AccessError } from "@/lib/rbac";
 import { writeAudit } from "@/lib/audit";
 import { siteCreateSchema, emptyToNull } from "@/lib/organization";
@@ -10,6 +13,7 @@ import { siteCreateSchema, emptyToNull } from "@/lib/organization";
 export async function GET(req: NextRequest) {
   try {
     const session = await getSession();
+    const locale = await getUiLocale();
     requirePermission(session, "company.manage");
 
     const url = new URL(req.url);
@@ -29,8 +33,8 @@ export async function GET(req: NextRequest) {
       where,
       orderBy: { createdAt: "desc" },
       include: {
-        branch: { select: { id: true, name: true } },
-        project: { select: { id: true, name: true } },
+        branch: { select: { id: true, name: true, names: true } },
+        project: { select: { id: true, name: true, names: true } },
       },
     });
 
@@ -38,15 +42,16 @@ export async function GET(req: NextRequest) {
       count: sites.length,
       sites: sites.map((s) => ({
         id: s.id,
-        name: s.name,
+        name: localizedName(s, locale, "name"), baseName: s.name,
+        names: s.names,
         address: s.address,
         latitude: s.latitude,
         longitude: s.longitude,
         radiusM: s.radiusM,
         status: s.status,
         createdAt: s.createdAt,
-        branch: s.branch ? { id: s.branch.id, name: s.branch.name } : null,
-        project: s.project ? { id: s.project.id, name: s.project.name } : null,
+        branch: s.branch ? { id: s.branch.id, name: localizedName(s.branch, locale, "name") } : null,
+        project: s.project ? { id: s.project.id, name: localizedName(s.project, locale, "name") } : null,
       })),
     });
   } catch (error) {
@@ -68,7 +73,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "invalid_input" }, { status: 400 });
     }
 
-    const { name, address, latitude, longitude, radiusM, branchId, projectId } = parsed.data;
+    const { name, address, latitude, longitude, radiusM, branchId, projectId, names } = parsed.data;
 
     // تحقق ملكية المراجع داخل الشركة (عزل 3.1)
     const branchIdValue = emptyToNull(branchId);
@@ -92,6 +97,7 @@ export async function POST(req: NextRequest) {
       data: {
         companyId: session!.companyId,
         name,
+        names: namesColumnValue(names),
         address: emptyToNull(address),
         latitude,
         longitude,

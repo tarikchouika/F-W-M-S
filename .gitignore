@@ -72,3 +72,6 @@ server.log
 
 # FWMS: bun.lock هو ملف القفل المرجعي (package-lock.json بلا داعٍ)
 package-lock.json
+
+# FWMS: عامل العرض المترجم — يُولَّد مع كل بناء (compile-render-worker.cjs)
+src/lib/reports/render-worker.cjs

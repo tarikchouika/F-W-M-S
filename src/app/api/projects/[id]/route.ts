@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth/session";
+import { namesColumnValue } from "@/lib/localized-name";
 import { requirePermission, AccessError } from "@/lib/rbac";
 import { writeAudit } from "@/lib/audit";
 import { projectUpdateSchema, emptyToNull, parseOptionalDate, entityIdSchema } from "@/lib/organization";
@@ -62,6 +63,7 @@ export async function PATCH(
         startsAt: startsAtDate,
         endsAt: endsAtDate,
         status: data.status ?? undefined,
+        names: data.names !== undefined ? namesColumnValue(data.names) : undefined,
       },
     });
 

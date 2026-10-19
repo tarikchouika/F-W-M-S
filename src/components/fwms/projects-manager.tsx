@@ -13,9 +13,12 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/provider";
+import { LocaleNamesFields, EMPTY_LOCALE_NAMES, localeNamesFromRow, localeNamesBody } from "@/components/fwms/locale-names-fields";
 import { PageHeader, StatusBadge, ConfirmAction, ListState, formatDate, apiRequest, apiErrorMessage } from "@/components/fwms/org-bits";
 
 type ProjectRow = {
+  baseName?: string;
+  names?: string | null;
   id: string;
   name: string;
   code: string | null;
@@ -27,9 +30,9 @@ type ProjectRow = {
   activeSites: number;
 };
 
-type ProjectForm = { name: string; code: string; branchId: string; startsAt: string; endsAt: string };
+type ProjectForm = { name: string; code: string; branchId: string; startsAt: string; endsAt: string; namesAr: string; namesFr: string; namesEn: string; namesEs: string };
 
-const EMPTY_FORM: ProjectForm = { name: "", code: "", branchId: "none", startsAt: "", endsAt: "" };
+const EMPTY_FORM: ProjectForm = { ...EMPTY_LOCALE_NAMES, name: "", code: "", branchId: "none", startsAt: "", endsAt: "" };
 
 function toDateInput(iso: string | null): string {
   if (!iso) return "";
@@ -97,7 +100,8 @@ export function ProjectsManager() {
   function openEdit(row: ProjectRow) {
     setEditingId(row.id);
     setForm({
-      name: row.name,
+      ...localeNamesFromRow(row),
+      name: row.baseName ?? row.name,
       code: row.code ?? "",
       branchId: row.branch?.id ?? "none",
       startsAt: toDateInput(row.startsAt),
@@ -115,6 +119,7 @@ export function ProjectsManager() {
     }
     const body = JSON.stringify({
       name: form.name.trim(),
+      names: localeNamesBody(form),
       code: form.code.trim(),
       branchId: form.branchId === "none" ? "" : form.branchId,
       startsAt: form.startsAt,
@@ -260,6 +265,8 @@ export function ProjectsManager() {
               <Label htmlFor="project-name">{t("common.name")}</Label>
               <Input id="project-name" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} required minLength={2} maxLength={120} disabled={saving} />
             </div>
+
+            <LocaleNamesFields form={form} setForm={setForm} disabled={saving} />
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="flex flex-col gap-2">
                 <Label htmlFor="project-code">{t("common.code")}</Label>

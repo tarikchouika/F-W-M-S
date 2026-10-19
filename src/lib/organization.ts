@@ -1,6 +1,7 @@
 // FWMS — تحقق مدخلات البنية التنظيمية (SPEC §5 و§8 — المرحلة 2)
 // zod في الخادم دائمًا (SPEC §6) — كل مسار يتحقق قبل أي كتابة
 import { z } from "zod";
+import { localeNamesSchema } from "@/lib/localized-name";
 
 // حدود الجغرافيا (SPEC §4.2): نصف قطر افتراضي 50 م قابل للتعديل لكل موقع
 export const RADIUS_MIN_M = 10;
@@ -19,6 +20,7 @@ export const entityIdSchema = z.string().trim().min(10).max(64);
 // ── الشركات (super_admin — SPEC §3) ─────────────────────────────
 
 export const companyCreateSchema = z.object({
+  names: localeNamesSchema.optional(),
   legalName: nameField,
   tradeName: optionalText(120),
   taxId: optionalText(32),
@@ -28,6 +30,7 @@ export const companyCreateSchema = z.object({
 });
 
 export const companyUpdateSchema = z.object({
+  names: localeNamesSchema.optional(),
   legalName: nameField.optional(),
   tradeName: optionalText(120),
   taxId: optionalText(32),
@@ -44,6 +47,7 @@ export const branchCreateSchema = z.object({
   code: optionalText(32),
   city: optionalText(80),
   address: optionalText(240),
+  names: localeNamesSchema.optional(),
 });
 
 export const branchUpdateSchema = branchCreateSchema.partial().extend({
@@ -53,6 +57,7 @@ export const branchUpdateSchema = branchCreateSchema.partial().extend({
 // ── المشاريع ────────────────────────────────────────────────────
 
 export const projectCreateSchema = z.object({
+  names: localeNamesSchema.optional(),
   name: nameField,
   code: optionalText(32),
   branchId: optionalText(64), // "" = غير مسند
@@ -67,6 +72,7 @@ export const projectUpdateSchema = projectCreateSchema.partial().extend({
 // ── المواقع (قلب Geofencing — SPEC §4.2) ────────────────────────
 
 export const siteCreateSchema = z.object({
+  names: localeNamesSchema.optional(),
   name: nameField,
   address: optionalText(240),
   latitude: z.number().min(-90).max(90),

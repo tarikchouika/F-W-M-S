@@ -3,12 +3,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth/session";
+import { localizedName, localizeRow, localizeNested } from "@/lib/localized-name";
+import { getUiLocale } from "@/i18n/ui-locale";
 import { requirePermission, AccessError } from "@/lib/rbac";
 import { addDaysToLocalDate, todayInZone, minutesInZone } from "@/lib/scheduling";
 
 export async function GET(req: NextRequest) {
   try {
     const session = await getSession();
+    const locale = await getUiLocale();
     requirePermission(session, "self.view");
 
     const url = new URL(req.url);
@@ -27,7 +30,7 @@ export async function GET(req: NextRequest) {
       where,
       orderBy: { startsAt: "asc" },
       include: {
-        site: { select: { id: true, name: true, address: true } },
+        site: { select: { id: true, name: true, names: true, address: true } },
         template: { select: { id: true, name: true } },
       },
       take: 200,
@@ -50,7 +53,7 @@ export async function GET(req: NextRequest) {
         source: s.source,
         notes: s.notes,
         site: s.site
-          ? { id: s.site.id, name: s.site.name, address: s.site.address }
+          ? { id: s.site.id, name: localizedName(s.site, locale, "name"), address: s.site.address }
           : null,
         template: s.template ? { id: s.template.id, name: s.template.name } : null,
       })),

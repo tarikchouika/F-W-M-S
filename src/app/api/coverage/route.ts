@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { requirePermission, AccessError } from "@/lib/rbac";
 import { getCoverageBoard } from "@/lib/coverage";
+import { getUiLocale } from "@/i18n/ui-locale";
 import { todayInZone } from "@/lib/scheduling";
 
 export async function GET(req: NextRequest) {
@@ -16,7 +17,7 @@ export async function GET(req: NextRequest) {
       ? dateParam
       : todayInZone(session!.companyTimezone); // الافتراضي: اليوم بتوقيت الشركة
 
-    const board = await getCoverageBoard(session!, date);
+    const board = await getCoverageBoard(session!, date, await getUiLocale());
     return NextResponse.json(board);
   } catch (error) {
     if (error instanceof AccessError) {

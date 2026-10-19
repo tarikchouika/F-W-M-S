@@ -4,6 +4,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth/session";
+import { localizedName, localizeRow, localizeNested } from "@/lib/localized-name";
+import { getUiLocale } from "@/i18n/ui-locale";
 import { requirePermission, AccessError } from "@/lib/rbac";
 import { writeAudit } from "@/lib/audit";
 import { isPolicyMode, isWithin, modeRequiresFace, POLICY_MODES, type PolicyMode } from "@/lib/verification";
@@ -24,7 +26,7 @@ async function loadRows(companyId: string) {
     db.verificationPolicy.findFirst({ where: { companyId, siteId: null } }),
     db.verificationPolicy.findMany({
       where: { companyId, siteId: { not: null } },
-      include: { site: { select: { id: true, name: true } } },
+      include: { site: { select: { id: true, name: true, names: true } } },
     }),
   ]);
   return { platform, company, siteRows };
@@ -33,6 +35,7 @@ async function loadRows(companyId: string) {
 export async function GET() {
   try {
     const session = await getSession();
+    const locale = await getUiLocale();
     requirePermission(session, "company.manage");
 
     const { platform, company, siteRows } = await loadRows(session!.companyId);
@@ -46,7 +49,7 @@ export async function GET() {
         : null,
       sites: siteRows.map((r) => ({
         siteId: r.siteId,
-        siteName: r.site?.name ?? "—",
+        siteName: r.site ? localizedName(r.site, locale, "name") : "—",
         policy: r.policy,
         faceAcknowledged: r.faceAcknowledged,
         updatedAt: r.updatedAt,

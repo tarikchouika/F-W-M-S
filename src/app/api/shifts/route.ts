@@ -3,6 +3,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth/session";
+import { localizedName, localizeRow, localizeNested } from "@/lib/localized-name";
+import { getUiLocale } from "@/i18n/ui-locale";
 import { requirePermission, AccessError } from "@/lib/rbac";
 import { writeAudit } from "@/lib/audit";
 import { emptyToNull } from "@/lib/organization";
@@ -22,6 +24,7 @@ import {
 export async function GET(req: NextRequest) {
   try {
     const session = await getSession();
+    const locale = await getUiLocale();
     requirePermission(session, "scheduling.manage");
 
     const url = new URL(req.url);
@@ -46,7 +49,7 @@ export async function GET(req: NextRequest) {
       orderBy: { startsAt: "asc" },
       include: {
         worker: { select: { id: true, fullName: true } },
-        site: { select: { id: true, name: true } },
+        site: { select: { id: true, name: true, names: true } },
         template: { select: { id: true, name: true } },
       },
       take: 500,
@@ -66,7 +69,7 @@ export async function GET(req: NextRequest) {
         source: s.source,
         notes: s.notes,
         worker: s.worker ? { id: s.worker.id, fullName: s.worker.fullName } : null,
-        site: { id: s.site.id, name: s.site.name },
+        site: { id: s.site.id, name: localizedName(s.site, locale, "name") },
         template: s.template ? { id: s.template.id, name: s.template.name } : null,
       })),
     });

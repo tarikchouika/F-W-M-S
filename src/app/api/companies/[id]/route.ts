@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth/session";
+import { namesColumnValue } from "@/lib/localized-name";
 import { requirePermission, AccessError } from "@/lib/rbac";
 import { writeAudit } from "@/lib/audit";
 import { isPlatformFrozen } from "@/lib/branding";
@@ -56,6 +57,7 @@ export async function PATCH(
         locale: data.locale ?? undefined,
         timezone: data.timezone ?? undefined,
         status: data.status ?? undefined,
+        names: data.names !== undefined ? namesColumnValue(data.names) : undefined,
       },
     });
 

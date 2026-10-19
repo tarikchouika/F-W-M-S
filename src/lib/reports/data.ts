@@ -2,6 +2,7 @@
 // القاعدة الذهبية: القسيمة والملخصات تُبنى من snapshotJson المجمدة للكشوف المعتمدة —
 // «التصدير يخضع للعملة والقواعد المعتمدة في وقت الفترة لا الحالية» (SPEC §4.4.1)
 import { db } from "@/lib/db";
+import { localizedName } from "@/lib/localized-name";
 import { getPlatformBranding } from "@/lib/branding";
 import type {
   AttendanceReportData,
@@ -32,15 +33,16 @@ export { ReportDataError };
 type CompanyRow = {
   id: string;
   legalName: string;
+  names?: string | null;
   tradeName: string | null;
   taxId: string | null;
   cnssNumber: string | null;
   currency: string;
 };
 
-function reportCompany(c: CompanyRow): ReportCompany {
+function reportCompany(c: CompanyRow, language?: string): ReportCompany {
   return {
-    legalName: c.legalName,
+    legalName: (language ? localizedName(c, language, "legalName") : c.legalName),
     tradeName: c.tradeName,
     taxId: c.taxId,
     cnssNumber: c.cnssNumber,
@@ -99,7 +101,8 @@ function parseSnapshot(raw: string | null | undefined, refNumber: string): Snaps
 
 export async function buildPayslipReportData(
   companyId: string,
-  payslipId: string
+  payslipId: string,
+  language?: string
 ): Promise<PayslipReportData> {
   const payslip = await db.payslip.findFirst({
     where: { id: payslipId, companyId },
@@ -148,7 +151,7 @@ export async function buildPayslipReportData(
     periodLabel: periodKeyOf(payslip.period.year, payslip.period.month),
     periodStatus: payslip.period.status,
     frozenAt: snap.frozenAt ?? null,
-    company: reportCompany(company),
+    company: reportCompany(company, language),
     worker,
     totals: {
       workedMinutes: t.workedMinutes ?? payslip.workedMinutes,
@@ -172,7 +175,8 @@ export async function buildPayslipReportData(
 
 export async function buildPayrollSummaryData(
   companyId: string,
-  periodId: string
+  periodId: string,
+  language?: string
 ): Promise<PayrollSummaryReportData> {
   const period = await db.payPeriod.findFirst({ where: { id: periodId, companyId } });
   if (!period) throw new ReportDataError(404, "period_not_found");
@@ -234,7 +238,7 @@ export async function buildPayrollSummaryData(
     periodId: period.id,
     periodLabel: periodKeyOf(period.year, period.month),
     periodStatus: period.status,
-    company: reportCompany(company),
+    company: reportCompany(company, language),
     workersCount: payslips.length,
     totals,
     rows,
@@ -249,7 +253,8 @@ export async function buildAttendanceReportData(
   year: number,
   month: number,
   kind: "attendance_statement" | "hours_statement",
-  siteIds?: string[] // نطاق مواقع co_admin (null = كامل الشركة)
+  siteIds?: string[], // نطاق مواقع co_admin (null = كامل الشركة)
+  language?: string
 ): Promise<AttendanceReportData> {
   const [company, worker] = await Promise.all([
     db.company.findUnique({ where: { id: companyId } }),
@@ -319,7 +324,7 @@ export async function buildAttendanceReportData(
     targetUserId,
     workerName: worker.fullName,
     rangeLabel: periodKeyOf(year, month),
-    company: reportCompany(company),
+    company: reportCompany(company, language),
     rows,
     totals: {
       days: rows.length,
@@ -333,7 +338,8 @@ export async function buildAttendanceReportData(
 // ─── ملخص التصاريح (المحاسب) ──────────────────────────────────
 
 export async function buildDeclarationsSummaryData(
-  companyId: string
+  companyId: string,
+  language?: string
 ): Promise<DeclarationsSummaryReportData> {
   const [company, declarations] = await Promise.all([
     db.company.findUnique({ where: { id: companyId } }),
@@ -373,7 +379,7 @@ export async function buildDeclarationsSummaryData(
   return {
     kind: "declarations_summary",
     branding: await reportBranding(),
-    company: reportCompany(company),
+    company: reportCompany(company, language),
     periodLabel: lastPeriod,
     rows,
   };
@@ -383,7 +389,8 @@ export async function buildDeclarationsSummaryData(
 
 export async function buildComplianceReportData(
   companyId: string,
-  declarationId: string
+  declarationId: string,
+  language?: string
 ): Promise<ComplianceReportData> {
   const declaration = await db.declaration.findFirst({
     where: { id: declarationId, companyId },
@@ -491,7 +498,7 @@ export async function buildComplianceReportData(
     declarationLabel: `${authorityLabel} — ${declaration.periodKey}`,
     authority: declaration.authority,
     status: declaration.status,
-    company: reportCompany(company),
+    company: reportCompany(company, language),
     periodLabel: period ? periodKeyOf(period.year, period.month) : declaration.periodKey,
     payslipTotals,
     declarationTotals,
@@ -503,12 +510,13 @@ export async function buildComplianceReportData(
 
 // ─── ملخص المنصة (super_admin) ────────────────────────────────
 
-export async function buildPlatformSummaryData(): Promise<PlatformSummaryReportData> {
+export async function buildPlatformSummaryData(language?: string): Promise<PlatformSummaryReportData> {
   const companies = await db.company.findMany({
     where: { status: "active" },
     select: {
       id: true,
       legalName: true,
+      names: true,
       _count: { select: { employeeProfiles: true } },
       payPeriods: {
         where: { status: "approved" },
@@ -540,7 +548,7 @@ export async function buildPlatformSummaryData(): Promise<PlatformSummaryReportD
     }
     const last = c.payPeriods[0];
     return {
-      legalName: c.legalName,
+      legalName: localizedName(c, language ?? "ar", "legalName"),
       workersCount: c._count.employeeProfiles,
       approvedPeriods: c.payPeriods.length,
       payslipsCount,

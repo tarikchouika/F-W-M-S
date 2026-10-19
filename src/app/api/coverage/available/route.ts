@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { requirePermission, AccessError } from "@/lib/rbac";
 import { getAvailableWorkers } from "@/lib/coverage";
+import { getUiLocale } from "@/i18n/ui-locale";
 
 export async function GET(req: NextRequest) {
   try {
@@ -15,7 +16,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "invalid_input" }, { status: 400 });
     }
 
-    const result = await getAvailableWorkers(session!, shiftId);
+    const result = await getAvailableWorkers(session!, shiftId, await getUiLocale());
     return NextResponse.json(result);
   } catch (error) {
     if (error instanceof AccessError) {

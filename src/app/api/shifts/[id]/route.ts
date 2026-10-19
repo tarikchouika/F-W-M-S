@@ -53,7 +53,7 @@ export async function PATCH(
       where: { id, companyId: session!.companyId },
       include: {
         worker: { select: { id: true, fullName: true } },
-        site: { select: { id: true, name: true } },
+        site: { select: { id: true, name: true, names: true } },
         template: { select: { id: true, name: true } },
       },
     });

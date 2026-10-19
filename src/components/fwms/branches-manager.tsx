@@ -12,9 +12,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/provider";
+import { LocaleNamesFields, EMPTY_LOCALE_NAMES, localeNamesFromRow, localeNamesBody } from "@/components/fwms/locale-names-fields";
 import { PageHeader, StatusBadge, ConfirmAction, ListState, formatDate, apiRequest, apiErrorMessage } from "@/components/fwms/org-bits";
 
 type BranchRow = {
+  baseName?: string;
+  names?: string | null;
   id: string;
   name: string;
   code: string | null;
@@ -25,9 +28,9 @@ type BranchRow = {
   activeSites: number;
 };
 
-type BranchForm = { name: string; code: string; city: string; address: string };
+type BranchForm = { name: string; code: string; city: string; address: string; namesAr: string; namesFr: string; namesEn: string; namesEs: string };
 
-const EMPTY_FORM: BranchForm = { name: "", code: "", city: "", address: "" };
+const EMPTY_FORM: BranchForm = { ...EMPTY_LOCALE_NAMES, name: "", code: "", city: "", address: "" };
 
 export function BranchesManager() {
   const { t, locale } = useI18n();
@@ -78,7 +81,7 @@ export function BranchesManager() {
 
   function openEdit(row: BranchRow) {
     setEditingId(row.id);
-    setForm({ name: row.name, code: row.code ?? "", city: row.city ?? "", address: row.address ?? "" });
+    setForm({ ...localeNamesFromRow(row), name: row.baseName ?? row.name, code: row.code ?? "", city: row.city ?? "", address: row.address ?? "" });
     setDialogOpen(true);
   }
 
@@ -91,6 +94,7 @@ export function BranchesManager() {
     }
     const body = JSON.stringify({
       name: form.name.trim(),
+      names: localeNamesBody(form),
       code: form.code.trim(),
       city: form.city.trim(),
       address: form.address.trim(),
@@ -234,6 +238,8 @@ export function BranchesManager() {
               <Label htmlFor="branch-name">{t("common.name")}</Label>
               <Input id="branch-name" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} required minLength={2} maxLength={120} disabled={saving} />
             </div>
+
+            <LocaleNamesFields form={form} setForm={setForm} disabled={saving} />
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="flex flex-col gap-2">
                 <Label htmlFor="branch-code">{t("common.code")}</Label>

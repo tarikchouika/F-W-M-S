@@ -1,5 +1,39 @@
 import type { NextConfig } from "next";
 
+
+// ─── غلق تبعيات عامل عرض المستندات زمن التشغيل (علاج بلاغ الوثائق 2026-10-19) ───
+// العامل (render-worker.cjs) يحمّل خارجيًا: @react-pdf/renderer (+react كندّ)
+// وsharp (وحدة أصلية). القوائم اليدوية السابقة كانت تنقصها شجرة كاملة
+// (linebreak/base64-js/pako/bidi-js…) فانكسر توليد PDF — الحل: حساب الغلقة
+// الكاملة من node_modules نفسه عند كل بناء، فلا تعود حزمة تنقص أبدًا.
+import { readFileSync } from "node:fs";
+
+function depsOf(name: string): string[] {
+  try {
+    const pkg = JSON.parse(readFileSync(`node_modules/${name}/package.json`, "utf8"));
+    return [...Object.keys(pkg.dependencies ?? {}), ...Object.keys(pkg.peerDependencies ?? {})];
+  } catch {
+    return [];
+  }
+}
+
+function depClosure(roots: string[]): string[] {
+  const seen = new Set<string>();
+  const queue = [...roots];
+  while (queue.length) {
+    const name = queue.shift()!;
+    if (seen.has(name)) continue;
+    seen.add(name);
+    for (const dep of depsOf(name)) if (!seen.has(dep)) queue.push(dep);
+  }
+  return [...seen];
+}
+
+// @react-pdf/renderer (بشجرته كلها) + react (ندّه) + sharp — تُضمّن لغرض /api/reports/**
+const WORKER_RUNTIME_PACKAGES = depClosure(["@react-pdf/renderer", "react", "sharp"])
+  .map((name) => `./node_modules/${name}/**`);
+
+
 const nextConfig: NextConfig = {
   output: "standalone",
   // إجراءات الخادم خلف بوابة عكسية (بلاغ المالك 2026-10-19 «خلل في تغيير لغة الموقع» — الجولة الرابعة):
@@ -52,22 +86,12 @@ const nextConfig: NextConfig = {
     "/verify/**": ["./infra/vercel/preview.db"],
     "/api/**": ["./infra/vercel/preview.db"],
     "/api/reports/**": [
-      "./node_modules/@react-pdf/renderer/**",
-      "./node_modules/@react-pdf/font/**",
-      "./node_modules/@react-pdf/layout/**",
-      "./node_modules/@react-pdf/render/**",
-      "./node_modules/@react-pdf/pdfkit/**",
-      "./node_modules/@react-pdf/image/**",
-      "./node_modules/@react-pdf/primitives/**",
-      "./node_modules/@react-pdf/reconciler/**",
-      "./node_modules/@react-pdf/stylesheet/**",
-      "./node_modules/@react-pdf/svg/**",
-      "./node_modules/@react-pdf/types/**",
-      "./node_modules/@react-pdf/textkit/**",
-      "./node_modules/fontkit/**",
-      "./node_modules/pdfkit/**",
-      "./node_modules/yoga-layout/**",
-      "./node_modules/sharp/**",
+      // عامل العرض (المترجم .cjs + المصدر .ts) — بدون ضمّه هنا كان الملف غائبًا
+      // عن حزمة Vercel فيفشل التوليد بـ render_worker_missing (بلاغ 2026-10-19).
+      // docx وqrcode والقواميس الأربع تُضمَّن داخل .cjs المُجمَّع (compile-render-worker).
+      "./src/lib/reports/**",
+      // شجرة @react-pdf + react + sharp كاملة (محسوبة أعلاه — لا قوائم يدوية بعدها)
+      ...WORKER_RUNTIME_PACKAGES,
       "./node_modules/@img/**",
       "./public/fonts/**",
     ],

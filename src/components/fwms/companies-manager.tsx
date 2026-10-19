@@ -15,9 +15,12 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/provider";
+import { LocaleNamesFields, EMPTY_LOCALE_NAMES, localeNamesFromRow, localeNamesBody } from "@/components/fwms/locale-names-fields";
 import { PageHeader, StatusBadge, ConfirmAction, ListState, formatDate, apiRequest, apiErrorMessage } from "@/components/fwms/org-bits";
 
 type CompanyRow = {
+  baseName?: string;
+  names?: string | null;
   id: string;
   legalName: string;
   tradeName: string | null;
@@ -38,9 +41,14 @@ type CompanyForm = {
   cnssNumber: string;
   locale: string;
   timezone: string;
+  namesAr: string;
+  namesFr: string;
+  namesEn: string;
+  namesEs: string;
 };
 
 const EMPTY_FORM: CompanyForm = {
+  ...EMPTY_LOCALE_NAMES,
   legalName: "",
   tradeName: "",
   taxId: "",
@@ -96,7 +104,8 @@ export function CompaniesManager({ currentCompanyId }: { currentCompanyId: strin
   function openEdit(row: CompanyRow) {
     setEditingId(row.id);
     setForm({
-      legalName: row.legalName,
+      legalName: row.baseName ?? row.legalName,
+      ...localeNamesFromRow(row),
       tradeName: row.tradeName ?? "",
       taxId: row.taxId ?? "",
       cnssNumber: row.cnssNumber ?? "",
@@ -115,6 +124,7 @@ export function CompaniesManager({ currentCompanyId }: { currentCompanyId: strin
     }
     const body = JSON.stringify({
       legalName: form.legalName.trim(),
+      names: localeNamesBody(form),
       tradeName: form.tradeName.trim(),
       taxId: form.taxId.trim(),
       cnssNumber: form.cnssNumber.trim(),
@@ -275,6 +285,8 @@ export function CompaniesManager({ currentCompanyId }: { currentCompanyId: strin
               <Label htmlFor="company-legal">{t("companies.legalName")}</Label>
               <Input id="company-legal" value={form.legalName} onChange={(e) => setForm((f) => ({ ...f, legalName: e.target.value }))} required minLength={2} maxLength={120} disabled={saving} />
             </div>
+
+            <LocaleNamesFields form={form} setForm={setForm} disabled={saving} />
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="flex flex-col gap-2">
                 <Label htmlFor="company-trade">{t("companies.tradeName")}</Label>

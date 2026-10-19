@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth/session";
+import { localizedName, localizeRow, localizeNested } from "@/lib/localized-name";
+import { getUiLocale } from "@/i18n/ui-locale";
 import { DashboardSidebar, MobileNav } from "@/components/fwms/dashboard-sidebar";
 import { LocationWatcher } from "@/components/fwms/location-watcher";
 import { CompanySwitcher } from "@/components/fwms/company-switcher";
@@ -38,10 +40,11 @@ export default async function DashboardLayout({
   // عضويات المستخدم السارية للشركات النشطة (للتبديل الصريح — SPEC §3.1)
   const memberships = await db.userMembership.findMany({
     where: { userId: session.sub, revokedAt: null, company: { status: "active" } },
-    include: { company: { select: { id: true, legalName: true, status: true } } },
+    include: { company: { select: { id: true, legalName: true, names: true, status: true } } },
     orderBy: { isDefault: "desc" },
   });
-  const companies = memberships.map((m) => ({ id: m.company.id, legalName: m.company.legalName }));
+  const locale = await getUiLocale();
+  const companies = memberships.map((m) => ({ id: m.company.id, legalName: localizedName(m.company, locale, "legalName") }));
 
   // هوية المالك + تفعيل الوحدات (white-label — SPEC §3.2): تُمرَّر للشريط الجانبي
   const branding = await getPlatformBranding();

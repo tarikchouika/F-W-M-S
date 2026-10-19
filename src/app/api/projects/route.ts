@@ -2,20 +2,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth/session";
+import { localizedName, localizeRow, localizeNested } from "@/lib/localized-name";
+import { getUiLocale } from "@/i18n/ui-locale";
 import { requirePermission, AccessError } from "@/lib/rbac";
 import { writeAudit } from "@/lib/audit";
 import { projectCreateSchema, emptyToNull, parseOptionalDate } from "@/lib/organization";
+import { namesColumnValue } from "@/lib/localized-name";
 
 export async function GET() {
   try {
     const session = await getSession();
+    const locale = await getUiLocale();
     requirePermission(session, "company.manage");
 
     const projects = await db.project.findMany({
       where: { companyId: session!.companyId },
       orderBy: { createdAt: "desc" },
       include: {
-        branch: { select: { id: true, name: true } },
+        branch: { select: { id: true, name: true, names: true } },
         _count: { select: { sites: { where: { status: "active" } } } },
       },
     });
@@ -24,13 +28,14 @@ export async function GET() {
       count: projects.length,
       projects: projects.map((p) => ({
         id: p.id,
-        name: p.name,
+        name: localizedName(p, locale, "name"), baseName: p.name,
+        names: p.names,
         code: p.code,
         status: p.status,
         startsAt: p.startsAt,
         endsAt: p.endsAt,
         createdAt: p.createdAt,
-        branch: p.branch ? { id: p.branch.id, name: p.branch.name } : null,
+        branch: p.branch ? { id: p.branch.id, name: localizedName(p.branch, locale, "name") } : null,
         activeSites: p._count.sites,
       })),
     });
@@ -78,6 +83,7 @@ export async function POST(req: NextRequest) {
 
     const project = await db.project.create({
       data: {
+        names: namesColumnValue(parsed.data.names),
         companyId: session!.companyId,
         name,
         code: emptyToNull(code),

@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: "desc" },
       include: {
         worker: { select: { id: true, fullName: true } },
-        site: { select: { id: true, name: true } },
+        site: { select: { id: true, name: true, names: true } },
         template: { select: { id: true, name: true } },
       },
     });

@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { requirePermission, AccessError } from "@/lib/rbac";
 import { replaceSchema, replaceShiftWorker } from "@/lib/coverage";
+import { getUiLocale } from "@/i18n/ui-locale";
 
 export async function POST(req: NextRequest) {
   try {
@@ -15,7 +16,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "invalid_input" }, { status: 400 });
     }
 
-    const result = await replaceShiftWorker(session!, parsed.data);
+    const result = await replaceShiftWorker(session!, parsed.data, await getUiLocale());
     return NextResponse.json(result);
   } catch (error) {
     if (error instanceof AccessError) {

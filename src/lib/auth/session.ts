@@ -1,6 +1,8 @@
 // FWMS — إدارة الجلسة من الخادم: قراءة cookie، جلسة موسّعة من القاعدة، وحرّاس الوصول
 import { cookies, headers } from "next/headers";
 import { db } from "@/lib/db";
+import { localizedName } from "@/lib/localized-name";
+import { getUiLocale } from "@/i18n/ui-locale";
 import { SESSION_COOKIE, SESSION_MAX_AGE, signSession, verifySession, type SessionPayload } from "./jwt";
 
 export type { SessionPayload };
@@ -42,6 +44,11 @@ export async function getSession(): Promise<
 
   if (!membership || !membership.user.isActive) return null;
 
+  // لغة الواجهة الحالية (الكوكي) لعرض اسم الشركة المترجم — لا session.locale
+  // المتقادمة (توقَع عند الدخول ولا يتغير مع مبدّل اللغة).
+  const uiLocale = await getUiLocale();
+
+
   // إبطال حقيقي للجلسات: رمز صدر قبل علامة الإبطال (خروج/تدوير) يُرفض.
   // دقة iat ثانية واحدة (معيار JWT) والعلامة بالمللي ثانية — نقارن على حدود الثانية
   // كي لا تُرفض جلسة صدرت في نفس ثانية الإبطال بعده (سباق اختبار المرحلة 8 2026-10-18:
@@ -54,7 +61,7 @@ export async function getSession(): Promise<
     ...raw,
     role: membership.role,
     companyId: membership.companyId,
-    companyName: membership.company.legalName,
+    companyName: localizedName(membership.company, uiLocale, "legalName"),
     companyLocale: membership.company.locale,
     companyTimezone: membership.company.timezone,
   };

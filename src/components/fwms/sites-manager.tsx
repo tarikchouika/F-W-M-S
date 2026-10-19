@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/provider";
+import { LocaleNamesFields, EMPTY_LOCALE_NAMES, localeNamesFromRow, localeNamesBody } from "@/components/fwms/locale-names-fields";
 import { cn } from "@/lib/utils";
 import { RADIUS_MIN_M, RADIUS_MAX_M, RADIUS_DEFAULT_M } from "@/lib/organization";
 import { PageHeader, StatusBadge, ConfirmAction, ListState, formatDate, apiRequest, apiErrorMessage } from "@/components/fwms/org-bits";
@@ -27,6 +28,8 @@ const SiteMap = dynamic(() => import("@/components/fwms/site-map").then((m) => m
 });
 
 type SiteRow = {
+  baseName?: string;
+  names?: string | null;
   id: string;
   name: string;
   address: string | null;
@@ -49,9 +52,14 @@ type SiteForm = {
   latitude: string;
   longitude: string;
   radiusM: number;
+  namesAr: string;
+  namesFr: string;
+  namesEn: string;
+  namesEs: string;
 };
 
 const EMPTY_FORM: SiteForm = {
+  ...EMPTY_LOCALE_NAMES,
   name: "",
   address: "",
   branchId: "none", // Radix Select لا يقبل قيمة فارغة — none تعني «بدون»
@@ -142,7 +150,8 @@ export function SitesManager() {
   function openEdit(site: SiteRow) {
     setEditingId(site.id);
     setForm({
-      name: site.name,
+      ...localeNamesFromRow(site),
+      name: site.baseName ?? site.name,
       address: site.address ?? "",
       branchId: site.branch?.id ?? "none",
       projectId: site.project?.id ?? "none",
@@ -181,6 +190,7 @@ export function SitesManager() {
 
     const body = JSON.stringify({
       name: form.name.trim(),
+      names: localeNamesBody(form),
       address: form.address.trim(),
       latitude,
       longitude,
@@ -405,6 +415,8 @@ export function SitesManager() {
                   disabled={saving}
                 />
               </div>
+
+              <LocaleNamesFields form={form} setForm={setForm} disabled={saving} />
 
               <div className="flex flex-col gap-2 sm:col-span-2">
                 <Label htmlFor="site-address">{t("common.address")}</Label>

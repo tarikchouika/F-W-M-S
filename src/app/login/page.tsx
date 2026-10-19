@@ -97,6 +97,25 @@ export default async function LoginPage({ searchParams }: LoginProps) {
           </CardContent>
         </Card>
       </div>
+
+      {/* (جولة 2026-10-19): روابط الصفحات القانونية والدليل — بكل لغات الواجهة */}
+      <nav className="relative z-10 mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+        {[
+          { href: "/legal/terms", label: tServer(dict, "legal.terms.title") },
+          { href: "/legal/privacy", label: tServer(dict, "legal.privacy.title") },
+          { href: "/legal/safety", label: tServer(dict, "legal.safety.title") },
+          { href: "/legal/rights", label: tServer(dict, "legal.rights.title") },
+          { href: "/guide", label: tServer(dict, "guide.title") },
+        ].map((l) => (
+          <a
+            key={l.href}
+            href={l.href}
+            className="text-xs text-white/80 underline-offset-4 hover:text-white hover:underline"
+          >
+            {l.label}
+          </a>
+        ))}
+      </nav>
     </div>
   );
 }

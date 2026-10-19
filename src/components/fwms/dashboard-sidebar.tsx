@@ -84,8 +84,8 @@ const ALL_ITEMS: NavItem[] = [
   { key: "myPayslips", labelKey: "dashboard.myPayslips", icon: ReceiptText, href: "/dashboard/my-payslips" },
   { key: "users", labelKey: "dashboard.users", icon: Users, href: "/dashboard/users" },
   { key: "reports", labelKey: "dashboard.reports", icon: FileText, href: "/dashboard/reports" },
-  { key: "audit", labelKey: "dashboard.audit", icon: ScrollText, soon: true },
-  { key: "settings", labelKey: "dashboard.settings", icon: Settings, soon: true },
+  { key: "audit", labelKey: "dashboard.audit", icon: ScrollText, href: "/dashboard/audit" },
+  { key: "settings", labelKey: "dashboard.settings", icon: Settings, href: "/dashboard/settings" },
 ];
 
 // إظهار العناصر بحسب الدور (SPEC §3): العامل يرى الأساسيات وبرنامجه وحضوره وأجوره فقط

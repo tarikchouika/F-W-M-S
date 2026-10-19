@@ -390,7 +390,8 @@ export function ReportsManager() {
                       </Select>
                     </div>
                     <div className="space-y-1.5">
-                      <Label>{t("reports.month")}</Label>
+                      {/* monthLabel وليس month: الأخيرة خريطة أرقام→أسماء (درس لقطات المالك 2026-10-19) */}
+                      <Label>{t("reports.monthLabel")}</Label>
                       <Select value={String(month)} onValueChange={(v) => setMonth(Number(v))}>
                         <SelectTrigger className="w-full">
                           <SelectValue />

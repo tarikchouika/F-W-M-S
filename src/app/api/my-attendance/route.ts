@@ -3,6 +3,8 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth/session";
+import { localizedName, localizeRow, localizeNested } from "@/lib/localized-name";
+import { getUiLocale } from "@/i18n/ui-locale";
 import { requirePermission, AccessError } from "@/lib/rbac";
 import { addDaysToLocalDate, todayInZone, zonedToUtc } from "@/lib/scheduling";
 import { findOpenCheckIn } from "@/lib/attendance-service";
@@ -12,6 +14,7 @@ import { QR_TTL_SECONDS } from "@/lib/verification";
 export async function GET() {
   try {
     const session = await getSession();
+    const locale = await getUiLocale();
     requirePermission(session, "self.view");
 
     const tz = session!.companyTimezone;
@@ -28,7 +31,7 @@ export async function GET() {
         occurredAt: { gte: todayStart, lt: todayEnd },
       },
       orderBy: { occurredAt: "desc" },
-      include: { site: { select: { id: true, name: true } } },
+      include: { site: { select: { id: true, name: true, names: true } } },
       take: 50,
     });
 
@@ -37,7 +40,11 @@ export async function GET() {
       where: { companyId: session!.companyId, workerUserId: session!.sub, type: "check_in", status: "verified" },
       orderBy: { occurredAt: "desc" },
     });
-    let openPair = null;
+    let openPair: {
+      checkInId: string;
+      occurredAt: Date;
+      site: { id: string; name: string; names: string | null; address: string | null } | null;
+    } | null = null;
     if (lastCheckIn) {
       const laterCheckOut = await db.attendanceEvent.findFirst({
         where: {
@@ -51,7 +58,7 @@ export async function GET() {
       if (!laterCheckOut) {
         const site = await db.site.findUnique({
           where: { id: lastCheckIn.siteId },
-          select: { id: true, name: true, address: true },
+          select: { id: true, name: true, names: true, address: true },
         });
         openPair = {
           checkInId: lastCheckIn.id,
@@ -71,7 +78,7 @@ export async function GET() {
         endsAt: { gt: todayStart },
       },
       orderBy: { startsAt: "asc" },
-      include: { site: { select: { id: true, name: true, address: true } } },
+      include: { site: { select: { id: true, name: true, names: true, address: true } } },
     });
     const currentShift = todayShifts.find((s) => s.startsAt <= now && s.endsAt >= now) ?? null;
     const nextShift = todayShifts.find((s) => s.startsAt > now) ?? null;
@@ -79,7 +86,7 @@ export async function GET() {
     // المواقع النشطة للشركة بإحداثياتها + السياسة النافذة (يختار العامل موقعه)
     const sites = await db.site.findMany({
       where: { companyId: session!.companyId, status: "active" },
-      select: { id: true, name: true, address: true, latitude: true, longitude: true, radiusM: true },
+      select: { id: true, name: true, names: true, address: true, latitude: true, longitude: true, radiusM: true },
       orderBy: { name: "asc" },
       take: 50,
     });
@@ -88,6 +95,8 @@ export async function GET() {
         const policy = await resolvePolicyForSite(s);
         return {
           ...s,
+          name: localizedName(s, locale, "name"),
+          baseName: s.name,
           policy: policy.mode,
           policyLevel: policy.level,
         };
@@ -101,7 +110,7 @@ export async function GET() {
         id: e.id,
         type: e.type,
         occurredAt: e.occurredAt,
-        site: e.site ? { id: e.site.id, name: e.site.name } : null,
+        site: e.site ? { id: e.site.id, name: localizedName(e.site, locale, "name") } : null,
         distanceM: e.distanceM,
         accuracyM: e.accuracyM,
         insideFence: e.insideFence,
@@ -111,12 +120,14 @@ export async function GET() {
         verification: e.verification,
         networkMode: e.networkMode,
       })),
-      openPair,
+      openPair: openPair
+        ? { ...openPair, site: openPair.site ? { ...openPair.site, name: localizedName(openPair.site, locale, "name") } : null }
+        : null,
       currentShift: currentShift
-        ? { id: currentShift.id, startsAt: currentShift.startsAt, endsAt: currentShift.endsAt, site: currentShift.site }
+        ? { id: currentShift.id, startsAt: currentShift.startsAt, endsAt: currentShift.endsAt, site: currentShift.site ? { ...currentShift.site, name: localizedName(currentShift.site, locale, "name") } : null }
         : null,
       nextShift: nextShift
-        ? { id: nextShift.id, startsAt: nextShift.startsAt, endsAt: nextShift.endsAt, site: nextShift.site }
+        ? { id: nextShift.id, startsAt: nextShift.startsAt, endsAt: nextShift.endsAt, site: nextShift.site ? { ...nextShift.site, name: localizedName(nextShift.site, locale, "name") } : null }
         : null,
       sites: sitesWithPolicy,
     });
