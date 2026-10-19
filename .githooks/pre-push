@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+# FWMS — خطاف «ما قبل الدفع» (pre-push)
+#
+# كيف يُفعَّل: scripts/install-hooks.mjs يضبط `core.hooksPath=.githooks` ويُستدعى
+# من سكربت postinstall ⇒ كل `bun install` (أي نسخة جديدة من المستودع) تفعّله من
+# تلقاء نفسها. لا يُعتمد على ضبط يدوي يُنسى.
+#
+# ما يمنعه (علاج دائم لثلاثة أخطاء مُرصودة 2026-10-18):
+#   1) **استيراد/تعريف ناقص** كان يصل إلى main ثم يسقط CI بعده — بوابة الجودة
+#      تُشغَّل هنا فيمنع الوصول أصلًا.
+#   2) **ازدياد التحذيرات صامتًا** (34 ← 35) — بوابة الجودة تقاس على ميزانية
+#      موثّقة فتُرفض أي زيادة غير مقرَّرة.
+#   3) **`git push --ff-only`** خيار غير موجود في git (يخصّ `merge`) فكان الدفع
+#      يفشل بـ`exit 129` ثم يُعاد بلا قوة. هنا تتحقق الأصالة نفسها
+#      (`merge-base --is-ancestor`) ⇒ الدفع الفوري مفروض بفحص لا بخيار يُنسى،
+#      وأي محاولة قوة تُرفض بالرقم نفسه.
+set -uo pipefail
+
+ZERO="0000000000000000000000000000000000000000"
+bad=0
+seen=0
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [ -z "${local_ref:-}" ] && continue
+  seen=$((seen + 1))
+  # حذف بعد (local_sha = صفر) أو فرع جديد (remote_sha = صفر) — لا أصل للمقارنة
+  [ "$local_sha" = "$ZERO" ] && continue
+  [ "$remote_sha" = "$ZERO" ] && continue
+  if ! git merge-base --is-ancestor "$remote_sha" "$local_sha" 2>/dev/null; then
+    printf '⛔ دفع غير-فوري (يحتاج قوّة) مرفوض: %s\n' "$remote_ref" >&2
+    bad=1
+  fi
+done
+
+if [ "$bad" -ne 0 ]; then
+  printf '%s\n' "⛔ أُوقف الدفع: main يُدفع للأمام فقط (force-push ممنوع)." >&2
+  printf '%s\n' "   استأنف بالتالي: git pull --rebase origin main" >&2
+  exit 1
+fi
+
+if [ "$seen" -eq 0 ]; then
+  printf '%s\n' "ℹ لا مراجع لدفعها — يتجاوز بوابة الجودة."
+  exit 0
+fi
+
+repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+if [ ! -f "$repo_root/scripts/gate.mjs" ]; then
+  printf '⚠ scripts/gate.mjs مفقود — يُسمح بالدفع دون بوابة.\n' >&2
+  exit 0
+fi
+
+printf '%s\n' "→ بوابة الجودة (lint + tsc ضمن ميزانية موثّقة) ..."
+node "$repo_root/scripts/gate.mjs"
+gate_status=$?
+
+if [ "$gate_status" -ne 0 ]; then
+  printf '⛔ بوابة الجودة رفضت الدفع (رمز %s) — انظر أعلاه.\n' "$gate_status" >&2
+  exit "$gate_status"
+fi
+
+printf '%s\n' "✓ الأصالة سليمة (fast-forward) والبوابة ناجحة — يُسمح بالدفع."
+exit 0
