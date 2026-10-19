@@ -57,8 +57,21 @@ service cron start >/dev/null 2>&1 || true
 command -v termux-wake-lock >/dev/null 2>&1 && termux-wake-lock || echo "⚠ termux-wake-lock غير متوفر (شغّل داخل Termux مباشرة)"
 
 # 2) مزامنة الكود وقاعدة البيانات
+OLD_HEAD="$(git rev-parse HEAD 2>/dev/null || echo none)"
 git pull --ff-only origin main
+NEW_HEAD="$(git rev-parse HEAD 2>/dev/null || echo none)"
 npx prisma migrate deploy
+
+# 2ب) إن تغيّر هذا السكربت نفسه بالسحب: أعد تشغيل النسخة الجديدة من أوله.
+#     bash يقرأ السكربت تزايديًا — متابعة تنفيذ نصّ استُبدل على القرص سلوكٌ غير
+#     معرف، والأهم: المنطق الجديد في الخطوة 4 (إعادة البناء عند تغيّر HEAD) لا
+#     يعمل ما دامت النسخة القديمة هي المنفِّذة — وهي التي كانت تتخطى البناء.
+#     إعادة التشغيل لا تتسلسل: بعد exec يصبح OLD_HEAD = NEW_HEAD فلا يُعاد مجددًا.
+if [ "$OLD_HEAD" != "$NEW_HEAD" ] && [ "$OLD_HEAD" != "none" ] \
+   && ! git diff --quiet "$OLD_HEAD" "$NEW_HEAD" -- infra/termux/start-server.sh 2>/dev/null; then
+  log "↻ سكربت التشغيل نفسه تحدّث بالسحب — إعادة التشغيل بالنسخة الجديدة"
+  exec bash "$0" "$@"
+fi
 
 # 3) النفق الدائم (Cloudflare Tunnel) — إن وُجد توكنه (docs/DATABASE_GUIDE.md §2.4)
 #    حارس التكاثر: لا يُشغَّل نفق ثانٍ إن كان واحدًا قائمًا أصلًا (نصّ الحارس يطابق
@@ -73,8 +86,20 @@ if grep -q '^CLOUDFLARE_TUNNEL_TOKEN=' .env 2>/dev/null; then
 fi
 
 # 4) البناء عند الحاجة ثم التشغيل
-if [ ! -d .next ]; then
+#    «عند الحاجة» = غياب .next **أو تغيّر HEAD منذ آخر بناء** — علاج جذر لبلاغ
+#    المالك 2026-10-19 «الترجمة لازالت لا تعمل»: الخادم كان يسحب main (بما فيه
+#    إصلاحات الترجمة) ثم يتخطى البناء لأن .next موجود — فيقدّم البناء القديم
+#    إلى الأبد. بصمة HEAD تُكتب داخل .next بعد كل بناء ناجح (تُمسح معه تلقائيًا
+#    عند أي بناء نظيف) وتُقارن عند كل تشغيل: تغيّرت ⇒ أعد البناء.
+BUILT_COMMIT_FILE=".next/BUILT_COMMIT"
+if [ ! -d .next ] \
+   || [ ! -f "$BUILT_COMMIT_FILE" ] \
+   || [ "$(git rev-parse HEAD 2>/dev/null || echo none)" != "$(cat "$BUILT_COMMIT_FILE" 2>/dev/null || echo none)" ]; then
+  log "→ الكود تغيّر منذ آخر بناء (أو لا بناء) — إعادة البناء..."
   npm run build
+  git rev-parse HEAD > "$BUILT_COMMIT_FILE"
+else
+  log "✔ البناء مطابق لرأس المستودع — لا حاجة لإعادة البناء"
 fi
 
 # 4ب) المحرّكات الأصلية لـ sharp في standalone (خطوة إلزامية بعد كل بناء — راجع §9.2)
