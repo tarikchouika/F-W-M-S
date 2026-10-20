@@ -36,6 +36,13 @@ const WORKER_RUNTIME_PACKAGES = depClosure(["pdfkit", "sharp"])
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  // ⚠️ جذر تتبّع الملفات يجب أن يكون **جذر المستودع** لا جذر «مشروع» أعلى منه:
+  // لو وُجد package.json/package-lock.json في مجلد أب (مثل /root) ⇒ اختار Next
+  // ذلك الجذر ⇒ صار standalone داخل `.next/standalone/F-W-M-S/` بدل
+  // `.next/standalone/` ⇒ سكريبت التشغيل (infra/termux/start-server.sh) لم يجد
+  // server.js ⇒ **الخادم المحلي لم يقلع** (بلاغ المالك 2026-10-20).
+  // التثبيت الصريح يجعل ناتج البناء ثابتًا مهما كان محيط الجهاز.
+  outputFileTracingRoot: __dirname,
   // إجراءات الخادم خلف بوابة عكسية (بلاغ المالك 2026-10-19 «خلل في تغيير لغة الموقع» — الجولة الرابعة):
   // حماية CSRF في Next تقارن ترويسة Origin مع x-forwarded-host ثم Host. بوابة Pages
   // (fwms-dg8.pages.dev) تعيد كتابة Host إلى أصل Vercel، وVercel بدوره يستبدل
