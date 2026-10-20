@@ -327,7 +327,19 @@ export function bidiPieces(text: string, baseRtl: boolean): BiPiece[] {
       const cp = chars[i].codePointAt(0)!;
       const strong = charType(cp);
       const isArabic = strong === R || strong === AN;
-      const isNeutral = strong === ON || strong === WS || strong === B || strong === S || strong === ES || strong === ET || strong === CS;
+      // ⚠️ NSM (علامات مركّبة: الهمزة تحت الألف…) وBN محايدتان **-finуча**:
+      // فاصلُ المقطع عندهما يفصل العلامة عن أساسها ⇒ تُرسم منفردة (بلا قاعدة)
+      // فيشوّهها fontkit (مربّع بدل الهمزة). العلامة يجب أن تبقى مع حرفها.
+      const isNeutral =
+        strong === ON ||
+        strong === WS ||
+        strong === B ||
+        strong === S ||
+        strong === ES ||
+        strong === ET ||
+        strong === CS ||
+        strong === NSM ||
+        strong === BN;
       if (!started) {
         curArabic = isArabic;
         started = true;
