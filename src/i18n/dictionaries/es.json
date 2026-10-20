@@ -56,7 +56,16 @@
     "techItem4Title": "Cuatro idiomas nativos",
     "techItem4Desc": "Árabe (RTL), francés, inglés y español — interfaz e informes, sin traducción automática.",
     "footerRights": "La propiedad de la plataforma es personalizable y transferible",
-    "footerDocs": "Documentación"
+    "footerDocs": "Documentación",
+    "referencesTitle": "Referencias oficiales verificadas",
+    "referencesSubtitle": "La plataforma calcula nómina y cotizaciones según reglas legales marroquíes — aquí están los organismos oficiales y los textos legales originales para que lo verifique usted mismo.",
+    "referencesCta": "Referencias oficiales",
+    "refPoint1Title": "Organismos oficiales",
+    "refPoint1Desc": "CNSS, DGI, Ministerio de Empleo y Ministerio de Finanzas — cada organismo donde se presentan sus archivos.",
+    "refPoint2Title": "Textos legales",
+    "refPoint2Desc": "El Código del Trabajo y los recopilatorios legislativos de la seguridad social y la AMO — para verificar cada regla aplicada.",
+    "refPoint3Title": "Descarga directa",
+    "refPoint3Desc": "Archivos PDF oficiales accesibles al público desde los sitios de los organismos que los publican — sin enlaces rotos."
   },
   "auth": {
     "loginTitle": "Iniciar sesión",
@@ -1570,5 +1579,55 @@
     "s5h": "5. Todos",
     "s5b": "El registro de auditoría documenta cada acción sensible a nombre de su autor. Ajustes contiene tu perfil y contraseña y, para gestores: las reglas de la empresa (horas, doble validación…). Úsalo con seguridad: no compartas tu sesión y sal al dejar el aparato.",
     "s5l1": "Los días festivos oficiales marroquíes vienen precargados — se descuentan automáticamente en nómina."
+  },
+  "references": {
+    "title": "Referencias oficiales de Marruecos",
+    "subtitle": "Todo aquello en lo que se apoya la plataforma: los organismos oficiales donde se presentan los archivos y los textos legales descargables desde sus fuentes originales. Enlaces verificados en vivo.",
+    "orgsTitle": "Organismos oficiales",
+    "orgsSubtitle": "Los organismos oficiales de Marruecos con los que la plataforma intercambia (nómina, auditoría, declaraciones).",
+    "lawsTitle": "Textos legales oficiales (descargables)",
+    "lawsSubtitle": "Copias oficiales accesibles al público en los sitios de los organismos que las publican — para verificar cada regla aplicada.",
+    "cat": {
+      "social": "Seguridad social y salud",
+      "fiscal": "Tributación y finanzas públicas",
+      "labor": "Trabajo y empleo",
+      "identity": "Identidad e inscripción",
+      "state": "Estado y servicios públicos",
+      "payment": "Pagos y banca",
+      "portal": "Portales integrados"
+    },
+    "use": {
+      "cnss": "Declaración mensual de salarios (DAMANCOM), cotizaciones del trabajador, AMO y pensiones.",
+      "dgi": "Declaración fiscal de retribuciones (SIMPL-IR) y formularios fiscales.",
+      "emploi": "Código del trabajo, jornada, vacaciones y festivos.",
+      "sgg": "Publicación de leyes y decretos — archivo oficial del Boletín Oficial.",
+      "lof": "Textos legislativos y reglamentarios (leyes de finances y decretos de aplicación).",
+      "cndp": "Carta Nacional de Identidad y número de trabajador.",
+      "anapec": "Servicios de empleo, colocación y formación.",
+      "bkam": "Reglas de pago y banco central.",
+      "sante": "Reembolsos AMO y servicios sanitarios.",
+      "equipement": "Proyectos, infraestructuras y equipamientos.",
+      "maroc": "Portal nacional y servicios públicos del Estado.",
+      "eservices": "Portal de servicios electrónicos al ciudadano."
+    },
+    "laws": {
+      "cnss-recueil-rg": "Cotizaciones del trabajador y regímenes de seguridad social (base jurídica de cada retención CNSS).",
+      "cnss-recueil-amo": "Reembolso de gastos médicos (AMO/TADAMON) y cálculo de cotizaciones.",
+      "amo-loi-65-00": "Seguro médico obligatorio de base (AMO) y techo de reembolso.",
+      "amo-dahir": "Última modificación del régimen AMO (dahir de promulgación).",
+      "nma-2010": "Nomenclatura de actividades (NMA) — base de la actividad en los archivos CNSS y DGI.",
+      "decret-2-04-512": "Descanso semanal (duración y exenciones) — usado por el motor de planificación.",
+      "decret-2-04-422": "Tarjeta de trabajo y sus menciones obligatorias — la rellena RRHH.",
+      "decret-2-04-513": "Condiciones de trabajo de mujeres y menores — las comprueba la plataforma al validar los turnos.",
+      "decret-2-04-514": "Reglamento interno de la empresa — gestionado en los ajustes de la empresa.",
+      "decret-2-10-183": "Relaciones colectivas, sindicatos y representación sindical — determina quién firma por la empresa.",
+      "bo-archives": "Todos los números del Boletín Oficial con sus fechas — punto de entrada a los textos reglamentarios."
+    },
+    "open": "Abrir el sitio oficial",
+    "download": "Descargar archivo (PDF)",
+    "verified": "Última verificación de los enlaces",
+    "disclaimer": "Esta página solo enumera enlaces a fuentes oficiales; la plataforma no es un distribuidor oficial y no sustituye la lectura del texto original ni el consejo de un especialista.",
+    "sourcesCount": "organismos",
+    "lawsCount": "textos legales"
   }
 }

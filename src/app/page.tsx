@@ -19,6 +19,8 @@ import {
   ArrowRight,
   LogIn,
   Github,
+  Scale,
+  FileDown,
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -41,6 +43,13 @@ const FEATURES: Feature[] = [
   { titleKey: "landing.featureDeclarationsTitle", descKey: "landing.featureDeclarationsDesc", icon: Landmark },
   { titleKey: "landing.featureReportsTitle", descKey: "landing.featureReportsDesc", icon: FileText },
   { titleKey: "landing.featureSecurityTitle", descKey: "landing.featureSecurityDesc", icon: ShieldCheck },
+];
+
+// ثلاث نقاط عن المراجع الرسمية (تُغذّى من القاموس)
+const REFERENCE_POINTS: Feature[] = [
+  { titleKey: "landing.refPoint1Title", descKey: "landing.refPoint1Desc", icon: Landmark },
+  { titleKey: "landing.refPoint2Title", descKey: "landing.refPoint2Desc", icon: Scale },
+  { titleKey: "landing.refPoint3Title", descKey: "landing.refPoint3Desc", icon: FileDown },
 ];
 
 const TECH: Feature[] = [
@@ -163,6 +172,28 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* ── المراجع الرسمية (روابط موثّقة + نصوص قانون للتحميل) ── */}
+        <section id="references" className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
+          <SectionHeading titleKey="landing.referencesTitle" subtitleKey="landing.referencesSubtitle" />
+          <div className="mt-12 grid gap-5 sm:grid-cols-3">
+            {REFERENCE_POINTS.map((point) => (
+              <div key={point.titleKey} className="fwms-card-hover rounded-xl border border-border/70 bg-card p-5">
+                <point.icon className="size-7 text-primary" aria-hidden />
+                <h3 className="mt-4 text-base font-bold text-card-foreground">{t(point.titleKey)}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{t(point.descKey)}</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
+            <Button asChild size="lg" variant="outline" className="gap-2">
+              <Link href="/references">
+                {t("landing.referencesCta")}
+                <ForwardArrow className="size-4" aria-hidden />
+              </Link>
+            </Button>
+          </div>
+        </section>
+
         {/* ── البنية المرنة ── */}
         <section className="border-y border-border/60 bg-secondary/40">
           <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
@@ -183,25 +214,54 @@ export default function LandingPage() {
         </section>
       </main>
 
-      {/* ── التذييل (ملصق أسفل الشاشة عند قصر المحتوى) ── */}
+      {/* ── التذييل ──
+          البنية: عمودان واضحان (الهوية في بداية القراءة · الروابط في نهايتها)
+          مع فاصل ذهبي — التذييل القديم كان يخلط الشعار بالعبارة اللاتينية
+          فبدا «مشوّهًا» في الاتجاه العربي (بلاغ المالك 2026-10-20). ── */}
       <footer className="mt-auto border-t border-border/60 bg-background">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 py-8 text-center sm:flex-row sm:px-6 sm:text-start">
-          <div className="flex items-center gap-2.5">
-            <FwmsLogo className="size-7" />
-            <div className="text-sm">
-              <span className="font-bold text-primary">FWMS</span>
-              <span className="text-muted-foreground"> — {t("app.tagline")}</span>
+        <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:px-6 md:grid-cols-[1fr_auto] md:items-start md:gap-12">
+          <div className="flex items-start gap-3">
+            <FwmsLogo className="size-9 shrink-0" />
+            <div className="space-y-1">
+              <p className="text-sm font-bold text-primary" dir="ltr">
+                FWMS
+              </p>
+              <p className="max-w-md text-xs leading-6 text-muted-foreground">{t("app.tagline")}</p>
             </div>
           </div>
-          <div className="flex items-center gap-4 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1.5">
-              <Github className="size-3.5" aria-hidden />
-              <span dir="ltr">tarikchouika/F-W-M-S</span>
-            </span>
-            <span aria-hidden>·</span>
-            <span>{t("landing.footerRights")}</span>
-          </div>
+
+          <nav className="flex flex-col gap-3 text-xs text-muted-foreground md:items-end">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 md:justify-end">
+              <Link href="/references" className="inline-flex items-center gap-1.5 underline-offset-4 hover:text-foreground hover:underline">
+                <Scale className="size-3.5" aria-hidden />
+                {t("landing.referencesCta")}
+              </Link>
+              <Link href="/guide" className="underline-offset-4 hover:text-foreground hover:underline">
+                {t("guide.title")}
+              </Link>
+              <Link href="/legal/terms" className="underline-offset-4 hover:text-foreground hover:underline">
+                {t("legal.terms.title")}
+              </Link>
+              <Link href="/legal/privacy" className="underline-offset-4 hover:text-foreground hover:underline">
+                {t("legal.privacy.title")}
+              </Link>
+            </div>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 md:justify-end">
+              <a
+                href="https://github.com/tarikchouika/F-W-M-S"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 underline-offset-4 hover:text-foreground hover:underline"
+              >
+                <Github className="size-3.5 shrink-0" aria-hidden />
+                <span dir="ltr">tarikchouika/F-W-M-S</span>
+              </a>
+              <span aria-hidden>·</span>
+              <span>{t("landing.footerRights")}</span>
+            </div>
+          </nav>
         </div>
+        <div className="h-1 w-full bg-gradient-to-l from-primary via-[var(--fwms-gold)] to-primary opacity-70" aria-hidden />
       </footer>
     </div>
   );

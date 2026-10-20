@@ -102,8 +102,17 @@ function payslipSvg(ctx: Ctx, data: Extract<AnyReportData, { kind: "payslip" }>,
 
   // رأس
   body.push(`<rect x="0" y="0" width="${W}" height="92" fill="${BRAND}"/>`);
-  body.push(line(W / 2, 38, L("reports.doc.payslipTitle"), { size: 26, bold: true, color: "#ffffff", align: "middle" }));
-  body.push(line(W / 2, 66, data.company.tradeName || data.company.legalName, { size: 14, color: "#c3ddce", align: "middle" }));
+  body.push(`<rect x="0" y="92" width="${W}" height="3" fill="${GOLD}"/>`);
+  const logoSize = 46;
+  const logoX = ctx.rtl ? W - 50 - logoSize : 50;
+  body.push(logoSvg(logoX, (92 - logoSize) / 2, logoSize, GOLD, "#ffffff"));
+  const titleX = ctx.rtl ? logoX - 14 : logoX + logoSize + 14;
+  body.push(
+    `<text x="${titleX}" y="42" text-anchor="start" ${ctxDirection()} font-family="Noto Naskh Arabic" font-size="24" font-weight="700" fill="#ffffff">${esc(L("reports.doc.payslipTitle"))}</text>`
+  );
+  body.push(
+    `<text x="${titleX}" y="70" text-anchor="start" ${ctxDirection()} font-family="Noto Naskh Arabic" font-size="13" fill="#c3ddce">${esc(data.company.tradeName || data.company.legalName)}</text>`
+  );
 
   cursor = 124;
   // العامل والفترة
@@ -193,6 +202,24 @@ function payslipSvg(ctx: Ctx, data: Extract<AnyReportData, { kind: "payslip" }>,
 </svg>`;
 }
 
+/** مسار نجمة الزليج الثمانية في فضاء 64×64 (نفس public/logo.svg) */
+const LOGO_STAR_PATH =
+  "M32 2.5 38.21 17.01 52.86 11.14 46.99 25.79 61.5 32 46.99 38.21 52.86 52.86 38.21 46.99 32 61.5 25.79 46.99 11.14 52.86 17.01 38.21 2.5 32 17.01 25.79 11.14 11.14 25.79 17.01Z";
+/** مسار الدبوس المفرّغ في فضاء 64×64 */
+const LOGO_PIN_PATH = "M32 48.23C30.3 43.73 22.4 33.2 22.4 26.5A9.6 9.6 0 1 1 41.6 26.5C41.6 33.2 33.7 43.73 32 48.23Z";
+
+/** الشعار في SVG (نجمة ذهبية + دبوس مفرّغ) — نفس الـgeometry بـpublic/logo.svg */
+function logoSvg(x: number, y: number, size: number, star: string, pin: string): string {
+  const s = size / 64;
+  return (
+    `<g transform="translate(${x} ${y}) scale(${s})">` +
+    `<path fill="${star}" d="${LOGO_STAR_PATH}"/>` +
+    `<path fill="${pin}" d="${LOGO_PIN_PATH}"/>` +
+    `<circle cx="32" cy="26.5" r="3.9" fill="${star}"/>` +
+    `</g>`
+  );
+}
+
 /** كتلة الملاحظة الإدارية في SVG (بطاقتا القسيمة وملخص المنصة) */
 function noteSvg(ctx: Ctx, body: string[], cursor: number): number {
   const note = ctx.options.note;
@@ -215,12 +242,15 @@ function noteSvg(ctx: Ctx, body: string[], cursor: number): number {
   const boxH = shown.length * 20 + 34;
   body.push(`<rect x="${LEFT}" y="${cursor}" width="${W - 100}" height="${boxH}" fill="#f7f2e6"/>`);
   body.push(`<rect x="${ctx.rtl ? W - LEFT - 3 : LEFT}" y="${cursor}" width="3" height="${boxH}" fill="${GOLD}"/>`);
+  // ⚠️ المرتكز في SVG **منطقي**: «start» = بداية السطر (الحافة اليمنى في rtl).
+  // استعمال «end» في rtl يجعل النص ينطلق خارج البطاقة (يتجاوز حافتها) — عيب صُوّر.
+  const noteX = ctx.rtl ? W - LEFT - 12 : LEFT + 12;
   body.push(
-    `<text x="${ctx.rtl ? W - LEFT - 12 : LEFT + 12}" y="${cursor + 20}" text-anchor="${ctx.rtl ? "end" : "start"}" ${ctxDirection()} font-family="Noto Naskh Arabic" font-size="11" font-weight="700" fill="#8a6a1f">${esc(L("reports.noteLabel"))}</text>`
+    `<text x="${noteX}" y="${cursor + 20}" text-anchor="start" ${ctxDirection()} font-family="Noto Naskh Arabic" font-size="11" font-weight="700" fill="#8a6a1f">${esc(L("reports.noteLabel"))}</text>`
   );
   shown.forEach((ln, i) => {
     body.push(
-      `<text x="${ctx.rtl ? W - LEFT - 12 : LEFT + 12}" y="${cursor + 38 + i * 20}" text-anchor="${ctx.rtl ? "end" : "start"}" ${ctxDirection()} font-family="Noto Naskh Arabic" font-size="12" fill="${INK}">${esc(ln)}</text>`
+      `<text x="${noteX}" y="${cursor + 38 + i * 20}" text-anchor="start" ${ctxDirection()} font-family="Noto Naskh Arabic" font-size="12" fill="${INK}">${esc(ln)}</text>`
     );
   });
   return cursor + boxH + 12;
@@ -237,8 +267,17 @@ function platformSvg(ctx: Ctx, data: Extract<AnyReportData, { kind: "platform_su
   const body: string[] = [];
 
   body.push(`<rect x="0" y="0" width="${W}" height="92" fill="${BRAND}"/>`);
-  body.push(line(W / 2, 38, L("reports.doc.platformTitle"), { size: 24, bold: true, color: "#ffffff", align: "middle" }));
-  body.push(line(W / 2, 66, `${L("reports.doc.companiesCount")}: ${data.companiesCount}`, { size: 13, color: "#c3ddce", align: "middle" }));
+  body.push(`<rect x="0" y="92" width="${W}" height="3" fill="${GOLD}"/>`);
+  const logoSize = 46;
+  const logoX = ctx.rtl ? W - 50 - logoSize : 50;
+  body.push(logoSvg(logoX, (92 - logoSize) / 2, logoSize, GOLD, "#ffffff"));
+  const titleX = ctx.rtl ? logoX - 14 : logoX + logoSize + 14;
+  body.push(
+    `<text x="${titleX}" y="42" text-anchor="start" ${ctxDirection()} font-family="Noto Naskh Arabic" font-size="24" font-weight="700" fill="#ffffff">${esc(L("reports.doc.platformTitle"))}</text>`
+  );
+  body.push(
+    `<text x="${titleX}" y="70" text-anchor="start" ${ctxDirection()} font-family="Noto Naskh Arabic" font-size="13" fill="#c3ddce">${esc(`${L("reports.doc.companiesCount")}: ${data.companiesCount}`)}</text>`
+  );
 
   let cursor = 130;
   const rowH = 34;

@@ -56,7 +56,16 @@
     "techItem4Title": "Four native languages",
     "techItem4Desc": "Arabic (RTL), French, English and Spanish — interface and reports, with no machine translation.",
     "footerRights": "Platform ownership is customizable and transferable",
-    "footerDocs": "Documentation"
+    "footerDocs": "Documentation",
+    "referencesTitle": "Verified official references",
+    "referencesSubtitle": "The platform computes payroll and contributions under Moroccan legal rules — here are the official bodies and the original law texts so you can verify them yourself.",
+    "referencesCta": "Official references",
+    "refPoint1Title": "Official bodies",
+    "refPoint1Desc": "CNSS, DGI, the Ministry of Employment and the Ministry of Finance — every body where your files are filed.",
+    "refPoint2Title": "Law texts",
+    "refPoint2Desc": "The labour code and the legislative compilations for social security and AMO — to verify every applied rule.",
+    "refPoint3Title": "Direct download",
+    "refPoint3Desc": "Official PDF files available to the public from the publishers' own sites — with no dead links."
   },
   "auth": {
     "loginTitle": "Sign in",
@@ -1570,5 +1579,55 @@
     "s5h": "5. Everyone",
     "s5b": "The audit log documents every sensitive action under its author's name. Settings holds your profile and password, and for managers: company rules (hours, dual approval…). Stay safe: never share your session and sign out when leaving the device.",
     "s5l1": "Official Moroccan public holidays are preloaded — automatically accounted for in payroll."
+  },
+  "references": {
+    "title": "Official Moroccan references",
+    "subtitle": "Everything the platform relies on: the official bodies where files are filed, and the law texts downloadable from their original sources. Links verified live.",
+    "orgsTitle": "Official bodies",
+    "orgsSubtitle": "The official Moroccan bodies the platform exchanges with (payroll, audit, filings).",
+    "lawsTitle": "Official law texts (downloadable)",
+    "lawsSubtitle": "Official copies available to the public on the publishers' own sites — to verify every rule the platform applies.",
+    "cat": {
+      "social": "Social security & health",
+      "fiscal": "Taxation & public finance",
+      "labor": "Work & employment",
+      "identity": "Identity & registration",
+      "state": "State & public services",
+      "payment": "Payments & banking",
+      "portal": "Integrated portals"
+    },
+    "use": {
+      "cnss": "Monthly payroll declaration (DAMANCOM), employee contributions, AMO and pensions.",
+      "dgi": "Payroll tax filing (SIMPL-IR) and tax forms.",
+      "emploi": "Labour code, working hours, leave and paid holidays.",
+      "sgg": "Publication of laws and decrees — the official Bulletin Officiel archive.",
+      "lof": "Legislative and regulatory texts (finance laws and implementation decrees).",
+      "cndp": "National identity card and employee number.",
+      "anapec": "Employment, placement and training services.",
+      "bkam": "Payment rules and the central bank.",
+      "sante": "AMO reimbursements and health services.",
+      "equipement": "Projects, infrastructure and equipment.",
+      "maroc": "The national portal and the State's public services.",
+      "eservices": "The citizen-facing electronic services portal."
+    },
+    "laws": {
+      "cnss-recueil-rg": "Employee contributions and social security regimes (the legal basis of every CNSS deduction).",
+      "cnss-recueil-amo": "Healthcare reimbursement (AMO/TADAMON) and contribution calculation.",
+      "amo-loi-65-00": "Basic compulsory health insurance (AMO) and reimbursement ceiling.",
+      "amo-dahir": "Latest amendment to the AMO regime (promulgating dahir).",
+      "nma-2010": "Economic activity nomenclature (NMA) — the activity basis in CNSS and DGI files.",
+      "decret-2-04-512": "Weekly rest (duration and exemptions) — used by the scheduling engine.",
+      "decret-2-04-422": "Work card and its mandatory entries — filled by HR.",
+      "decret-2-04-513": "Working conditions for women and minors — checked when validating schedules.",
+      "decret-2-04-514": "Company internal regulations — managed in company settings.",
+      "decret-2-10-183": "Collective relations, unions and trade-union representation — decides who signs for the company.",
+      "bo-archives": "Every Bulletin Officiel number with its publication date — the entry point to regulatory texts."
+    },
+    "open": "Open the official site",
+    "download": "Download file (PDF)",
+    "verified": "Links last verified",
+    "disclaimer": "This page lists links to official sources only; the platform is not an official distributor and does not replace reading the original text or consulting a specialist.",
+    "sourcesCount": "official bodies",
+    "lawsCount": "law texts"
   }
 }

@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "bun --bun next dev -p 3000 2>&1 | tee dev.log",
-    "build": "prisma generate && node scripts/compile-render-worker.mjs && next build && cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/ && mkdir -p .next/standalone/src/lib && cp -r src/lib/reports .next/standalone/src/lib/ && cp -r src/i18n .next/standalone/src/ && node scripts/copy-worker-deps.mjs",
+    "build": "prisma generate && node scripts/compile-render-worker.mjs && next build && node scripts/copy-standalone-assets.mjs",
     "start": "NODE_ENV=production bun .next/standalone/server.js 2>&1 | tee server.log",
     "lint": "eslint .",
     "gate": "node scripts/gate.mjs",

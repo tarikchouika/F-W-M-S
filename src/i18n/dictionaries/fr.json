@@ -56,7 +56,16 @@
     "techItem4Title": "Quatre langues natives",
     "techItem4Desc": "Arabe (RTL), français, anglais et espagnol — interface et rapports, sans traduction automatique.",
     "footerRights": "La propriété de la plateforme est personnalisable et transférable",
-    "footerDocs": "Documentation"
+    "footerDocs": "Documentation",
+    "referencesTitle": "Références officielles vérifiées",
+    "referencesSubtitle": "La plateforme calcule paie et cotisations selon des règles légales marocaines — voici les liens des administrations et les textes originaux pour le vérifier vous-même.",
+    "referencesCta": "Références officielles",
+    "refPoint1Title": "Administrations officielles",
+    "refPoint1Desc": "CNSS, DGI, ministère de l'Emploi, ministère des Finances — chaque administration où sont déposés vos fichiers.",
+    "refPoint2Title": "Textes de loi",
+    "refPoint2Desc": "Code du travail et recueils législatifs de la sécurité sociale et de l'AMO — pour vérifier chaque règle appliquée.",
+    "refPoint3Title": "Téléchargement direct",
+    "refPoint3Desc": "Fichiers PDF officiels accessibles au public depuis les sites des éditeurs — sans lien périmé."
   },
   "auth": {
     "loginTitle": "Connexion",
@@ -1570,5 +1579,55 @@
     "s5h": "5. Tout le monde",
     "s5b": "Le journal d'audit documente chaque action sensible au nom de son auteur. Les Paramètres contiennent votre profil et votre mot de passe, et pour les gestionnaires : les règles de la société (heures, double validation…). Pour un usage sûr : ne partagez pas votre session et déconnectez-vous en quittant l'appareil.",
     "s5l1": "Les jours fériés officiels marocains sont préchargés — déduits automatiquement en paie."
+  },
+  "references": {
+    "title": "Références officielles marocaines",
+    "subtitle": "Tout ce sur quoi s'appuie la plateforme : les administrations officielles où sont déposés les fichiers, et les textes de loi téléchargeables depuis leurs sources d'origine. Liens vérifiés en direct.",
+    "orgsTitle": "Administrations officielles",
+    "orgsSubtitle": "Les administrations marocaines officielles avec lesquelles la plateforme échange (paie, audit, déclarations).",
+    "lawsTitle": "Textes de loi officiels (téléchargeables)",
+    "lawsSubtitle": "Copies officielles accessibles au public sur les sites des administrations — pour vérifier chaque règle appliquée.",
+    "cat": {
+      "social": "Sécurité sociale et santé",
+      "fiscal": "Fiscalité et finances publiques",
+      "labor": "Travail et emploi",
+      "identity": "Identité et immatriculation",
+      "state": "État et services publics",
+      "payment": "Paiement et banque",
+      "portal": "Portails intégrés"
+    },
+    "use": {
+      "cnss": "Déclaration mensuelle des salaires (DAMANCOM), cotisations salarié, AMO et pensions.",
+      "dgi": "Déclaration des rémunérations (SIMPL-IR) et formulaires fiscaux.",
+      "emploi": "Code du travail, heures de travail, congés et congés payés.",
+      "sgg": "Publication des lois et décrets — archives officielles du Bulletin Officiel.",
+      "lof": "Textes législatifs et réglementaires (lois de finances et décrets d'application).",
+      "cndp": "Carte nationale d'identité et numéro d'employé.",
+      "anapec": "Services d'emploi, de placement et de formation.",
+      "bkam": "Règles de paiement et banque centrale.",
+      "sante": "Remboursements AMO et services de santé.",
+      "equipement": "Projets, infrastructures et équipements.",
+      "maroc": "Portail national et services publics de l'État.",
+      "eservices": "Portail des services électroniques au citizen."
+    },
+    "laws": {
+      "cnss-recueil-rg": "Cotisations salarié et regimes de sécurité sociale (base juridique de chaque prélèvement CNSS).",
+      "cnss-recueil-amo": "Remboursement des soins (AMO/TADAMON) et calcul des cotisations.",
+      "amo-loi-65-00": "Assurance maladie obligatoire de base (AMO) et plafond de remboursement.",
+      "amo-dahir": "Dernière modification du régime AMO (dahir de promulgation).",
+      "nma-2010": "Nomenclature des activités (NMA) — base de l'activité dans les fichiers CNSS et DGI.",
+      "decret-2-04-512": "Repos hebdomadaire (durée et dérogations) — utilisé par le moteur de planification.",
+      "decret-2-04-422": "Carte de travail et mentions obligatoires — renseignée par les RH.",
+      "decret-2-04-513": "Travail des femmes et des mineurs — contrôlé par la plateforme lors de la validation des plannings.",
+      "decret-2-04-514": "Règlement intérieur de l'entreprise — géré dans les paramètres de la société.",
+      "decret-2-10-183": "Relations collectives, syndicats et représentation syndicale — détermine qui signe pour l'entreprise.",
+      "bo-archives": "Tous les numéros du Bulletin Officiel avec leurs dates — point d'entrée des textes réglementaires."
+    },
+    "open": "Ouvrir le site officiel",
+    "download": "Télécharger le fichier (PDF)",
+    "verified": "Dernière vérification des liens",
+    "disclaimer": "Cette page recense uniquement des liens vers les sources officielles ; la plateforme n'est pas un distributeur officiel et ne remplace ni la lecture du texte original ni le conseil d'un spécialiste.",
+    "sourcesCount": "administrations",
+    "lawsCount": "textes de loi"
   }
 }

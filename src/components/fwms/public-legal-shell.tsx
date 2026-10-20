@@ -19,22 +19,28 @@ export function PublicLegalShell({ children }: { children: React.ReactNode }) {
     { href: "/legal/rights", label: t("legal.rights.title") },
     { href: "/guide", label: t("guide.title") },
   ];
+  // ⚠️ الخلفية **فاتحة** لا fwms-hero-gradient (الأخضر الداكن):
+  // محتوى هذه الصفحات (نص foreground داكن) كان يُرسم على تدرّج أخضر داكن ⇒
+  // عنوان الصفحة غير مقروء (بلاغ المالك 2026-10-20). الآن: سطح فاتح + شريط
+  // علوي أخضر رفيع يبقى التوقيع البصري.
   return (
-    <div className="fwms-hero-gradient flex min-h-screen flex-col">
-      <header className="container flex h-16 items-center justify-between gap-3">
-        <Link href="/" className="flex items-center gap-2" aria-label="FWMS">
-          <FwmsLogo className="size-8" />
-          <span className="text-sm font-semibold text-foreground">FWMS</span>
-        </Link>
-        <div className="flex items-center gap-1.5">
-          <LangSwitcher />
-          <ThemeSwitcher />
+    <div className="flex min-h-screen flex-col bg-background">
+      <header className="border-b border-border/60 bg-background/90 backdrop-blur">
+        <div className="container flex h-16 items-center justify-between gap-3">
+          <Link href="/" className="flex items-center gap-2" aria-label="FWMS">
+            <FwmsLogo className="size-8" />
+            <span className="text-sm font-semibold text-foreground">FWMS</span>
+          </Link>
+          <div className="flex items-center gap-1.5">
+            <LangSwitcher />
+            <ThemeSwitcher />
+          </div>
         </div>
       </header>
 
       <main className="container flex-1 pb-10">{children}</main>
 
-      <footer className="border-t border-border/60 bg-background/80 py-6">
+      <footer className="border-t border-border/60 bg-secondary/40 py-6">
         <div className="container space-y-3">
           <nav className="flex flex-wrap items-center gap-x-4 gap-y-2">
             {links.map((l) => (
