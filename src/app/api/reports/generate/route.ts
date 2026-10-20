@@ -22,6 +22,8 @@ const generateSchema = z.object({
   includeEmployerShare: z.boolean().optional(),
   year: z.number().int().min(2020).max(2100).optional(),
   month: z.number().int().min(1).max(12).optional(),
+  // ملاحظة إدارية تُطبع في المستند (تُخزَّن مع الخيارات ⇒ تُبطل البصمة عند تغيّرها)
+  note: z.string().max(2000).optional(),
 });
 
 export async function POST(req: NextRequest) {

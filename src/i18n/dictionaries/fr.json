@@ -1179,7 +1179,19 @@
       "of": "sur",
       "footerOfficial": "Document généré électroniquement",
       "qrCaption": "Scannez pour vérifier l'authenticité"
-    }
+    },
+    "formatHintEditable": "DOCX et CSV sont modifiables · PDF et PNG sont pour la diffusion et l'impression",
+    "formatHintCsv": "CSV — tableau modifiable (Excel)",
+    "noteLabel": "Note administrative",
+    "noteOn": "Ajouter une note administrative au document",
+    "notePlaceholder": "Imprimée dans le document — la modifier crée une nouvelle version numérotée (l'ancienne reste pour l'audit)",
+    "revise": "Version révisée",
+    "reviseTitle": "Créer une version révisée du document",
+    "reviseHint": "Le document d'origine n'est pas modifié : une nouvelle version numérotée est créée, l'ancienne reste figée pour l'audit.",
+    "reviseOk": "Nouvelle version créée — téléchargement en cours",
+    "reviseFailed": "Impossible de créer la version révisée",
+    "reviseNoteRequired": "Saisissez d'abord la note",
+    "csvHint": "Tableau CSV : montants bruts sans format et dates ISO — s'ouvre dans Excel et reste modifiable"
   },
   "platform": {
     "title": "Propriété de la plateforme",

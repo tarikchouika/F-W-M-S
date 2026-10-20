@@ -1179,7 +1179,19 @@
       "of": "de",
       "footerOfficial": "Documento generado electrónicamente",
       "qrCaption": "Escanee para verificar la autenticidad"
-    }
+    },
+    "formatHintEditable": "DOCX y CSV son editables · PDF y PNG son para distribuir e imprimir",
+    "formatHintCsv": "CSV — tabla editable (Excel)",
+    "noteLabel": "Nota administrativa",
+    "noteOn": "Añadir una nota administrativa al documento",
+    "notePlaceholder": "Se imprime en el documento — modificarla crea una nueva versión numerada (la anterior se conserva para auditoría)",
+    "revise": "Versión revisada",
+    "reviseTitle": "Crear una versión revisada del documento",
+    "reviseHint": "El documento original no se modifica: se crea una nueva versión numerada y la anterior queda congelada para auditoría.",
+    "reviseOk": "Nueva versión creada — descargando",
+    "reviseFailed": "No se pudo crear la versión revisada",
+    "reviseNoteRequired": "Escribe primero la nota",
+    "csvHint": "Tabla CSV: importes brutos sin formato y fechas ISO — se abre en Excel y sigue siendo editable"
   },
   "platform": {
     "title": "Propiedad de la plataforma",

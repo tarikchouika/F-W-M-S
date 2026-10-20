@@ -591,6 +591,33 @@ function drawNotice(flow: Flow, text: string, tone: "warn" | "ok"): void {
   flow.y = top + h;
 }
 
+/** كتلة الملاحظة الإدارية (تُطبع في المستند — تعديلها يُنشئ نسخة جديدة) */
+function drawNote(flow: Flow): void {
+  const note = flow.ctx.options.note;
+  if (!note) return;
+  const { doc, ctx } = flow;
+  const size = FS.small;
+  const label = tr(ctx.dict, "reports.noteLabel");
+  const lines = wrapLines(doc, note, CONTENT_W - 34, { size });
+  const h = lines.length * lineH(size) + 30;
+  ensure(flow, h + 10);
+  const top = flow.y;
+  rect(doc, M_X, top, CONTENT_W, h, "#f7f2e6");
+  rect(doc, ctx.rtl ? PAGE_W - M_X - 3 : M_X, top, 3, h, GOLD);
+  const labelPieces = measurePieces(doc, label, { size: FS.tiny, bold: true, color: "#8a6a1f" });
+  drawLine(doc, labelPieces, ctx.rtl ? PAGE_W - M_X - 14 - piecesWidth(labelPieces) : M_X + 14, top + 7, {
+    size: FS.tiny,
+    bold: true,
+    color: "#8a6a1f",
+  });
+  lines.forEach((line, i) => {
+    const pieces = measurePieces(doc, line, { size });
+    const w = piecesWidth(pieces);
+    drawLine(doc, pieces, ctx.rtl ? PAGE_W - M_X - 14 - w : M_X + 14, top + 20 + i * lineH(size), { size });
+  });
+  flow.y = top + h + 12;
+}
+
 /** شريط الصافي (خضراء) */
 function drawNetBox(flow: Flow, label: string, amount: string, width: number): void {
   const { doc, ctx } = flow;
@@ -733,6 +760,8 @@ function payslipPage(flow: Flow, data: PayslipReportData): void {
     flow.y += 10;
   }
 
+  drawNote(flow);
+
   // الصافي + QR مصغّرة
   const netW = CONTENT_W - 92;
   ensure(flow, 60);
@@ -812,6 +841,7 @@ function payrollSummaryPage(flow: Flow, data: Extract<AnyReportData, { kind: "pa
     { small: true }
   );
   flow.y += 18;
+  drawNote(flow);
   drawQrBlock(flow);
 }
 
@@ -873,6 +903,7 @@ function attendancePage(
     drawNotice(flow, L("reports.doc.noRows"), "ok");
   }
   flow.y += 18;
+  drawNote(flow);
   drawQrBlock(flow);
 }
 
@@ -924,6 +955,7 @@ function declarationsSummaryPage(flow: Flow, data: Extract<AnyReportData, { kind
     drawNotice(flow, L("reports.doc.noRows"), "ok");
   }
   flow.y += 18;
+  drawNote(flow);
   drawQrBlock(flow);
 }
 
@@ -996,6 +1028,7 @@ function compliancePage(flow: Flow, data: Extract<AnyReportData, { kind: "compli
     drawKvCard(flow, items, 1);
     flow.y += 12;
   }
+  drawNote(flow);
   drawQrBlock(flow);
 }
 
@@ -1041,6 +1074,7 @@ function platformSummaryPage(flow: Flow, data: Extract<AnyReportData, { kind: "p
     drawNotice(flow, L("reports.doc.noRows"), "ok");
   }
   flow.y += 18;
+  drawNote(flow);
   drawQrBlock(flow);
 }
 

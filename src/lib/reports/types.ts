@@ -17,20 +17,20 @@ export const REPORT_KINDS = [
 ] as const;
 export type ReportKind = (typeof REPORT_KINDS)[number];
 
-export const REPORT_FORMATS = ["pdf", "docx", "png"] as const;
+export const REPORT_FORMATS = ["pdf", "docx", "png", "csv"] as const;
 export type ReportFormat = (typeof REPORT_FORMATS)[number];
 
 export type ReportLanguage = Locale; // ar | fr | en | es
 
 /** الصيغ المسموحة لكل نوع — PNG «للقسيمة والملخصات القصيرة فقط» (SPEC §4.4.1) */
 export const KIND_FORMATS: Record<ReportKind, ReportFormat[]> = {
-  payslip: ["pdf", "docx", "png"],
-  payroll_summary: ["pdf", "docx"],
-  attendance_statement: ["pdf", "docx"],
-  hours_statement: ["pdf", "docx"],
-  declarations_summary: ["pdf", "docx"],
-  compliance_report: ["pdf", "docx"],
-  platform_summary: ["pdf", "docx", "png"],
+  payslip: ["pdf", "docx", "png", "csv"],
+  payroll_summary: ["pdf", "docx", "csv"],
+  attendance_statement: ["pdf", "docx", "csv"],
+  hours_statement: ["pdf", "docx", "csv"],
+  declarations_summary: ["pdf", "docx", "csv"],
+  compliance_report: ["pdf", "docx", "csv"],
+  platform_summary: ["pdf", "docx", "png", "csv"],
 };
 
 export function isReportKind(v: unknown): v is ReportKind {
@@ -43,6 +43,9 @@ export function isReportFormat(v: unknown): v is ReportFormat {
 /** خيارات التوليد — تُخزَّن optionsJson مع المستند (قابلة للتدقيق) */
 export type ReportOptions = {
   includeEmployerShare?: boolean; // حصة المشغّل: افتراضيًا تُخفى عن العامل (SPEC §4.4.1)
+  /** ملاحظة إدارية تُطبع في المستند — تعديلها **يولّد نسخة جديدة مرقّمة**
+   *  ولا يمسّ النسخة القديمة (SPEC §4.4.1: «أي تصحيح يولّد نسخة جديدة مرقّمة») */
+  note?: string;
 };
 
 // ─── نماذج بيانات المستندات (من snapshotJson المجمدة) ─────────

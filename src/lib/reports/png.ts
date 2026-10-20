@@ -37,11 +37,12 @@ function brandFooter(ctx: Ctx, bottomY: number, refLine: string): string {
   );
 }
 const W = 860; // عرض أساس — density 144 يعطي دقة مشاركة جيدة بالهاتف
-const BRAND = "#1e3a5f";
-const INK = "#1a2433";
-const MUTED = "#5b6b7f";
-const LINE_C = "#d7dee8";
-const HEAD_BG = "#eef2f7";
+const BRAND = "#0c5c3c";
+const GOLD = "#e1a035";
+const INK = "#101911";
+const MUTED = "#5c675d";
+const LINE_C = "#e4e6e1";
+const HEAD_BG = "#ecf4ee";
 
 function esc(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -102,7 +103,7 @@ function payslipSvg(ctx: Ctx, data: Extract<AnyReportData, { kind: "payslip" }>,
   // رأس
   body.push(`<rect x="0" y="0" width="${W}" height="92" fill="${BRAND}"/>`);
   body.push(line(W / 2, 38, L("reports.doc.payslipTitle"), { size: 26, bold: true, color: "#ffffff", align: "middle" }));
-  body.push(line(W / 2, 66, data.company.tradeName || data.company.legalName, { size: 14, color: "#c9d6e8", align: "middle" }));
+  body.push(line(W / 2, 66, data.company.tradeName || data.company.legalName, { size: 14, color: "#c3ddce", align: "middle" }));
 
   cursor = 124;
   // العامل والفترة
@@ -168,6 +169,9 @@ function payslipSvg(ctx: Ctx, data: Extract<AnyReportData, { kind: "payslip" }>,
   body.push(`<text x="${colAmountX}" y="${cursor + 33}" text-anchor="${ctx.rtl ? "start" : "end"}" direction="ltr" font-family="Noto Sans" font-size="20" font-weight="700" fill="#ffffff">${esc(money(data.totals.netCents))}</text>`);
   cursor += 78;
 
+  // الملاحظة الإدارية (إن وُجدت)
+  cursor = noteSvg(ctx, body, cursor);
+
   const height = Math.max(cursor + 170, 660);
 
   // QR + المرجع
@@ -189,6 +193,39 @@ function payslipSvg(ctx: Ctx, data: Extract<AnyReportData, { kind: "payslip" }>,
 </svg>`;
 }
 
+/** كتلة الملاحظة الإدارية في SVG (بطاقتا القسيمة وملخص المنصة) */
+function noteSvg(ctx: Ctx, body: string[], cursor: number): number {
+  const note = ctx.options.note;
+  if (!note) return cursor;
+  const L = (k: string) => tr(ctx.dict, k);
+  const LEFT = 50;
+  const lines: string[] = [];
+  // لفّ بسيط: كل 78 محرفًا سطرًا (عرض البطاقة 860 ⇒ خط 12)
+  const words = note.split(/\s+/);
+  let current = "";
+  for (const w of words) {
+    const candidate = current ? `${current} ${w}` : w;
+    if (candidate.length > 78 && current) {
+      lines.push(current);
+      current = w;
+    } else current = candidate;
+  }
+  if (current) lines.push(current);
+  const shown = lines.slice(0, 4);
+  const boxH = shown.length * 20 + 34;
+  body.push(`<rect x="${LEFT}" y="${cursor}" width="${W - 100}" height="${boxH}" fill="#f7f2e6"/>`);
+  body.push(`<rect x="${ctx.rtl ? W - LEFT - 3 : LEFT}" y="${cursor}" width="3" height="${boxH}" fill="${GOLD}"/>`);
+  body.push(
+    `<text x="${ctx.rtl ? W - LEFT - 12 : LEFT + 12}" y="${cursor + 20}" text-anchor="${ctx.rtl ? "end" : "start"}" ${ctxDirection()} font-family="Noto Naskh Arabic" font-size="11" font-weight="700" fill="#8a6a1f">${esc(L("reports.noteLabel"))}</text>`
+  );
+  shown.forEach((ln, i) => {
+    body.push(
+      `<text x="${ctx.rtl ? W - LEFT - 12 : LEFT + 12}" y="${cursor + 38 + i * 20}" text-anchor="${ctx.rtl ? "end" : "start"}" ${ctxDirection()} font-family="Noto Naskh Arabic" font-size="12" fill="${INK}">${esc(ln)}</text>`
+    );
+  });
+  return cursor + boxH + 12;
+}
+
 // ─── بطاقة ملخص المنصة ────────────────────────────────────────
 
 function platformSvg(ctx: Ctx, data: Extract<AnyReportData, { kind: "platform_summary" }>, qrB64: string): string {
@@ -201,7 +238,7 @@ function platformSvg(ctx: Ctx, data: Extract<AnyReportData, { kind: "platform_su
 
   body.push(`<rect x="0" y="0" width="${W}" height="92" fill="${BRAND}"/>`);
   body.push(line(W / 2, 38, L("reports.doc.platformTitle"), { size: 24, bold: true, color: "#ffffff", align: "middle" }));
-  body.push(line(W / 2, 66, `${L("reports.doc.companiesCount")}: ${data.companiesCount}`, { size: 13, color: "#c9d6e8", align: "middle" }));
+  body.push(line(W / 2, 66, `${L("reports.doc.companiesCount")}: ${data.companiesCount}`, { size: 13, color: "#c3ddce", align: "middle" }));
 
   let cursor = 130;
   const rowH = 34;
@@ -219,6 +256,9 @@ function platformSvg(ctx: Ctx, data: Extract<AnyReportData, { kind: "platform_su
     body.push(`<text x="${colNet}" y="${cursor}" text-anchor="${ctx.rtl ? "start" : "end"}" direction="ltr" font-family="Noto Sans" font-size="13" fill="${INK}">${esc(money(r.netCents))}</text>`);
     cursor += rowH;
   }
+
+  // الملاحظة الإدارية (إن وُجدت)
+  cursor = noteSvg(ctx, body, cursor);
 
   const height = Math.max(cursor + 90, 460);
   const qrX = ctx.rtl ? LEFT + 6 : W - LEFT - 80;

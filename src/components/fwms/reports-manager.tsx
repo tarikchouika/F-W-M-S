@@ -5,12 +5,21 @@
 // المدير/المحاسب الملخصات والتصاريح، المالك ملخص المنصة.
 // التوليد في الخادم (نفس الناتج في كل مكان) والتنزيل من النسخة الثابتة المخزنة.
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Download, FileDown, FileText, LoaderCircle, RefreshCcw } from "lucide-react";
+import { Download, FileDown, FileText, LoaderCircle, PencilLine, RefreshCcw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
@@ -71,6 +80,12 @@ export function ReportsManager() {
   const [language, setLanguage] = useState<string>(locale);
   const [includeEmployerShare, setIncludeEmployerShare] = useState(false);
   const [generating, setGenerating] = useState(false);
+  // ملاحظة إدارية تُطبع في المستند — تغييرها يُنشئ نسخة جديدة مرقّمة (لا تعديل للقديم)
+  const [note, setNote] = useState<string>("");
+  // المستند قيد المراجعة (نسخة محدَّثة)
+  const [reviseTarget, setReviseTarget] = useState<RecentDoc | null>(null);
+  const [reviseNote, setReviseNote] = useState<string>("");
+  const [revising, setRevising] = useState(false);
 
   // مصادر الأهداف
   const [myPayslips, setMyPayslips] = useState<MyPayslip[]>([]);
@@ -168,6 +183,8 @@ export function ReportsManager() {
     setGenerating(true);
     try {
       const body: Record<string, unknown> = { kind, targetId: "", format, language };
+      const trimmedNote = note.trim();
+      if (trimmedNote) body.note = trimmedNote;
       switch (kind) {
         case "payslip":
           body.targetId = payslipId;
@@ -220,6 +237,51 @@ export function ReportsManager() {
       }
     } finally {
       setGenerating(false);
+    }
+  }
+
+  /** تنزيل مستند من رابط تنزيله (يستخدم Blob + اسم الملف من الترويسة) */
+  async function downloadFrom(downloadUrl: string, fileName?: string) {
+    const res = await fetch(downloadUrl, { cache: "no-store" });
+    if (!res.ok) throw new Error("download_failed");
+    const blob = await res.blob();
+    const disposition = res.headers.get("Content-Disposition") ?? "";
+    const match = /filename="([^"]+)"/.exec(disposition);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName ?? match?.[1] ?? "document";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  /** إنشاء نسخة محدَّثة (ملاحظة جديدة ⇒ إصدار جديد؛ القديم يبقى للتدقيق) */
+  async function revise() {
+    if (!reviseTarget) return;
+    if (!reviseNote.trim()) {
+      toast({ variant: "destructive", description: t("reports.reviseNoteRequired") });
+      return;
+    }
+    setRevising(true);
+    try {
+      const res = await fetch(`/api/reports/${reviseTarget.id}/revise`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ note: reviseNote }),
+      });
+      if (!res.ok) throw new Error("revise_failed");
+      const result = (await res.json()) as { downloadUrl?: string; fileName?: string };
+      if (result.downloadUrl) await downloadFrom(result.downloadUrl, result.fileName);
+      toast({ description: t("reports.reviseOk") });
+      setReviseTarget(null);
+      setReviseNote("");
+      void load();
+    } catch {
+      toast({ variant: "destructive", description: t("reports.reviseFailed") });
+    } finally {
+      setRevising(false);
     }
   }
 
@@ -456,22 +518,47 @@ export function ReportsManager() {
                 </label>
               )}
 
+              <div className="space-y-1.5">
+                <Label htmlFor="fwms-report-note">{t("reports.noteOn")}</Label>
+                <Textarea
+                  id="fwms-report-note"
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  placeholder={t("reports.notePlaceholder")}
+                  rows={3}
+                  maxLength={2000}
+                />
+              </div>
+
               <Separator />
 
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-sm text-muted-foreground">{t("reports.format")}:</span>
-                {(kindInfo?.formats ?? []).map((f) => (
-                  <Button
-                    key={f}
-                    size="sm"
-                    disabled={generating || !targetReady()}
-                    onClick={() => void generate(f)}
-                    className="gap-1.5 uppercase"
-                  >
-                    {generating ? <LoaderCircle className="size-3.5 animate-spin" aria-hidden /> : <FileDown className="size-3.5" aria-hidden />}
-                    {f}
-                  </Button>
-                ))}
+              <div className="space-y-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm text-muted-foreground">{t("reports.format")}:</span>
+                  {(kindInfo?.formats ?? []).map((f) => (
+                    <Button
+                      key={f}
+                      size="sm"
+                      disabled={generating || !targetReady()}
+                      onClick={() => void generate(f)}
+                      className="gap-1.5 uppercase"
+                      title={
+                        f === "csv"
+                          ? t("reports.formatHintCsv")
+                          : f === "docx"
+                            ? t("reports.formatHintEditable")
+                            : undefined
+                      }
+                    >
+                      {generating ? <LoaderCircle className="size-3.5 animate-spin" aria-hidden /> : <FileDown className="size-3.5" aria-hidden />}
+                      {f}
+                    </Button>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">{t("reports.formatHintEditable")}</p>
+                {kindInfo?.formats.includes("csv") ? (
+                  <p className="text-xs text-muted-foreground">{t("reports.csvHint")}</p>
+                ) : null}
               </div>
             </CardContent>
           </Card>
@@ -522,9 +609,23 @@ export function ReportsManager() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Button size="icon" variant="ghost" onClick={() => void redownload(d.id)} aria-label={t("reports.download")}>
-                            <Download className="size-4" aria-hidden />
-                          </Button>
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => {
+                                setReviseTarget(d);
+                                setReviseNote("");
+                              }}
+                              aria-label={t("reports.revise")}
+                              title={t("reports.revise")}
+                            >
+                              <PencilLine className="size-4" aria-hidden />
+                            </Button>
+                            <Button size="icon" variant="ghost" onClick={() => void redownload(d.id)} aria-label={t("reports.download")}>
+                              <Download className="size-4" aria-hidden />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -535,6 +636,40 @@ export function ReportsManager() {
           </Card>
         </div>
       )}
+
+      <Dialog open={reviseTarget !== null} onOpenChange={(open) => !open && setReviseTarget(null)}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{t("reports.reviseTitle")}</DialogTitle>
+            <DialogDescription>{t("reports.reviseHint")}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-1.5">
+            <Label htmlFor="fwms-revise-note">{t("reports.noteLabel")}</Label>
+            <Textarea
+              id="fwms-revise-note"
+              value={reviseNote}
+              onChange={(e) => setReviseNote(e.target.value)}
+              placeholder={t("reports.notePlaceholder")}
+              rows={4}
+              maxLength={2000}
+            />
+            {reviseTarget ? (
+              <p className="text-xs text-muted-foreground" dir="ltr">
+                {reviseTarget.refNumber} · v{reviseTarget.version} · {reviseTarget.format}
+              </p>
+            ) : null}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReviseTarget(null)}>
+              {t("common.cancel")}
+            </Button>
+            <Button onClick={() => void revise()} disabled={revising} className="gap-1.5">
+              {revising ? <LoaderCircle className="size-3.5 animate-spin" aria-hidden /> : <PencilLine className="size-3.5" aria-hidden />}
+              {t("reports.revise")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

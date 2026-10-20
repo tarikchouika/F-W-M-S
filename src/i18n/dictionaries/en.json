@@ -1179,7 +1179,19 @@
       "of": "of",
       "footerOfficial": "Electronically generated document",
       "qrCaption": "Scan to verify authenticity"
-    }
+    },
+    "formatHintEditable": "DOCX and CSV are editable · PDF and PNG are for distribution and printing",
+    "formatHintCsv": "CSV — editable table (Excel)",
+    "noteLabel": "Administrative note",
+    "noteOn": "Add an administrative note to the document",
+    "notePlaceholder": "Printed in the document — editing it creates a new numbered version (the previous one stays for audit)",
+    "revise": "Revised version",
+    "reviseTitle": "Create a revised version of the document",
+    "reviseHint": "The original document is not modified: a new numbered version is created and the old one stays frozen for audit.",
+    "reviseOk": "New version created — downloading",
+    "reviseFailed": "Could not create the revised version",
+    "reviseNoteRequired": "Write the note first",
+    "csvHint": "CSV table: raw amounts without formatting and ISO dates — opens in Excel and stays editable"
   },
   "platform": {
     "title": "Platform ownership",

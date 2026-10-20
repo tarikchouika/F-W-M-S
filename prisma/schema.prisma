@@ -1014,6 +1014,7 @@ model GeneratedDocument {
   fileSize        Int
   fileBytes       Bytes // النسخة الثابتة نفسها (SPEC §4.4.1: تُحفظ نسخة ثابتة)
   optionsJson     String? // خيارات التوليد (includeEmployerShare مثلًا)
+  note            String? // ملاحظة إدارية تُطبع في المستند — تعديلها يولّد نسخة جديدة مرقّمة (لا تعديل للقديم)
   createdByUserId String
   createdAt       DateTime @default(now())
 

@@ -11,7 +11,7 @@ import { writeAudit } from "@/lib/audit";
 import { getSession } from "@/lib/auth/session";
 import type { SessionPayload } from "@/lib/auth/jwt";
 import type { AnyReportData, ReportFormat, ReportKind, ReportLanguage, ReportOptions } from "./types";
-import { KIND_FORMATS } from "./types";
+import { KIND_FORMATS, isReportKind, isReportFormat } from "./types";
 import {
   buildPayslipReportData,
   buildPayrollSummaryData,
@@ -36,6 +36,10 @@ export type GenerateInput = {
   includeEmployerShare?: boolean;
   year?: number; // لبيانات الحضور
   month?: number;
+  /** ملاحظة إدارية تُطبع في المستند — تغييرها يولّد **نسخة جديدة مرقّمة**
+   *  (SPEC §4.4.1: «المستندات المعتمدة لا تتغير بعد توليدها… أي تصحيح يولّد
+   *  نسخة جديدة مرقّمة») — والنسخة القديمة تبقى ثابتة للتدقيق */
+  note?: string;
 };
 
 export type GenerateResult = {
@@ -123,8 +127,11 @@ const RENDERER_VERSION = 11; // v11: العلامات المركّبة (الهم
 // v7: تذييل white-label — إزالة اسم المنتج من تسمية footerOfficial (SPEC §3.2)
 
 function contentHashOf(kind: ReportKind, targetId: string, language: string, data: AnyReportData, options: ReportOptions): string {
-  // خيارات مؤثرة في العرض تُضمَّن: (includeEmployerShare للقسيمة)
-  const normalizedOptions = kind === "payslip" ? { es: options.includeEmployerShare === true } : {};
+  // خيارات مؤثرة في العرض تُضمَّن: (includeEmployerShare للقسيمة · الملاحظة الإدارية للجميع)
+  const normalizedOptions = {
+    ...(kind === "payslip" ? { es: options.includeEmployerShare === true } : {}),
+    ...(options.note ? { n: options.note } : {}),
+  };
   const canonical = JSON.stringify({ k: kind, t: targetId, l: language, o: normalizedOptions, rv: RENDERER_VERSION, d: data });
   return createHash("sha256").update(canonical, "utf8").digest("hex");
 }
@@ -234,8 +241,10 @@ export async function generateReport(
   }
 
   // ── خيارات العرض ──
+  const note = normalizeNote(input.note);
   const options: ReportOptions = {
     includeEmployerShare: await resolveEmployerShare(session, kind, input.includeEmployerShare),
+    ...(note ? { note } : {}),
   };
 
   // ── بصمة المحتوى: هل موجود سابقًا؟ (الثبات) ──
@@ -329,6 +338,76 @@ export async function generateReport(
     createdAt: row.createdAt.toISOString(),
     reused: false,
   };
+}
+
+/** تطبيع الملاحظة الإدارية: trim + حدّ طول (كي لا يتضخّم الملف) */
+export function normalizeNote(note: string | null | undefined): string | undefined {
+  const v = (note ?? "").trim().replace(/\r\n/g, "\n");
+  if (!v) return undefined;
+  return v.slice(0, 2000);
+}
+
+/**
+ * مراجعة مستند مُولَّد ⇒ **نسخة جديدة مرقّمة** (لا تعديل على القديم).
+ * SPEC §4.4.1: «المستندات المعتمدة لا تتغير بعد توليدها: تُحفظ نسخة ثابتة،
+ * وأي تصحيح يولّد نسخة جديدة مرقّمة» — فالتسجيل قديم يبقى كما هو للتدقيق.
+ */
+export async function reviseDocument(
+  session: SessionPayload,
+  docId: string,
+  note: string | null | undefined,
+  requestOrigin: string
+): Promise<GenerateResult> {
+  const row = await db.generatedDocument.findFirst({
+    where: { id: docId },
+    select: {
+      id: true,
+      companyId: true,
+      kind: true,
+      format: true,
+      language: true,
+      targetId: true,
+      optionsJson: true,
+    },
+  });
+  if (!row) throw new ReportDataError(404, "document_not_found");
+  if (row.companyId !== session.companyId) throw new AccessError(403, "forbidden");
+  if (!isReportKind(row.kind) || !isReportFormat(row.format)) {
+    throw new ReportDataError(422, "unknown_kind");
+  }
+  const prev = parseOptions(row.optionsJson);
+  const result = await generateReport(
+    session,
+    {
+      kind: row.kind,
+      targetId: row.targetId,
+      format: row.format,
+      language: row.language as ReportLanguage,
+      includeEmployerShare: prev.includeEmployerShare,
+      note: normalizeNote(note),
+    },
+    requestOrigin
+  );
+  await writeAudit({
+    companyId: session.companyId,
+    userId: session.sub,
+    action: "report.revised",
+    entity: "generated_document",
+    entityId: result.id,
+    after: { kind: row.kind, format: row.format, refNumber: result.refNumber, version: result.version },
+  });
+  return result;
+}
+
+/** خيارات المستند المخزَّنة (JSON) — بأمان (JSON تالف ⇒ خيارات فارغة) */
+function parseOptions(json: string | null): ReportOptions {
+  if (!json) return {};
+  try {
+    const parsed = JSON.parse(json) as ReportOptions;
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
 }
 
 async function allocateRefNumber(companyId: string): Promise<string> {
@@ -477,6 +556,7 @@ const CONTENT_TYPES: Record<string, string> = {
   pdf: "application/pdf",
   docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   png: "image/png",
+  csv: "text/csv; charset=utf-8",
 };
 
 export async function getDocumentForDownload(session: SessionPayload, docId: string): Promise<StoredDocument> {

@@ -257,6 +257,26 @@ function pageFooter(ctx: Ctx): Footer {
   });
 }
 
+/** الملاحظة الإدارية (تُطبع في المستند) */
+function noteBlock(ctx: Ctx): Paragraph[] {
+  const note = ctx.options.note;
+  if (!note) return [];
+  const L = (k: string) => tr(ctx.dict, k);
+  return [
+    new Paragraph({
+      bidirectional: ctx.rtl,
+      spacing: { before: 200, after: 40 },
+      children: [new TextRun({ text: L("reports.noteLabel"), bold: true, size: 16, color: "8A6A1F", rightToLeft: ctx.rtl, font: ctx.rtl ? "Noto Naskh Arabic" : "Noto Sans" })],
+    }),
+    new Paragraph({
+      bidirectional: ctx.rtl,
+      alignment: AlignmentType.START,
+      spacing: { after: 120 },
+      children: [new TextRun({ text: note, size: 19, color: INK, rightToLeft: ctx.rtl, font: ctx.rtl ? "Noto Naskh Arabic" : "Noto Sans" })],
+    }),
+  ];
+}
+
 function qrBlock(ctx: Ctx, qrPng: Buffer): Paragraph[] {
   const L = (k: string) => tr(ctx.dict, k);
   return [
@@ -338,6 +358,7 @@ function payslipChildren(ctx: Ctx, data: Extract<AnyReportData, { kind: "payslip
     ...(data.smigBreached ? [p(ctx, L("reports.doc.smigWarning"), { bold: true, color: "92400E" })] : []),
 
     kvRow(ctx, L("reports.doc.net"), money(data.totals.netCents), { bold: true, latinValue: true }),
+    ...noteBlock(ctx),
     ...qrBlock(ctx, qrPng),
   ];
   return out;
@@ -386,6 +407,7 @@ function payrollSummaryChildren(ctx: Ctx, data: Extract<AnyReportData, { kind: "
         { text: money(r.netCents), widthPct: 13, latin: true, align: "end", bold: true },
       ])
     ),
+    ...noteBlock(ctx),
     ...qrBlock(ctx, qrPng),
   ];
 }
@@ -426,6 +448,7 @@ function attendanceChildren(
       ])
     ),
     ...(data.rows.length === 0 ? [p(ctx, L("reports.doc.noRows"), { size: 8, color: MUTED })] : []),
+    ...noteBlock(ctx),
     ...qrBlock(ctx, qrPng),
   ];
 }
@@ -460,6 +483,7 @@ function declarationsSummaryChildren(ctx: Ctx, data: Extract<AnyReportData, { ki
       ])
     ),
     ...(data.rows.length === 0 ? [p(ctx, L("reports.doc.noRows"), { size: 8, color: MUTED })] : []),
+    ...noteBlock(ctx),
     ...qrBlock(ctx, qrPng),
   ];
 }
@@ -515,6 +539,7 @@ function complianceChildren(ctx: Ctx, data: Extract<AnyReportData, { kind: "comp
           ...(data.specVersion !== null ? [kvRow(ctx, L("reports.doc.specVersion"), `v${data.specVersion}`, { latinValue: true })] : []),
         ]
       : []),
+    ...noteBlock(ctx),
     ...qrBlock(ctx, qrPng),
   ];
 }
@@ -551,6 +576,7 @@ function platformSummaryChildren(ctx: Ctx, data: Extract<AnyReportData, { kind: 
       ])
     ),
     ...(data.rows.length === 0 ? [p(ctx, L("reports.doc.noRows"), { size: 8, color: MUTED })] : []),
+    ...noteBlock(ctx),
     ...qrBlock(ctx, qrPng),
   ];
 }

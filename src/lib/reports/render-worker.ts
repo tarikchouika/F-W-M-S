@@ -12,6 +12,7 @@ import type { AnyReportData, ReportLanguage, ReportOptions } from "./types";
 import { renderReportPdf } from "./pdf";
 import { renderReportDocx } from "./docx";
 import { renderReportPng } from "./png";
+import { renderReportCsv } from "./csv";
 
 async function main() {
   const [jobPath, outPath] = process.argv.slice(2);
@@ -38,6 +39,8 @@ async function main() {
     bytes = await renderReportDocx(data, language, options, meta);
   } else if (format === "png") {
     bytes = await renderReportPng(data, language, options, meta);
+  } else if (format === "csv") {
+    bytes = renderReportCsv(data, language, options, meta);
   } else {
     throw new Error(`worker_bad_format:${format}`);
   }
