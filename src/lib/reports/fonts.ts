@@ -4,12 +4,10 @@
 import { join } from "node:path";
 import { readFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
-import { loadPdfLib } from "./load-react-pdf";
 
-let pdfFontsRegistered = false;
 let fontconfigPrepared = false;
 
-/** حل مسار مجلد الخطوط الفعلي — standalone يُشغَّل من .next/standalone لكن public يُنسَخ إليه */
+/** حل مسار مجلد الخطوط الفعلي — standalone يُشغَّل من .next/standalone لكن public يُنسخ إليه */
 export function fontsDir(): string {
   const candidates = [
     join(process.cwd(), "public", "fonts"),
@@ -31,49 +29,6 @@ export const FONT_FILES = {
 /** عائلة الخط حسب اتجاه المستند: العربية Naskh، واللاتينية Noto Sans */
 export function docFontFamily(language: string): string {
   return language === "ar" ? "Naskh" : "NotoSans";
-}
-
-/** تسجيل خطوط @react-pdf مرة واحدة لكل عملية خادم
- * ⚠️ عبر data URL حصرًا: محمّل الخطوط يستخدم fetch() والمسارات الملفية تفشل
- * فيه (fetch المرقَّع من Next لا يدعم الملفات) — ثبت عمليًا في جلسة المرحلة 7 */
-async function fontDataUrl(file: string): Promise<string> {
-  const buf = await readFile(join(fontsDir(), file));
-  return `data:font/ttf;base64,${buf.toString("base64")}`;
-}
-
-export async function ensurePdfFonts(): Promise<void> {
-  if (pdfFontsRegistered) return;
-  const { Font } = loadPdfLib();
-  const [naskhReg, naskhBold, sansReg, sansBold] = await Promise.all([
-    fontDataUrl(FONT_FILES.naskhRegular),
-    fontDataUrl(FONT_FILES.naskhBold),
-    fontDataUrl(FONT_FILES.sansRegular),
-    fontDataUrl(FONT_FILES.sansBold),
-  ]);
-  Font.register({
-    family: "Naskh",
-    fonts: [
-      { src: naskhReg, fontWeight: 400 },
-      { src: naskhBold, fontWeight: 700 },
-    ],
-  });
-  Font.register({
-    family: "NotoSans",
-    fonts: [
-      { src: sansReg, fontWeight: 400 },
-      { src: sansBold, fontWeight: 700 },
-    ],
-  });
-  // الخط الافتراضي للمكوّنات بلا fontFamily صريح — بدل خطوط PDF القياسية
-  // (#standard-fonts) التي تفشل خارج الحزمة في Turbopack/bun
-  Font.register({
-    family: "Helvetica",
-    fonts: [
-      { src: sansReg, fontWeight: 400 },
-      { src: sansBold, fontWeight: 700 },
-    ],
-  });
-  pdfFontsRegistered = true;
 }
 
 /** قراءة ملف خط (لتضمينه في DOCX — يظهر سليمًا على أي جهاز) */

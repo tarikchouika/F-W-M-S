@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 
 // ─── غلق تبعيات عامل عرض المستندات زمن التشغيل (علاج بلاغ الوثائق 2026-10-19) ───
-// العامل (render-worker.cjs) يحمّل خارجيًا: @react-pdf/renderer (+react كندّ)
+// العامل (render-worker.cjs) يحمّل خارجيًا: pdfkit (بشجرته) + sharp (وحدة أصلية)
 // وsharp (وحدة أصلية). القوائم اليدوية السابقة كانت تنقصها شجرة كاملة
 // (linebreak/base64-js/pako/bidi-js…) فانكسر توليد PDF — الحل: حساب الغلقة
 // الكاملة من node_modules نفسه عند كل بناء، فلا تعود حزمة تنقص أبدًا.
@@ -29,8 +29,8 @@ function depClosure(roots: string[]): string[] {
   return [...seen];
 }
 
-// @react-pdf/renderer (بشجرته كلها) + react (ندّه) + sharp — تُضمّن لغرض /api/reports/**
-const WORKER_RUNTIME_PACKAGES = depClosure(["@react-pdf/renderer", "react", "sharp"])
+// pdfkit (بشجرته كاملة) + sharp — تُضمّن لغرض /api/reports/**
+const WORKER_RUNTIME_PACKAGES = depClosure(["pdfkit", "sharp"])
   .map((name) => `./node_modules/${name}/**`);
 
 
@@ -101,7 +101,7 @@ const nextConfig: NextConfig = {
     ];
   },
   // حزم خادمية ثقيلة لا تُحزَّم (sharp وحدة أصلية) — react-pdf يُحمَّل عبر createRequire
-  serverExternalPackages: ["@react-pdf/renderer", "sharp"],
+  serverExternalPackages: ["pdfkit", "sharp"],
   // تتبع ملفات standalone: الحزم المحمّلة ديناميكيًا (createRequire/dynamic import)
   // لا تراها أداة التتبع تلقائيًا — تُضمَّن صراحة مع شجراتها
   outputFileTracingIncludes: {
@@ -118,7 +118,7 @@ const nextConfig: NextConfig = {
       // عن حزمة Vercel فيفشل التوليد بـ render_worker_missing (بلاغ 2026-10-19).
       // docx وqrcode والقواميس الأربع تُضمَّن داخل .cjs المُجمَّع (compile-render-worker).
       "./src/lib/reports/**",
-      // شجرة @react-pdf + react + sharp كاملة (محسوبة أعلاه — لا قوائم يدوية بعدها)
+      // شجرة pdfkit + sharp كاملة (محسوبة أعلاه — لا قوائم يدوية بعدها)
       ...WORKER_RUNTIME_PACKAGES,
       "./node_modules/@img/**",
       "./public/fonts/**",

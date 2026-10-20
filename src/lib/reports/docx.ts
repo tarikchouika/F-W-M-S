@@ -25,6 +25,7 @@ import { reportDict, tr, docMoney, docHours, monthLabel, isRtl } from "./i18n";
 import type { ReportDict } from "./i18n";
 import { qrPngBuffer } from "./qr";
 import { LINE_KIND_MAP } from "./line-kinds";
+import { logoPng } from "./logo";
 
 export type DocxRenderMeta = {
   refNumber: string;
@@ -41,12 +42,16 @@ type Ctx = {
   options: ReportOptions;
   meta: DocxRenderMeta;
   branding: ReportBranding; // هوية مالك المنصة (white-label — SPEC §3.2)
+  logo: Buffer | null; // شعار المنصة PNG (ترويسة الوثيقة) — null إن تعذّر التحويل
 };
 
-const INK = "1A2433";
-const MUTED = "5B6B7F";
-const LINE_C = "D7DEE8";
-const BRAND = "1E3A5F";
+// لوحة هوية المنصة (globals.css — oklch محوَّل إلى hex): أخضر مغربي عميق + ذهب
+const INK = "101911";
+const MUTED = "5C675D";
+const LINE_C = "E4E6E1";
+const BRAND = "0C5C3C";
+const GOLD = "E1A035";
+const BRAND_SOFT = "ECF4EE";
 
 // ─── أدوات ────────────────────────────────────────────────────
 
@@ -54,9 +59,10 @@ function makeCtx(
   language: ReportLanguage,
   options: ReportOptions,
   meta: DocxRenderMeta,
-  branding: ReportBranding
+  branding: ReportBranding,
+  logo: Buffer | null
 ): Ctx {
-  return { lang: language, dict: reportDict(language), rtl: isRtl(language), options, meta, branding };
+  return { lang: language, dict: reportDict(language), rtl: isRtl(language), options, meta, branding, logo };
 }
 
 /** فقرة نصية بالاتجاه الصحيح — الأرقام والعزوف اللاتيني run منفصل LTR */
@@ -101,6 +107,7 @@ function sectionTitle(ctx: Ctx, text: string): Paragraph {
   return new Paragraph({
     bidirectional: ctx.rtl,
     spacing: { before: 160, after: 80 },
+    border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: GOLD, space: 4 } },
     children: [new TextRun({ text, bold: true, size: 24, color: BRAND, rightToLeft: ctx.rtl, font: ctx.rtl ? "Noto Naskh Arabic" : "Noto Sans" })],
   });
 }
@@ -127,7 +134,7 @@ function table(ctx: Ctx, header: Col[], rows: Col[][]): Table {
         (c) =>
           new TableCell({
             width: { size: c.widthPct, type: WidthType.PERCENTAGE },
-            shading: head ? { fill: "EEF2F7" } : undefined,
+            shading: head ? { fill: BRAND_SOFT } : undefined,
             children: [
               new Paragraph({
                 bidirectional: ctx.rtl && !c.latin,
@@ -179,35 +186,41 @@ function headerBlock(
   ctx: Ctx,
   company: { legalName: string; tradeName: string | null; taxId: string | null; cnssNumber: string | null },
   title: string,
-  metaLine: string
+  metaLine: string,
+  logo: Buffer | null
 ): Paragraph[] {
   const L = (k: string) => tr(ctx.dict, k);
   const ids: string[] = [];
   if (company.taxId) ids.push(`${L("reports.doc.ice")}: ${company.taxId}`);
   if (company.cnssNumber) ids.push(`${L("reports.doc.cnssAff")}: ${company.cnssNumber}`);
+  const brandRuns = [
+    ...(logo ? [new ImageRun({ type: "png", data: logo, transformation: { width: 44, height: 44 } })] : []),
+    new TextRun({ text: company.tradeName || company.legalName, bold: true, size: 30, color: BRAND, rightToLeft: ctx.rtl, font: ctx.rtl ? "Noto Naskh Arabic" : "Noto Sans" }),
+  ];
   return [
     new Paragraph({
       bidirectional: ctx.rtl,
-      alignment: AlignmentType.CENTER,
+      alignment: AlignmentType.START,
       spacing: { after: 40 },
-      children: [new TextRun({ text: company.tradeName || company.legalName, bold: true, size: 30, color: BRAND, rightToLeft: ctx.rtl, font: ctx.rtl ? "Noto Naskh Arabic" : "Noto Sans" })],
+      children: brandRuns,
     }),
     new Paragraph({
       bidirectional: ctx.rtl,
-      alignment: AlignmentType.CENTER,
+      alignment: AlignmentType.START,
       spacing: { after: 120 },
       children: [new TextRun({ text: [company.legalName, ...ids].join("  •  "), size: 17, color: MUTED, rightToLeft: ctx.rtl, font: ctx.rtl ? "Noto Naskh Arabic" : "Noto Sans" })],
     }),
     new Paragraph({
       bidirectional: ctx.rtl,
-      alignment: AlignmentType.CENTER,
+      alignment: AlignmentType.START,
       heading: HeadingLevel.HEADING_1,
       spacing: { after: 60 },
+      border: { bottom: { style: BorderStyle.SINGLE, size: 12, color: GOLD, space: 6 } },
       children: [new TextRun({ text: title, bold: true, size: 34, color: INK, rightToLeft: ctx.rtl, font: ctx.rtl ? "Noto Naskh Arabic" : "Noto Sans" })],
     }),
     new Paragraph({
       bidirectional: ctx.rtl,
-      alignment: AlignmentType.CENTER,
+      alignment: AlignmentType.START,
       spacing: { after: 160 },
       children: [new TextRun({ text: metaLine, size: 18, color: MUTED, rightToLeft: ctx.rtl, font: ctx.rtl ? "Noto Naskh Arabic" : "Noto Sans" })],
     }),
@@ -274,7 +287,7 @@ function payslipChildren(ctx: Ctx, data: Extract<AnyReportData, { kind: "payslip
   const lines = data.lines.filter((l) => showEmployer || !l.kind.startsWith("employer_"));
 
   const out: (Paragraph | Table)[] = [
-    ...headerBlock(ctx, data.company, L("reports.doc.payslipTitle"), `${L("reports.doc.period")}: ${periodLabel}`),
+    ...headerBlock(ctx, data.company, L("reports.doc.payslipTitle"), `${L("reports.doc.period")}: ${periodLabel}`, ctx.logo),
 
     sectionTitle(ctx, L("reports.doc.workerSection")),
     kvRow(ctx, L("reports.doc.worker"), data.worker.fullName, { bold: true }),
@@ -337,7 +350,7 @@ function payrollSummaryChildren(ctx: Ctx, data: Extract<AnyReportData, { kind: "
   const periodLabel = monthLabel(ctx.dict, Number(y), Number(m));
 
   return [
-    ...headerBlock(ctx, data.company, L("reports.doc.summaryTitle"), `${L("reports.doc.period")}: ${periodLabel}  •  ${L("reports.doc.workersCount")}: ${data.workersCount}`),
+    ...headerBlock(ctx, data.company, L("reports.doc.summaryTitle"), `${L("reports.doc.period")}: ${periodLabel}  •  ${L("reports.doc.workersCount")}: ${data.workersCount}`, ctx.logo),
 
     sectionTitle(ctx, L("reports.doc.totalsSection")),
     kvRow(ctx, L("reports.doc.workersCount"), String(data.workersCount), { latinValue: true }),
@@ -388,7 +401,7 @@ function attendanceChildren(
   const title = data.kind === "hours_statement" ? L("reports.doc.hoursTitle") : L("reports.doc.attendanceTitle");
 
   return [
-    ...headerBlock(ctx, data.company, title, `${L("reports.doc.worker")}: ${data.workerName}  •  ${L("reports.doc.period")}: ${rangeLabel}`),
+    ...headerBlock(ctx, data.company, title, `${L("reports.doc.worker")}: ${data.workerName}  •  ${L("reports.doc.period")}: ${rangeLabel}`, ctx.logo),
 
     sectionTitle(ctx, L("reports.doc.totalsSection")),
     kvRow(ctx, L("reports.doc.attendancePresentDays"), String(data.totals.presentDays), { latinValue: true }),
@@ -422,7 +435,7 @@ function declarationsSummaryChildren(ctx: Ctx, data: Extract<AnyReportData, { ki
   const money = (c: number | null) => (c === null ? "—" : docMoney(c, ctx.lang));
 
   return [
-    ...headerBlock(ctx, data.company, L("reports.doc.declSummaryTitle"), `${L("reports.doc.period")}: ${data.periodLabel}`),
+    ...headerBlock(ctx, data.company, L("reports.doc.declSummaryTitle"), `${L("reports.doc.period")}: ${data.periodLabel}`, ctx.logo),
 
     sectionTitle(ctx, L("reports.doc.declSection")),
     table(
@@ -470,7 +483,7 @@ function complianceChildren(ctx: Ctx, data: Extract<AnyReportData, { kind: "comp
   const allMatch = data.diffs.length > 0 && data.diffs.every((d) => d.diffCents === 0);
 
   return [
-    ...headerBlock(ctx, data.company, L("reports.doc.complianceTitle"), `${data.declarationLabel}  •  ${L("reports.doc.colDeclStatus")}: ${dictOr(ctx, `declarations.statuses.${data.status}`, data.status)}`),
+    ...headerBlock(ctx, data.company, L("reports.doc.complianceTitle"), `${data.declarationLabel}  •  ${L("reports.doc.colDeclStatus")}: ${dictOr(ctx, `declarations.statuses.${data.status}`, data.status)}`, ctx.logo),
     p(ctx, L("reports.doc.complianceIntro"), { size: 8, color: MUTED }),
 
     sectionTitle(ctx, L("reports.doc.complianceTable")),
@@ -515,7 +528,8 @@ function platformSummaryChildren(ctx: Ctx, data: Extract<AnyReportData, { kind: 
       ctx,
       { legalName: data.branding.legalName, tradeName: data.branding.displayName, taxId: null, cnssNumber: null },
       L("reports.doc.platformTitle"),
-      `${L("reports.doc.companiesCount")}: ${data.companiesCount}`
+      `${L("reports.doc.companiesCount")}: ${data.companiesCount}`,
+      ctx.logo
     ),
 
     sectionTitle(ctx, L("reports.doc.companiesSection")),
@@ -549,12 +563,13 @@ export async function renderReportDocx(
   options: ReportOptions,
   meta: DocxRenderMeta
 ): Promise<Uint8Array> {
-  const ctx = makeCtx(language, options, meta, data.branding);
-  const [naskh, sans, qrPng] = await Promise.all([
+  const [naskh, sans, qrPng, logo] = await Promise.all([
     readFont(FONT_FILES.naskhRegular),
     readFont(FONT_FILES.sansRegular),
     qrPngBuffer(meta.verifyUrl, 240),
+    logoPng(180),
   ]);
+  const ctx = makeCtx(language, options, meta, data.branding, logo);
 
   let children: (Paragraph | Table)[];
   switch (data.kind) {

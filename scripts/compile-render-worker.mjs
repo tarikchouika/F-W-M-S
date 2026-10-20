@@ -10,8 +10,8 @@
 //   • ما يُضمَّن داخل الحزمة: كل الكود المحلي (pdf/docx/png/i18n/qr/line-kinds)
 //     والقواميس الأربع (استيراد ساكن في get-dictionary) وحزمتا docx وqrcode.
 //   • ما يبقى خارجيًا (يُحل زمن التشغيل من node_modules):
-//       - @react-pdf/renderer: يُحمَّل عبر createRequire (load-react-pdf.ts)
-//         لأن حزمته وتبعياته wasm يجب أن تبقى بشجرة node الحقيقية.
+//       - pdfkit: يُحمَّل عبر createRequire (داخل pdf.ts) لأن حزمته تقرأ
+//         ملفات الخطوط/AFM من القرص — لا تُجمَّع (تحتاج مسارات الحزمة كما هي).
 //       - sharp: وحدة أصلية (.node) — لا تُجمَّع أبدًا.
 // التشغيل: node scripts/compile-render-worker.mjs — مضمن في «build» قبل next build
 // (على Vercel والهاتف معًا) حتى يجده تتبع standalone فيضمّه.
@@ -29,7 +29,7 @@ try {
     platform: "node",
     format: "cjs", // درس الاختبار الأول: ESM يرمي «Dynamic require of "fs"» لمكتبات CJS المجمعة — cjs أصيل هنا
     target: "node18",
-    external: ["@react-pdf/renderer", "sharp"],
+    external: ["pdfkit", "sharp"],
     sourcemap: false,
     minify: false,
     metafile: false,
