@@ -39,8 +39,10 @@ function readDirSafe(dir) {
 
 const STANDALONE = findStandaloneRoot();
 if (!STANDALONE) {
-  console.error("✗ لم يُعثر على حزمة standalone (.next/standalone) — أُوقف البناء");
-  process.exit(1);
+  // لا حزمة standalone (نشر Vercel مثلًا: يتولّى Next/Vercel التتبّع بنفسه)
+  // ⇒ لا شيء لنسخه، والبناء صحيح. **ليس خطأ** — الخروج بصفر.
+  console.log("· لا حزمة standalone (نشر سحابي) — تُخطّى تجهيز الأصول");
+  process.exit(0);
 }
 
 function copyInto(srcRel, destRel) {
