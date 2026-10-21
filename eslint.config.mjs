@@ -6,7 +6,17 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+// 🔒 فحص أمني 2026-10-21: كان هذا المدخل عالميًا (بلا files) — و`eslint .` بعد أي
+// بناء محلي يصطدم بـ`src/lib/reports/render-worker.cjs` (مُنتَج بناء مُتجاهَل في
+// git يولّده compile-render-worker.mjs)؛ الملف لا يطابق نمط المدخل الذي يسجّل
+// إضافة react-hooks (`js,jsx,mjs,ts,tsx,mts,cts` — بلا cjs) فيبقى مدخل القواعد
+// هذا مطبّقًا عليه بلا تعريف الإضافة ⇒ «could not find plugin react-hooks».
+// فشل كامن يتوقف على وجود مُنتَج البناء محليًا (لهذا تقلّب بين الجلسات/البيئات).
+// العلاج المزدوج: (1) تجاهل المُنتَج صراحةً في lint — لا معنى لفحص 1.6MB مولّدة،
+// (2) مطابقة نطاق هذا المدخل لنمط المدخل المسجّل للإضافات نفسه — لا تغيير سلوك
+// (القواعد كلها قواعد كود أصلًا) وزوال الانهيار على أي ملف غير مطابق.
 const eslintConfig = [...nextCoreWebVitals, ...nextTypescript, {
+  files: ["**/*.{js,jsx,mjs,ts,tsx,mts,cts}"],
   rules: {
     // TypeScript rules
     "@typescript-eslint/no-explicit-any": "off",
@@ -52,7 +62,7 @@ const eslintConfig = [...nextCoreWebVitals, ...nextTypescript, {
     "no-useless-escape": "off",
   },
 }, {
-  ignores: ["node_modules/**", ".next/**", "out/**", "build/**", "next-env.d.ts", "examples/**", "skills"]
+  ignores: ["node_modules/**", ".next/**", "out/**", "build/**", "next-env.d.ts", "examples/**", "skills", "src/lib/reports/render-worker.cjs"]
 }];
 
 export default eslintConfig;

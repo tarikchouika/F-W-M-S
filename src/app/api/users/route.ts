@@ -107,6 +107,15 @@ export async function POST(req: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json({ error: "invalid_input" }, { status: 400 });
     }
+
+    // 🔒 فحص أمني 2026-10-21: التفويض users.create لا يشمل إنشاء مالك منصة
+    // (مُثبت حيًّا: مدير مفوَّض أنشأ حساب super_admin ⇒ صلاحيات المالك كاملة داخل الشركة).
+    // روح قاعدة المالك 2026-10-18: platform.manage «لا تُفوَّض» — وإنشاء حساب سوبر
+    // أدمن يمنح عمليًا كل الصلاحيات دفعة واحدة، فالحدّ الأدنى المنطقي للتفويض:
+    // كل الأدوار إلا super_admin (السوبر الحقيقي يبقى وحده من يُنشئ نظراءه).
+    if (session.role !== "super_admin" && parsed.data.role === "super_admin") {
+      return NextResponse.json({ error: "cannot_create_super_admin_delegated" }, { status: 403 });
+    }
     if (parsed.data.jobTitleKey && !isJobTitleKey(parsed.data.jobTitleKey)) {
       return NextResponse.json({ error: "invalid_job_title" }, { status: 400 });
     }

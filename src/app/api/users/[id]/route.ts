@@ -48,6 +48,14 @@ export async function PATCH(
       return NextResponse.json({ error: "cannot_deactivate_self" }, { status: 409 });
     }
 
+    // 🔒 فحص أمني 2026-10-21: غير السوبر أدمن لا يعطّل حساب مالك المنصة
+    // (مُثبت حيًّا: أدمن لديه users.manage عطّل super_admin ⇒ المالك 403 account_inactive
+    // وجلساته تموت ولا يستطيع إعادة تفعيل نفسه — حجب خدمة على مالك المنصة من موظف).
+    // سوبر أدمن يعطّل سوبر أدمن آخر يبقى مسموحًا (إدارة المنصة بطبعها).
+    if (data.isActive === false && membership.role === "super_admin" && session.role !== "super_admin") {
+      return NextResponse.json({ error: "cannot_deactivate_super_admin" }, { status: 403 });
+    }
+
     if (data.isActive !== undefined) {
       await db.user.update({ where: { id }, data: { isActive: data.isActive } });
       // تعطيل الحساب يبطل جلساته فورًا (نمط sessionsInvalidatedAt)
