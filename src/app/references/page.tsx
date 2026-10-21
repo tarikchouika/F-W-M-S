@@ -28,7 +28,9 @@ export default async function ReferencesPage() {
 
   return (
     <PublicLegalShell>
-      <div className="mx-auto w-full max-w-4xl space-y-8 py-6">
+      {/* (بلاغ المالك 2026-10-22): عمود أوسع على الحواسيب (max-w-6xl) + شبكة
+          3 أعمدة للجهات و2 للنصوص — كانت صفحة «قاعدة بيانات» بعمود واحد ضيق. */}
+      <div className="mx-auto w-full max-w-4xl space-y-10 py-6 lg:max-w-6xl">
         <header className="space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="outline" className="gap-1.5">
@@ -41,10 +43,10 @@ export default async function ReferencesPage() {
             </Badge>
             <Badge variant="outline">{tr("references.verified")}: {VERIFIED_ON}</Badge>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-4xl">
             {tr("references.title")}
           </h1>
-          <p className="text-sm leading-7 text-muted-foreground">{tr("references.subtitle")}</p>
+          <p className="text-base leading-8 text-muted-foreground sm:text-lg">{tr("references.subtitle")}</p>
         </header>
 
         {/* ── الجهات الرسمية ── */}
@@ -56,7 +58,7 @@ export default async function ReferencesPage() {
             </h2>
             <p className="text-sm text-muted-foreground">{tr("references.orgsSubtitle")}</p>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {CATEGORY_ORDER.flatMap((cat) =>
               OFFICIAL_SOURCES.filter((s) => s.category === cat).map((s) => (
                 <Card key={s.id} className="border-border/70">
@@ -67,7 +69,7 @@ export default async function ReferencesPage() {
                         {tr(`references.cat.${cat}`)}
                       </Badge>
                     </div>
-                    <p className="text-sm leading-6 text-muted-foreground">{tr(`references.use.${s.id}`)}</p>
+                    <p className="text-sm leading-7 text-muted-foreground">{tr(`references.use.${s.id}`)}</p>
                     <div className="flex flex-wrap items-center gap-3 pt-1">
                       <a
                         href={s.url}
@@ -106,10 +108,10 @@ export default async function ReferencesPage() {
             </h2>
             <p className="text-sm text-muted-foreground">{tr("references.lawsSubtitle")}</p>
           </div>
-          <div className="space-y-3">
+          <div className="grid gap-3 md:grid-cols-2">
             {LAW_FILES.map((law) => (
               <Card key={law.id} className="border-border/70">
-                <CardContent className="space-y-2 p-5">
+                <CardContent className="flex h-full flex-col space-y-2 p-5">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <h3 className="text-sm font-bold leading-6 text-card-foreground" dir="auto">
                       {law.title}
@@ -121,12 +123,12 @@ export default async function ReferencesPage() {
                   <p className="text-xs leading-5 text-muted-foreground" dir="auto">
                     {law.citation}
                   </p>
-                  <p className="text-sm leading-6 text-foreground/85">{tr(`references.laws.${law.id}`)}</p>
+                  <p className="text-sm leading-7 text-foreground/85">{tr(`references.laws.${law.id}`)}</p>
                   <a
                     href={law.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary underline-offset-4 hover:underline"
+                    className="mt-auto inline-flex items-center gap-1.5 pt-1 text-xs font-semibold text-primary underline-offset-4 hover:underline"
                   >
                     {law.direct ? tr("references.download") : tr("references.open")}
                     {law.direct ? (
@@ -141,7 +143,7 @@ export default async function ReferencesPage() {
           </div>
         </section>
 
-        <p className="rounded-xl border border-border/70 bg-secondary/40 p-4 text-xs leading-6 text-muted-foreground">
+        <p className="rounded-xl border border-border/70 bg-secondary/40 p-4 text-sm leading-7 text-muted-foreground">
           {tr("references.disclaimer")}
         </p>
 

@@ -16,14 +16,19 @@
 //   * الميزانية بدل «هل صفر؟» تسمح بتقدّم مشروع فيه ميزانية معروفة، وتمنع أي
 //     ازدياد غير مقصود. رفعها يتم بتحرير ملف صريح داخل المستودع (بصمة git).
 //
+//   3) انجراف لقطة معاينة Vercel (بلاغ المالك 2026-10-22 «تحرير وتحميل الوثائق لا
+//      يعمل»): اللقطة كانت متأخرة عن المخطط (بلا هجرة report_document_note)
+//      ففشل كل توليد وثيقة على نشر Vercel بـP2022 — الفحص هنا يمنع تكراره
+//      بمقارنة مخطط اللقطة مع الهجرات قبل أي دفع.
+//
 // الاستخدام:
-//   bun run gate            # بوابة كاملة (lint + tsc)
+//   bun run gate            # بوابة كاملة (lint + tsc + لقطة المعاينة)
 //   bun run gate --quick    # lint فقط (أسرع — يُستعمل في خطاف commit إن لزم)
 //   bun run gate --json     # مخرجات آلية
 //
 // الرموز: 0 = ناجحة · 1 = تجاوز ميزانية · 2 = تعذّر تشغيل أداة.
 import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync, rmSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
@@ -163,6 +168,54 @@ if (!QUICK) {
     under: n < baseline.tscErrors,
     detail: n > baseline.tscErrors ? samples.join("\n") : tsc.code !== 0 && n === 0 ? tsc.tail : "",
   });
+}
+
+// ── 3) انجراف لقطة معاينة Vercel (تخطّي في --quick) ───────────────────────────
+// infra/vercel/preview.db يجب أن يطابق المخطط/الهجرات تمامًا: نشر Vercel لا
+// يطبّق هجرات عند الإقلاع (يستعمل اللقطة كما هي) ⇒ أي عمود ناقص فيها = عطل
+// حيّ 500 على مساراته (حدث فعلًا: GeneratedDocument.note — بلاغ 2026-10-22).
+if (!QUICK) {
+  const snapshotAbs = join(ROOT, "infra/vercel/preview.db");
+  if (!existsSync(snapshotAbs)) {
+    results.push({
+      name: "snapshot",
+      metric: "اللقطة غير موجودة",
+      limit: "مخطط مطابق للهجرات",
+      over: true,
+      detail: "infra/vercel/preview.db مفقودة — أولّدها بـ scripts/regen-preview-db.sh",
+    });
+  } else {
+    // prisma migrate diff: من مخطط اللقطة الفعلي إلى الهجرات — «No difference detected»
+    // = مطابقة؛ وأي سطر DDL أو فشل الأمر = انجراف/خلل يوقف الدفع
+    const diff = run(join(ROOT, "node_modules/.bin/prisma"), [
+      "migrate",
+      "diff",
+      "--from-url",
+      `file:${snapshotAbs}`,
+      "--to-migrations",
+      join(ROOT, "prisma/migrations"),
+      "--shadow-database-url",
+      "file:/tmp/fwms-gate-shadow.db",
+    ]);
+    const noDiff = /No difference detected/.test(diff.out);
+    const drift = !noDiff || diff.code !== 0;
+    const driftLines = diff.out
+      .split("\n")
+      .filter((l) => /^(ALTER|CREATE|DROP|--.*[Ee]rror)/.test(l) || /Error/.test(l))
+      .slice(0, 8);
+    results.push({
+      name: "snapshot",
+      metric: drift ? "مخطط اللقطة متأخر عن الهجرات" : "مطابقة",
+      limit: "مخطط مطابق للهجرات",
+      over: drift,
+      detail: drift
+        ? driftLines.join("\n") +
+          "\nأولّد اللقطة: scripts/regen-preview-db.sh (أو regen-preview-preserve-passwords.sh لحفظ الكلمات)"
+        : "",
+    });
+    // نظّف قاعدة الظل إن أُنشئت
+    try { rmSync("/tmp/fwms-gate-shadow.db", { force: true }); } catch { /* بلا أثر */ }
+  }
 }
 
 // ── الإخراج ─────────────────────────────────────────────────────────────────

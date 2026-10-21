@@ -188,7 +188,10 @@ export function DashboardSidebar({
   const items = navItemsFor(role, hiddenKeys);
 
   return (
-    <aside className="hidden w-64 shrink-0 flex-col bg-sidebar text-sidebar-foreground md:flex">
+    // relative z-10 (بلاغ المالك 2026-10-22 «الخريطة تغطي الشريط الجانبي»): سياق
+    // تراكب صريح يجعل الشريط يعلو دائمًا أي محتوى عابر من منطقة المحتوى (مثل ألواح
+    // خريطة فلت أنماطها) — تحصين دفاعي مرافق لتحميل أنماط Leaflet ساكنًا.
+    <aside className="relative z-10 hidden w-64 shrink-0 flex-col bg-sidebar text-sidebar-foreground md:flex">
       {/* الهوية */}
       <div className="flex items-center gap-2.5 border-b border-sidebar-border px-4 py-4">
         <FwmsLogo className="size-8" />

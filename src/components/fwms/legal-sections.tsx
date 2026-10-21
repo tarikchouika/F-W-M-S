@@ -1,6 +1,12 @@
 // FWMS — عارض مقاطع الصفحة القانونية/الدليل: يبنيها من شجرة القاموس (s1h…s5l4)
 // استعمال: <LegalSections dict={dict.legal.terms} />
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+//
+// (بلاغ المالك 2026-10-22 «العرض العام للصفحات القانونية والتوضيحية غير متناسب
+// مع الحواسيب»): كان العمود max-w-3xl (768px) وسط شاشات 1536-1920px بخط 14px
+// وبطاقات شبيهة بمنظر الجوال — هوّل المساحات الفارغة وكثّر التمرير. الآن:
+// عمود أوسع على الحواسيب (max-w-5xl) + خط أكبر للقراءة المريحة (15px/سطر 32px)
+// + ترقيم مقاطع بهوية ذهبية يعطي إحساس «وثيقة» لا «تطبيق جوال».
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export type LegalSection = { h: string; b: string; bullets: string[] };
 
@@ -23,24 +29,36 @@ export function sectionsOf(tree: Record<string, string>): LegalSection[] {
 export function LegalSections({ tree }: { tree: Record<string, string> }) {
   const sections = sectionsOf(tree);
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-5">
-      <header className="space-y-2 pt-4">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">{tree.title}</h1>
-        <p className="text-sm text-muted-foreground">{tree.subtitle}</p>
+    <div className="mx-auto w-full max-w-3xl space-y-6 py-6 lg:max-w-5xl">
+      <header className="space-y-3 pb-2 pt-4">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-4xl">
+          {tree.title}
+        </h1>
+        <p className="text-base leading-8 text-muted-foreground sm:text-lg">{tree.subtitle}</p>
+        {/* خط ذهبي بهوية المنصة تحت العنوان — يصل الصفحات العامة بالوثائق المولَّدة */}
+        <div className="h-1 w-24 rounded-full bg-gold" aria-hidden />
       </header>
 
       {sections.map((s, i) => (
-        <Card key={i}>
-          <CardHeader>
-            <CardTitle className="text-base">{s.h}</CardTitle>
+        <Card key={i} className="border-border/70">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-start gap-3 text-base font-bold sm:text-lg">
+              <span
+                className="mt-0.5 inline-flex size-7 shrink-0 items-center justify-center rounded-lg bg-gold/15 text-sm font-extrabold tabular-nums text-gold"
+                aria-hidden
+              >
+                {i + 1}
+              </span>
+              <span className="leading-8">{s.h}</span>
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <p className="text-sm leading-7 text-foreground/90">{s.b}</p>
+          <CardContent className="space-y-4">
+            <p className="text-[15px] leading-8 text-foreground/90">{s.b}</p>
             {s.bullets.length ? (
-              <ul className="space-y-2 ps-0">
+              <ul className="space-y-2.5 ps-0">
                 {s.bullets.map((b, j) => (
-                  <li key={j} className="flex items-start gap-2 text-sm leading-6 text-foreground/85">
-                    <span className="mt-2 size-1.5 shrink-0 rounded-full bg-primary" aria-hidden />
+                  <li key={j} className="flex items-start gap-2.5 text-[15px] leading-7 text-foreground/85">
+                    <span className="mt-2.5 size-1.5 shrink-0 rounded-full bg-primary" aria-hidden />
                     <span>{b}</span>
                   </li>
                 ))}

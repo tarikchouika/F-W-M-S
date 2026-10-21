@@ -3,7 +3,9 @@
 // FWMS — خريطة الحضور الحي (المرحلة 9): مناطق الفرق (دوائر) + آخر مواقع الأعضاء
 // (علامات ملوّنة بالحالة). يُستورد ديناميكيًا بلا SSR (درس Leaflet + Next — جلسة المرحلة 2)
 // ويُغلَّف MapContainer بحاوية dir="ltr" وإلا اختلط تموضع البلاطات في RTL.
-import "leaflet/dist/leaflet.css";
+// ملاحظة: أنماط Leaflet تُحمّل ساكنًا من globals.css (لا استيراد هنا) — نفس درس
+// بلاغ 2026-10-22: استيراد CSS داخل مكوّن dynamic يُحمّل وقت التشغيل فيسبق
+// رسمُ الخريطة أنماطَها فتسبح الألواح فوق الصفحة.
 import { useEffect } from "react";
 import { MapContainer, TileLayer, CircleMarker, Circle, Popup, useMap } from "react-leaflet";
 import { useI18n } from "@/i18n/provider";
@@ -64,7 +66,8 @@ export function PresenceMap({ groups }: { groups: GroupPresence[] }) {
           : t("presence.stateNoPing");
 
   return (
-    <div dir="ltr" className="h-[320px] w-full overflow-hidden rounded-xl border border-border/60 sm:h-[420px]">
+    // isolate: سياق تراكب مستقل يحبس ألواح الخريطة مهما حدث (تحصين بلاغ 2026-10-22)
+    <div dir="ltr" className="relative isolate h-[320px] w-full overflow-hidden rounded-xl border border-border/60 sm:h-[420px]">
       <MapContainer center={DEFAULT_CENTER} zoom={DEFAULT_ZOOM} scrollWheelZoom className="size-full">
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'

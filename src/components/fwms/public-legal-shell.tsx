@@ -23,10 +23,14 @@ export function PublicLegalShell({ children }: { children: React.ReactNode }) {
   // محتوى هذه الصفحات (نص foreground داكن) كان يُرسم على تدرّج أخضر داكن ⇒
   // عنوان الصفحة غير مقروء (بلاغ المالك 2026-10-20). الآن: سطح فاتح + شريط
   // علوي أخضر رفيع يبقى التوقيع البصري.
+  //
+  // px-4 (بلاغ المالك 2026-10-22 «غير متناسب مع الحواسيب» + حواف الجوال):
+  // صنف container في Tailwind 4 لم يعد يحمل حشوة أفقية افتراضية — كانت النصوص
+  // تلتصق بحواف الشاشة على الجوال، والمحتوى بلا تنفّس على الحواسيب.
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <header className="border-b border-border/60 bg-background/90 backdrop-blur">
-        <div className="container flex h-16 items-center justify-between gap-3">
+        <div className="container flex h-16 items-center justify-between gap-3 px-4 sm:px-6">
           <Link href="/" className="flex items-center gap-2" aria-label="FWMS">
             <FwmsLogo className="size-8" />
             <span className="text-sm font-semibold text-foreground">FWMS</span>
@@ -38,10 +42,10 @@ export function PublicLegalShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <main className="container flex-1 pb-10">{children}</main>
+      <main className="container flex-1 px-4 pb-12 pt-2 sm:px-6">{children}</main>
 
       <footer className="border-t border-border/60 bg-secondary/40 py-6">
-        <div className="container space-y-3">
+        <div className="container space-y-3 px-4 sm:px-6">
           <nav className="flex flex-wrap items-center gap-x-4 gap-y-2">
             {links.map((l) => (
               <Link

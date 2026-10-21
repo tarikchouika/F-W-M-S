@@ -2,7 +2,9 @@
 
 // FWMS — خريطة المواقع (Leaflet + react-leaflet): علامة مركز + دائرة نطاق التحقق لكل موقع (SPEC §4.2)
 // تُستورد ديناميكيًا بلا SSR من مدير المواقع (Leaflet يحتاج window)
-import "leaflet/dist/leaflet.css";
+// ملاحظة: أنماط Leaflet تُحمّل ساكنًا من globals.css (لا استيراد هنا) — درس بلاغ
+// 2026-10-22: استيراد CSS داخل مكوّن dynamic يُحمّل وقت التشغيل <link> بعد
+// الجافاسكربت، فتُرسم الخريطة أولا بلا أنماط وتسبح ألواحها فوق الشريط الجانبي.
 import { useEffect } from "react";
 import {
   MapContainer,
@@ -115,10 +117,13 @@ export function SiteMap({
   const { t, locale } = useI18n();
 
   return (
-    // Leaflet يتوقع حاوية LTR — الغلاف يعزل الخريطة عن اتجاه الصفحة العربية
+    // Leaflet يتوقع حاوية LTR — الغلاف يعزل الخريطة عن اتجاه الصفحة العربية.
+    // isolate (سياق تراكب مستقل): حتى لو فشلت أنماط الخريطة كليًا يومًا ما، تبقى
+    // ألواحها (z-index 400-800) حبيسة سياق هذا الغلاف ولا تعلو الشريط الجانبي
+    // (الذي صار relative z-10) — تحصين دفاعي بطبقتين (بلاغ المالك 2026-10-22).
     <div
       dir="ltr"
-      className={cn("overflow-hidden rounded-xl border border-border bg-muted/30", className)}
+      className={cn("relative isolate overflow-hidden rounded-xl border border-border bg-muted/30", className)}
       aria-label={t("map.title")}
     >
       <MapContainer center={center} zoom={zoom} scrollWheelZoom className="h-full w-full">
