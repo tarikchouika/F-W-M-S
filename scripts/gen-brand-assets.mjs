@@ -143,7 +143,7 @@ async function main() {
   //      mipmap-{d}/ic_launcher_foreground.png           — طبقة adaptive (العلامة داخل المنطقة الآمنة)
   //      mipmap-{d}/ic_launcher_monochrome.png           — أيقونة متغيّرة الألوان (أندرويد 13+)
   //      mipmap-anydpi-v26/ic_launcher{,_round}.xml      — تعريف adaptive
-  //      values/ic_launcher_colors.xml                   — خلفية كحلية #0F2242
+  //      values/ic_launcher_background.xml               — خلفية كحلية #0F2242 (فوق ملف القالب)
   const ANDROID_LAUNCHER = path.join(ROOT, "infra", "android", "launcher");
   const DENSITIES = [
     ["mdpi", 48, 108],
@@ -213,10 +213,12 @@ async function main() {
 `;
   await writeFile(path.join(anydpi, "ic_launcher.xml"), adaptiveXml(true));
   await writeFile(path.join(anydpi, "ic_launcher_round.xml"), adaptiveXml(true));
+  // نفس اسم ملف قالب Capacitor (ic_launcher_background.xml) — الكتابة فوقه لا إضافة
+  // ملف ثانٍ (إلا: "Duplicate resources" في دمج موارد Android)
   const valuesDir = path.join(ANDROID_LAUNCHER, "values");
   await mkdir(valuesDir, { recursive: true });
   await writeFile(
-    path.join(valuesDir, "ic_launcher_colors.xml"),
+    path.join(valuesDir, "ic_launcher_background.xml"),
     `<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_launcher_background">#0F2242</color>
