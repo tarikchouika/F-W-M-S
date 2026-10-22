@@ -176,16 +176,16 @@ jobs:
           RES="android/app/src/main/res"
           for D in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
             mkdir -p "$RES/mipmap-$D"
-            cp "../../infra/android/launcher/mipmap-$D/ic_launcher.png"           "$RES/mipmap-$D/ic_launcher.png"
-            cp "../../infra/android/launcher/mipmap-$D/ic_launcher_round.png"     "$RES/mipmap-$D/ic_launcher_round.png"
-            cp "../../infra/android/launcher/mipmap-$D/ic_launcher_foreground.png" "$RES/mipmap-$D/ic_launcher_foreground.png"
-            cp "../../infra/android/launcher/mipmap-$D/ic_launcher_monochrome.png" "$RES/mipmap-$D/ic_launcher_monochrome.png"
+            cp "../infra/android/launcher/mipmap-$D/ic_launcher.png"           "$RES/mipmap-$D/ic_launcher.png"
+            cp "../infra/android/launcher/mipmap-$D/ic_launcher_round.png"     "$RES/mipmap-$D/ic_launcher_round.png"
+            cp "../infra/android/launcher/mipmap-$D/ic_launcher_foreground.png" "$RES/mipmap-$D/ic_launcher_foreground.png"
+            cp "../infra/android/launcher/mipmap-$D/ic_launcher_monochrome.png" "$RES/mipmap-$D/ic_launcher_monochrome.png"
           done
           mkdir -p "$RES/mipmap-anydpi-v26"
-          cp ../../infra/android/launcher/mipmap-anydpi-v26/ic_launcher.xml        "$RES/mipmap-anydpi-v26/ic_launcher.xml"
-          cp ../../infra/android/launcher/mipmap-anydpi-v26/ic_launcher_round.xml  "$RES/mipmap-anydpi-v26/ic_launcher_round.xml"
+          cp ../infra/android/launcher/mipmap-anydpi-v26/ic_launcher.xml        "$RES/mipmap-anydpi-v26/ic_launcher.xml"
+          cp ../infra/android/launcher/mipmap-anydpi-v26/ic_launcher_round.xml  "$RES/mipmap-anydpi-v26/ic_launcher_round.xml"
           mkdir -p "$RES/values"
-          cp ../../infra/android/launcher/values/ic_launcher_colors.xml            "$RES/values/ic_launcher_colors.xml"
+          cp ../infra/android/launcher/values/ic_launcher_colors.xml            "$RES/values/ic_launcher_colors.xml"
           echo "→ أيقونات التطبيق: $(find $RES/mipmap* -name 'ic_launcher*' | wc -l) ملفًا من لوغو المنصة"
           # تحقق حتمي: أيقونة فارغة أو مفقودة تُسقط البناء (لا صمت أبدًا)
           test -s "$RES/mipmap-xxxhdpi/ic_launcher.png" || { echo "✗ ic_launcher.png مفقودة"; exit 1; }
