@@ -256,3 +256,33 @@
 [dir="rtl"] .fwms-flip-rtl {
   transform: scaleX(-1);
 }
+
+/* ─── الغلاف الأصلي: شاشة كاملة متناسقة مع شرائط النظام ───────────────────
+ * بلاغ المالك 2026-10-23: «شاشة التطبيق يجب أن تشغّل 100% من مساحة الشاشة
+ * بشكل يتناسق مع الشريط العلوي والسفلي للنظام».
+ * غلاف أندرويد يجعل النافذة حافة-لحافة (edge-to-edge) ثم يحقن قياسات الشرائط
+ * الفعلية بالبكسل في --fwms-inset-* (من WindowInsets — لا تخمين)، وenv() تبقى
+ * احتياطًا. في المتصفح العادي القيم كلها صفر ⇒ لا أثر إطلاقًا على التصميم. */
+:root {
+  --fwms-inset-top: env(safe-area-inset-top, 0px);
+  --fwms-inset-bottom: env(safe-area-inset-bottom, 0px);
+  --fwms-inset-left: env(safe-area-inset-left, 0px);
+  --fwms-inset-right: env(safe-area-inset-right, 0px);
+}
+
+/* الإزاحة المطبَّقة مرة واحدة على جذر المستند (box-sizing: border-box في preflight
+ * فلا يتضخّم الارتفاع) — كل صفحات المنصة تتوارثها بلا لمس أي تنسيق داخلي. */
+html.fwms-native {
+  height: 100%;
+  overscroll-behavior-y: none;
+}
+html.fwms-native body {
+  min-height: 100dvh;
+  padding-top: var(--fwms-inset-top);
+  padding-bottom: var(--fwms-inset-bottom);
+}
+
+/* الترويسة الملتصقة: تُلصق **تحت** شريط الحالة لا تحته (خلفيتها تمتد إلى الحافة) */
+html.fwms-native .fwms-sticky-top {
+  top: var(--fwms-inset-top);
+}

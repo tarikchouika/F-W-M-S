@@ -28,7 +28,7 @@ export function PublicLegalShell({ children }: { children: React.ReactNode }) {
   // صنف container في Tailwind 4 لم يعد يحمل حشوة أفقية افتراضية — كانت النصوص
   // تلتصق بحواف الشاشة على الجوال، والمحتوى بلا تنفّس على الحواسيب.
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="flex min-h-dvh flex-col bg-background">
       <header className="border-b border-border/60 bg-background/90 backdrop-blur">
         <div className="container flex h-16 items-center justify-between gap-3 px-4 sm:px-6">
           <Link href="/" className="flex items-center gap-2" aria-label="FWMS">

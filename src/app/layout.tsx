@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "next-themes";
 import { I18nProvider } from "@/i18n/provider";
 import { ServiceWorkerRegister } from "@/components/fwms/sw-register";
+import { NativeShell } from "@/components/fwms/native-shell";
 import { LOCALE_COOKIE, localeDirection, resolveLocale } from "@/i18n/config";
 import { getDictionary, tServer } from "@/i18n/get-dictionary";
 
@@ -59,6 +60,9 @@ export const viewport: Viewport = {
   ],
   width: "device-width",
   initialScale: 1,
+  // الغلاف الأصلي (تطبيق أندرويد): viewport-fit=cover ضروري لتفعيل
+  // env(safe-area-inset-*) وحافة-لحافة — بلاغ المالك 2026-10-23
+  viewportFit: "cover",
 };
 
 export default async function RootLayout({
@@ -84,6 +88,7 @@ export default async function RootLayout({
           </I18nProvider>
           <Toaster />
           <ServiceWorkerRegister />
+          <NativeShell />
         </ThemeProvider>
       </body>
     </html>

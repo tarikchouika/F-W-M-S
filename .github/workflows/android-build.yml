@@ -3,9 +3,21 @@
 # طلب المالك 2026-10-19: «يجب أن يشتغل سير بناء ملف apk بشكل آلي كلما نُشرت
 # نسخة محسّنة أو أي تحديث، وينشئ رابطًا دائمًا لتحميل آخر نسخة».
 #
-# الاستراتيجية (كما وُثّقت في v0.10.0): غلاف Capacitor (webview) يشير إلى نشر
-# Cloudflare الحي (fwms-dg8.pages.dev) — نفس الكود وسلوك واحد (SPEC §7)،
-# لا نسخة أندرويد منفصلة تُصان يدويًا.
+# الاستراتيجية (كما وُثّقت في v0.10.0): غلاف Capacitor (webview) يشير إلى النشر الحي
+# — نفس الكود وسلوك واحد (SPEC §7)، لا نسخة أندرويد منفصلة تُصان يدويًا.
+#
+# بلاغ المالك 2026-10-23 (تصدير/تحرير/تنزيل الوثائق + ملء الشاشة) — درسان مقيسان:
+#   (1) كان الغلاف يشير إلى fwms-dg8.pages.dev وهي بوابة على نشر Vercel (لقطة
+#       SQLite في /tmp لكل نسخة). الوثائق المولَّدة داخل التطبيق كانت تُكتب في
+#       تلك اللقطة المؤقتة فيضيع الملف بين الطلبات/الطبعات (تنزيل فاشل) ويصير
+#       التحقق «غير حقيقي» (not_found) — والرابط نفسه يعمل.
+#       ⇒ الغلاف يشير الآن إلى الخادم المرجعي (بوابة الهاتف عبر النفق) حيث تُحفظ
+#       الوثائق فعليًا. رابطا الوثيقة (pages.dev/vercel.app) يبقيان للمتحقق الخارجي
+#       مع تحقق فدرالي على Vercel (راجع src/lib/reports/generate.ts).
+#   (2) WebView لا ينفّذ <a download> على روابط blob ⇒ التصدير يبدو معطوبًا.
+#       ⇒ جسر أندرويد أصلي (Filesystem + Share) في src/lib/native-bridge.ts.
+#   (3) الشاشة: نافذة حافة-لحافة (edge-to-edge) + قياسات شرائط النظام الحقيقية
+#       تُحقن في الويب (--fwms-inset-*) فلا يختفي أي عنصر تحت الشريطين.
 #
 # المشغّلات: كل push إلى main (أي تحديث) + كل وسم v* + تشغيل يدوي (مع app_url).
 #
@@ -26,9 +38,9 @@ on:
   workflow_dispatch:
     inputs:
       app_url:
-        description: "عنوان نشر الواجهة (افتراضي: بوابة Cloudflare)"
+        description: "عنوان الخادم المرجعي الذي يفتحه التطبيق (افتراضي: بوابة الهاتف)"
         required: false
-        default: "https://fwms-dg8.pages.dev"
+        default: "https://fwms.tarikc.workers.dev"
   push:
     branches: [main]
     tags: ["v*"]
@@ -50,7 +62,7 @@ jobs:
     name: Build APK (Capacitor)
     runs-on: ubuntu-latest
     env:
-      APP_URL: ${{ github.event.inputs.app_url || 'https://fwms-dg8.pages.dev' }}
+      APP_URL: ${{ github.event.inputs.app_url || 'https://fwms.tarikc.workers.dev' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -130,7 +142,12 @@ jobs:
           sed -i "s|REPLACE_ME|$APP_URL|g" android-shell/www/index.html
 
       - name: Install Capacitor (no project deps touched)
-        run: npm install --no-save @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
+        run: |
+          # الإضافات الثلاث ضرورية لبلاغ المالك 2026-10-23:
+          # status-bar (نمط الشريط العلوي) · filesystem + share (تنزيل الوثائق
+          # داخل WebView عبر مشاركة النظام — WebView لا ينفّذ <a download>).
+          npm install --no-save @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6 \
+            @capacitor/status-bar@6 @capacitor/filesystem@6 @capacitor/share@6
 
       - name: Write Capacitor config + add Android platform
         working-directory: android-shell
@@ -144,7 +161,12 @@ jobs:
             "private": true
           }
           PKG
-          # التطبيق يشير إلى النشر الحي مباشرة (server.url) — www مجرد احتياط بلا اتصال
+          # التطبيق يشير إلى الخادم المرجعي مباشرة (server.url) — www احتياط بلا اتصال.
+          # overlaysWebView: المحتوى يمتد تحت شريط الحالة (الشاشة الكاملة) والقياسات
+          # تُحقن من MainActivity لتفادي اختفاء أي عنصر تحته.
+          # includePlugins: الإضافات الأصلية الثلاث تُربط في مشروع gradle — اكتشاف
+          # Capacitor يقرأ dependencies من package.json، وهذا الملف مكتوب بلا تبعيات
+          # (الإضافات مثبّتة --no-save) فالقائمة الصريحة هي الطريق الحتمي (مُختبَر).
           cat > capacitor.config.json <<CFG
           {
             "appId": "$PACKAGE_ID",
@@ -155,7 +177,19 @@ jobs:
               "cleartext": false
             },
             "android": {
-              "allowMixedContent": false
+              "allowMixedContent": false,
+              "backgroundColor": "#0f2242"
+            },
+            "includePlugins": [
+              "@capacitor/status-bar",
+              "@capacitor/filesystem",
+              "@capacitor/share"
+            ],
+            "plugins": {
+              "StatusBar": {
+                "overlaysWebView": true,
+                "style": "DEFAULT"
+              }
             },
             "androidScheme": "https"
           }
@@ -165,6 +199,169 @@ jobs:
           npx cap add android
           echo "→ android/ project:"
           ls android/
+
+      - name: Patch Android project (edge-to-edge window + native downloads)
+        working-directory: android-shell
+        run: |
+          # ── (1) MainActivity: نافذة حافة-لحافة + حقن قياسات الشرائط في الويب ──
+          # القياسات تأتي من WindowInsets الفعلية (لا تقدير): أزرار النظام و«الجزّة»
+          # ولوحة المفاتيح — فتُضبط حشوات الصفحة ولا يختفي أي زر تحتها.
+          MAIN="android/app/src/main/java/ma/fwms/app/MainActivity.java"
+          cat > "$MAIN" <<'JAVA'
+          package ma.fwms.app;
+
+          import android.os.Bundle;
+          import android.webkit.WebView;
+          import androidx.core.view.ViewCompat;
+          import androidx.core.view.WindowCompat;
+          import androidx.core.view.WindowInsetsCompat;
+          import com.getcapacitor.BridgeActivity;
+          import com.getcapacitor.WebViewListener;
+
+          /**
+           * FWMS — نشاط التطبيق (بلاغ المالك 2026-10-23):
+           * شاشة كاملة تمتد تحت شريط الحالة وشريط التنقل (edge-to-edge)، مع حقن
+           * قياس الشرائط الفعلية في الويب كمتغيّرات CSS (--fwms-inset-*) بعد كل
+           * تحميل صفحة — فلا يغطي أي شريط عنصرًا من الواجهة.
+           * كل شيء داخل try/catch: أي فشل هنا لا يُسقط التطبيق (الويب يحمل احتياطي
+           * env(safe-area-inset-*)).
+           */
+          public class MainActivity extends BridgeActivity {
+              // جسر الويب محفوظ كحقل: مستمع الـinsets يمرّر View لا WebView (اكتُشف بتحقّق نوعي)
+              private WebView bridgeWebView;
+              private int insetTop;
+              private int insetBottom;
+              private int insetLeft;
+              private int insetRight;
+
+              @Override
+              public void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  try {
+                      WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+
+                      bridgeWebView = getBridge().getWebView();
+
+                      // التنقّل الكامل (دخول/خروج) ينشئ <html> جديدًا ⇒ إعادة الحقن
+                      getBridge().addWebViewListener(new WebViewListener() {
+                          @Override
+                          public void onPageLoaded(WebView view) {
+                              injectInsets();
+                          }
+                      });
+
+                      ViewCompat.setOnApplyWindowInsetsListener(bridgeWebView, (view, insets) -> {
+                          final int bars = WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout();
+                          insetTop = insets.getInsets(bars).top;
+                          insetLeft = insets.getInsets(bars).left;
+                          insetRight = insets.getInsets(bars).right;
+                          // الأسفل = الأكبر بين شريط التنقّل ولوحة المفاتيح (حقول النماذج)
+                          insetBottom = Math.max(insets.getInsets(bars).bottom, insets.getInsets(WindowInsetsCompat.Type.ime()).bottom);
+                          injectInsets();
+                          return ViewCompat.onApplyWindowInsets(view, insets);
+                      });
+
+                      bridgeWebView.post(() -> ViewCompat.requestApplyInsets(bridgeWebView));
+                  } catch (Throwable ignored) {
+                      // لا شيء: الويب يعمل بلا القياسات (المتصفح/الاحتياطي)
+                  }
+              }
+
+              /** كتابة القياسات (بكسل مستقل عن الكثافة) في جذر المستند */
+              private void injectInsets() {
+                  try {
+                      final WebView webView = bridgeWebView;
+                      final float density = getResources().getDisplayMetrics().density;
+                      if (density <= 0f || webView == null) return;
+                      final String js = "document.documentElement.style.setProperty('--fwms-inset-top','" + Math.round(insetTop / density) + "px');"
+                          + "document.documentElement.style.setProperty('--fwms-inset-bottom','" + Math.round(insetBottom / density) + "px');"
+                          + "document.documentElement.style.setProperty('--fwms-inset-left','" + Math.round(insetLeft / density) + "px');"
+                          + "document.documentElement.style.setProperty('--fwms-inset-right','" + Math.round(insetRight / density) + "px');";
+                      webView.post(() -> {
+                          try {
+                              webView.evaluateJavascript(js, null);
+                          } catch (Throwable ignored) {
+                              // لا شيء
+                          }
+                      });
+                  } catch (Throwable ignored) {
+                      // لا شيء
+                  }
+              }
+          }
+          JAVA
+          test -s "$MAIN" || { echo "✗ MainActivity.java لم يُكتب"; exit 1; }
+          grep -q "setDecorFitsSystemWindows" "$MAIN" || { echo "✗ رقعة حافة-لحافة مفقودة"; exit 1; }
+          # تحقّق نوعي: مستمع الـinsets يمرّر View لا WebView ⇒ الجسر المحفوظ يُستعمل داخل injectInsets
+          grep -q "private WebView bridgeWebView" "$MAIN" || { echo "✗ متغيّر الجسر مفقود"; exit 1; }
+
+          # ── (2) الأنماط: نافذة حافة-لحافة + شرائط شفافة (نهاري/ليلي) ──
+          STYLES="android/app/src/main/res/values/styles.xml"
+          mkdir -p android/app/src/main/res/values-night
+          write_styles() {
+            cat > "$1" <<XML
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+
+              <!-- Base application theme. -->
+              <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+                  <item name="colorPrimary">@color/colorPrimary</item>
+                  <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+                  <item name="colorAccent">@color/colorAccent</item>
+              </style>
+
+              <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.DayNight.NoActionBar">
+                  <item name="windowActionBar">false</item>
+                  <item name="windowNoTitle">true</item>
+                  <item name="android:background">@null</item>
+              </style>
+
+              <!-- شاشة البدء + نافذة حافة-لحافة (بلاغ المالك 2026-10-23) -->
+              <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
+                  <item name="android:background">@drawable/splash</item>
+                  <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+                  <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+                  <item name="android:statusBarColor">@android:color/transparent</item>
+                  <item name="android:navigationBarColor">@android:color/transparent</item>
+                  <item name="android:windowLightStatusBar">$2</item>
+                  <item name="android:windowLightNavigationBar">$2</item>
+              </style>
+          </resources>
+          XML
+          }
+          write_styles "$STYLES" "true"
+          write_styles "android/app/src/main/res/values-night/styles.xml" "false"
+          grep -q "windowLayoutInDisplayCutoutMode" "$STYLES" || { echo "✗ رقعة النافذة مفقودة"; exit 1; }
+
+          # ── (3) النشاط: لوحة المفاتيح تُعيد ضبط الحجم لا تغطي الحقول ──
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          python3 - "$MANIFEST" <<'PY'
+          import re, sys
+          path = sys.argv[1]
+          xml = open(path, encoding="utf-8").read()
+          if 'windowSoftInputMode' not in xml:
+              xml = re.sub(r'(\s+)android:launchMode="singleTask"',
+                           r'\1android:windowSoftInputMode="adjustResize"\1android:launchMode="singleTask"',
+                           xml, count=1)
+          open(path, "w", encoding="utf-8").write(xml)
+          PY
+          grep -q "windowSoftInputMode" "$MANIFEST" || { echo "✗ رقعة لوحة المفاتيح مفقودة"; exit 1; }
+
+          # ── (4) androidx.core صريحة (WindowInsetsCompat في MainActivity) ──
+          printf '\ndependencies {\n    implementation "androidx.core:core:1.12.0"\n}\n' >> android/app/build.gradle
+
+          # ── (5) مزامنة الإضافات (status-bar/filesystem/share) في مشروع gradle ──
+          npx cap sync android
+          echo "→ إضافات Capacitor المرتبطة:"
+          grep -h "capacitor-" android/capacitor.settings.gradle
+          for P in capacitor-status-bar capacitor-filesystem capacitor-share; do
+            grep -q "$P" android/capacitor.settings.gradle || { echo "✗ إضافة $P غير مرتبطة"; exit 1; }
+          done
+          echo "→ إضافات مُسجَّلة للتحميل وقت التشغيل:"
+          cat android/app/src/main/assets/capacitor.plugins.json
+          for P in status-bar filesystem share; do
+            grep -q "@capacitor/$P" android/app/src/main/assets/capacitor.plugins.json || { echo "✗ إضافة $P غير مُسجَّلة"; exit 1; }
+          done
 
       - name: Brand the launcher icon (FWMS logo — أمر المالك 2026-10-23)
         working-directory: android-shell

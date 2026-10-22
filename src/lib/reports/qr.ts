@@ -10,6 +10,36 @@ export function verifyUrl(origin: string, refNumber: string, fileHash: string): 
   return `${base}/verify/${encodeURIComponent(refNumber)}?h=${fileHash.slice(0, VERIFY_HASH_PREFIX)}`;
 }
 
+/** بوابات التحقق العامة المطبوعة على الوثيقة (بلاغ المالك 2026-10-23):
+ * «الوثيقة المصدرة يجب أن تصدر برابطين: pages.dev و vercel.app» — رابطان مستقلان
+ * حتى يبقى التحقق ممكنًا إن تعذّرت إحداهما، ومعهما QR يحمل الرابط الأول.
+ * تُضبط القائمة عبر FWMS_PUBLIC_VERIFY_ORIGINS (مفصولة بفواصل) وإلا فالافتراضي المعتمد. */
+export const DEFAULT_PUBLIC_VERIFY_ORIGINS = [
+  "https://fwms-dg8.pages.dev",
+  "https://fwms-orpin.vercel.app",
+];
+
+/** بوابات التحقق النافذة (بلا تكرار، بلا شرطة أخيرة) */
+export function publicVerifyOrigins(): string[] {
+  const raw = (process.env.FWMS_PUBLIC_VERIFY_ORIGINS ?? "").trim();
+  const list = (raw ? raw.split(",") : DEFAULT_PUBLIC_VERIFY_ORIGINS)
+    .map((origin) => origin.trim().replace(/\/+$/, ""))
+    .filter(Boolean);
+  const unique = [...new Set(list)];
+  return unique.length ? unique : DEFAULT_PUBLIC_VERIFY_ORIGINS;
+}
+
+/** رابط تحقق على بوابة محددة (نفس صيغة verifyUrl لكن بأصل صريح لا من البيئة) */
+export function verifyUrlAt(origin: string, refNumber: string, fileHash: string): string {
+  const base = origin.replace(/\/+$/, "");
+  return `${base}/verify/${encodeURIComponent(refNumber)}?h=${fileHash.slice(0, VERIFY_HASH_PREFIX)}`;
+}
+
+/** روابط التحقق المطبوعة على الوثيقة — رابط لكل بوابة عامة (الأول هو محتوى QR) */
+export function verifyUrls(refNumber: string, fileHash: string): string[] {
+  return publicVerifyOrigins().map((origin) => verifyUrlAt(origin, refNumber, fileHash));
+}
+
 /** QR كـ PNG buffer (لتضمينه في PDF/DOCX/PNG) */
 export async function qrPngBuffer(url: string, size = 220): Promise<Buffer> {
   return QRCode.toBuffer(url, {

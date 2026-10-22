@@ -48,6 +48,7 @@ export type PdfRenderMeta = {
   refNumber: string;
   contentHash: string;
   verifyUrl: string;
+  verifyUrls?: string[]; // بوابات التحقق العامة المطبوعة (صفحة/فيرسل) — أولها محتوى QR
   generatedAt: string;
   generatedBy: string;
   qrData: string;
@@ -573,11 +574,14 @@ function drawQrBlock(flow: Flow): void {
     size: 7,
     color: MUTED,
   });
-  const url = ctx.meta.verifyUrl.replace(/^https?:\/\//, "");
-  const urlPieces = measurePieces(doc, url, { size: 7, color: BRAND });
-  drawLine(doc, urlPieces, ctx.rtl ? anchor - piecesWidth(urlPieces) : anchor, top + 44, {
-    size: 7,
-    color: BRAND,
+  // رابطان تحقق عامّان (pages.dev + vercel.app) — بلاغ المالك 2026-10-23
+  const links = (ctx.meta.verifyUrls?.length ? ctx.meta.verifyUrls : [ctx.meta.verifyUrl]).slice(0, 2);
+  links.forEach((link, i) => {
+    const urlPieces = measurePieces(doc, link.replace(/^https?:\/\//, ""), { size: 7, color: BRAND });
+    drawLine(doc, urlPieces, ctx.rtl ? anchor - piecesWidth(urlPieces) : anchor, top + 44 + i * 12, {
+      size: 7,
+      color: BRAND,
+    });
   });
   void put;
   flow.y = top + cardH;

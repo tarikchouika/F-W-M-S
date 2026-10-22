@@ -91,9 +91,9 @@ export default function LandingPage() {
   const ForwardArrow = dir === "rtl" ? ArrowLeft : ArrowRight;
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="flex min-h-dvh flex-col bg-background">
       {/* ── الترويسة ── */}
-      <header className="sticky top-0 z-50 border-b border-border/60 bg-background/85 backdrop-blur-md">
+      <header className="fwms-sticky-top sticky top-0 z-50 border-b border-border/60 bg-background/85 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
           <Link href="/" className="flex items-center gap-2.5" aria-label="FWMS">
             <FwmsLogo className="size-9" />

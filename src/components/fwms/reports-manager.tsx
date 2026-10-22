@@ -25,6 +25,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/provider";
 import { apiRequest, ListState, PageHeader } from "@/components/fwms/org-bits";
+import { deliverFile } from "@/lib/native-bridge";
 import { localeLabels } from "@/i18n/config";
 
 type KindInfo = { kind: string; formats: string[] };
@@ -213,18 +214,10 @@ export function ReportsManager() {
       toast({
         description: result.reused ? t("reports.exportReused") : t("reports.exportOk"),
       });
-      // التنزيل من النسخة الثابتة
+      // التنزيل من النسخة الثابتة (داخل تطبيق أندرويد: مشاركة أصلية — حفظ/فتح/إرسال)
       const res = await fetch(result.downloadUrl, { cache: "no-store" });
       if (!res.ok) throw new Error("download_failed");
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = result.fileName;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      await deliverFile(await res.blob(), result.fileName);
       void load();
     } catch (e) {
       const code = (e as { message?: string })?.message ?? "";
@@ -240,21 +233,14 @@ export function ReportsManager() {
     }
   }
 
-  /** تنزيل مستند من رابط تنزيله (يستخدم Blob + اسم الملف من الترويسة) */
+  /** تنزيل مستند من رابط تنزيله (اسم الملف من الترويسة — أندرويد: مشاركة أصلية) */
   async function downloadFrom(downloadUrl: string, fileName?: string) {
     const res = await fetch(downloadUrl, { cache: "no-store" });
     if (!res.ok) throw new Error("download_failed");
     const blob = await res.blob();
     const disposition = res.headers.get("Content-Disposition") ?? "";
     const match = /filename="([^"]+)"/.exec(disposition);
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = fileName ?? match?.[1] ?? "document";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+    await deliverFile(blob, fileName ?? match?.[1] ?? "document");
   }
 
   /** إنشاء نسخة محدَّثة (ملاحظة جديدة ⇒ إصدار جديد؛ القديم يبقى للتدقيق) */
@@ -292,14 +278,7 @@ export function ReportsManager() {
       const blob = await res.blob();
       const disposition = res.headers.get("Content-Disposition") ?? "";
       const match = /filename="([^"]+)"/.exec(disposition);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = match?.[1] ?? "document";
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      await deliverFile(blob, match?.[1] ?? "document");
     } catch {
       toast({ variant: "destructive", description: t("reports.exportFailed") });
     }

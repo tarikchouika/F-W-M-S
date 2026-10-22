@@ -19,7 +19,7 @@ export default async function NotFound() {
   const BackArrow = dir === "rtl" ? ArrowRight : ArrowLeft;
 
   return (
-    <main className="fwms-hero-gradient flex min-h-screen flex-col items-center justify-center gap-6 px-4 text-center">
+    <main className="fwms-hero-gradient flex min-h-dvh flex-col items-center justify-center gap-6 px-4 text-center">
       <div className="fwms-zellige absolute inset-0 opacity-50" aria-hidden />
       <div className="relative z-10 flex max-w-md flex-col items-center gap-5 rounded-2xl border border-white/20 bg-card/95 p-8 shadow-2xl backdrop-blur">
         <FileQuestion className="size-12 text-muted-foreground" aria-hidden />

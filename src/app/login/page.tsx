@@ -56,7 +56,7 @@ export default async function LoginPage({ searchParams }: LoginProps) {
   return (
     <div
       dir={localeDirection[pageLocale]}
-      className="fwms-hero-gradient relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-4 py-10 lg:px-8"
+      className="fwms-hero-gradient relative flex min-h-dvh flex-col items-center justify-center overflow-hidden px-4 py-10 lg:px-8"
     >
       <div className="fwms-zellige absolute inset-0 opacity-50" aria-hidden />
       {/* العلامة المائية — لوغو ذهبي كبير خلف بطاقة الدخول */}

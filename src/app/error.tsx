@@ -32,7 +32,7 @@ export default function ErrorPage({
     <div
       dir={dir}
       lang={locale}
-      className="fwms-hero-gradient relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-4 py-10"
+      className="fwms-hero-gradient relative flex min-h-dvh flex-col items-center justify-center overflow-hidden px-4 py-10"
       style={{
         background:
           "linear-gradient(160deg, oklch(0.28 0.04 160) 0%, oklch(0.42 0.09 160) 55%, oklch(0.5 0.1 150) 100%)",

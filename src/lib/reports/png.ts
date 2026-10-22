@@ -14,6 +14,7 @@ export type PngRenderMeta = {
   refNumber: string;
   contentHash: string;
   verifyUrl: string;
+  verifyUrls?: string[]; // بوابات التحقق العامة المطبوعة (pages.dev + vercel.app)
   generatedAt: string;
   generatedBy: string;
 };
@@ -39,12 +40,47 @@ function brandFooter(ctx: Ctx, bottomY: number, refLine: string): string {
   );
 }
 const W = 860; // عرض أساس — density 144 يعطي دقة مشاركة جيدة بالهاتف
+const LEFT_PAD = 50; // هامش الصفحة (يطابق LEFT المحلي في بنّاءي الصفحة)
 const BRAND = "#0f2242"; // كحلي عميق — لون أرضية اللوغو
 const GOLD = "#d4a437";
 const INK = "#101722";
 const MUTED = "#5a6478";
 const LINE_C = "#e2e6ef";
 const HEAD_BG = "#eef1f7";
+
+/**
+ * شريط التحقق السفلي — **مشترك بين بنّاءي PNG** (القسيمة وملخص المنصة):
+ * QR + المرجع + البصمة + ترجمة التحقق + **رابطا التحقق العامّان**
+ * (pages.dev + vercel.app) — بلاغ المالك 2026-10-23: «الوثيقة المصدرة يجب أن
+ * تصدر برابطين». كان بنّاء ملخص المنصة يطبع QR + الفوتر بلا رابط إطلاقًا،
+ * وبنّاء القسيمة يطبع رابطًا واحدًا — الآن مسار واحد يضمن الاثنين في كل وثيقة.
+ * الهندسة (مقاس QR وموضعه) تختلف قليلًا بين البنّاءين فتُمرَّر من المتصل.
+ */
+function verificationFooter(
+  ctx: Ctx,
+  body: string[],
+  qrB64: string,
+  o: { height: number; qrSize: number; qrX: number; refText: string }
+): void {
+  const L = (k: string) => tr(ctx.dict, k);
+  const { height, qrSize, qrX, refText } = o;
+  const refX = ctx.rtl ? W - LEFT_PAD - 6 : LEFT_PAD + 6;
+  // المعرّف والبصمة والروابط نصوص ltr بمحاذاة فيزيائية: في مستند rtl تنتهي عند
+  // الحافة اليمنى (لا تُثبَّت هناك ثم تخرج)، وترجمة التحقق تتبع اتجاه المستند.
+  const latinAnchor = ctx.rtl ? "end" : "start";
+  body.push(
+    `<image href="data:image/png;base64,${qrB64}" x="${qrX}" y="${height - (qrSize + 38)}" width="${qrSize}" height="${qrSize}"/>`
+  );
+  body.push(`<text x="${refX}" y="${height - 112}" text-anchor="${latinAnchor}" direction="ltr" font-family="Noto Sans" font-size="12" fill="${INK}">${esc(refText)}</text>`);
+  body.push(`<text x="${refX}" y="${height - 96}" text-anchor="${latinAnchor}" direction="ltr" font-family="Noto Sans" font-size="10" fill="${MUTED}">${esc(ctx.meta.contentHash.slice(0, 24))}</text>`);
+  body.push(`<text x="${refX}" y="${height - 80}" text-anchor="start" ${ctxDirection()} font-family="Noto Naskh Arabic" font-size="10" fill="${MUTED}">${esc(L("reports.doc.qrCaption"))}</text>`);
+  // الرابطان سطران متتاليان نازلان (لا متراكبان): الأول على -64 والثاني على -50
+  const links = (ctx.meta.verifyUrls?.length ? ctx.meta.verifyUrls : [ctx.meta.verifyUrl]).slice(0, 2);
+  links.forEach((link, i) => {
+    body.push(`<text x="${refX}" y="${height - 64 + i * 14}" text-anchor="${latinAnchor}" direction="ltr" font-family="Noto Sans" font-size="9" fill="${MUTED}">${esc(link.replace(/^https?:\/\//, ""))}</text>`);
+  });
+  body.push(brandFooter(ctx, height - 20, ctx.meta.refNumber));
+}
 
 function esc(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -183,20 +219,13 @@ function payslipSvg(ctx: Ctx, data: Extract<AnyReportData, { kind: "payslip" }>,
   // الملاحظة الإدارية (إن وُجدت)
   cursor = noteSvg(ctx, body, cursor);
 
-  const height = Math.max(cursor + 170, 660);
-
-  // QR + المرجع
-  const qrX = ctx.rtl ? LEFT + 6 : W - LEFT - 96;
-  body.push(`<image href="data:image/png;base64,${qrB64}" x="${qrX}" y="${height - 130}" width="92" height="92"/>`);
-  const refX = ctx.rtl ? W - LEFT - 6 : LEFT + 6;
-  // المعرّف والبصمة نصوص ltr بمحاذاة فيزيائية: في مستند rtl تنتهي عند الحافة اليمنى (لا تُثبَّت هناك ثم تخرج)
-  const latinAnchor = ctx.rtl ? "end" : "start";
-  // ترجمة التحقق تتبع اتجاه المستند: start في rtl = الحافة اليمنى ✓ وفي ltr = اليسرى ✓
-  const refAnchor = "start";
-  body.push(`<text x="${refX}" y="${height - 92}" text-anchor="${latinAnchor}" direction="ltr" font-family="Noto Sans" font-size="12" fill="${INK}">${esc(data.refNumber)}</text>`);
-  body.push(`<text x="${refX}" y="${height - 72}" text-anchor="${latinAnchor}" direction="ltr" font-family="Noto Sans" font-size="10" fill="${MUTED}">${esc(ctx.meta.contentHash.slice(0, 24))}</text>`);
-  body.push(`<text x="${refX}" y="${height - 54}" text-anchor="${refAnchor}" ${ctxDirection()} font-family="Noto Naskh Arabic" font-size="10" fill="${MUTED}">${esc(L("reports.doc.qrCaption"))}</text>`);
-  body.push(brandFooter(ctx, height - 20, ctx.meta.refNumber));
+  const height = Math.max(cursor + 200, 660);
+  verificationFooter(ctx, body, qrB64, {
+    height,
+    qrSize: 92,
+    qrX: ctx.rtl ? LEFT + 6 : W - LEFT - 96,
+    refText: data.refNumber,
+  });
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${height}" viewBox="0 0 ${W} ${height}">
   <rect width="${W}" height="${height}" fill="#ffffff"/>
@@ -308,10 +337,13 @@ function platformSvg(ctx: Ctx, data: Extract<AnyReportData, { kind: "platform_su
   // الملاحظة الإدارية (إن وُجدت)
   cursor = noteSvg(ctx, body, cursor);
 
-  const height = Math.max(cursor + 90, 460);
-  const qrX = ctx.rtl ? LEFT + 6 : W - LEFT - 80;
-  body.push(`<image href="data:image/png;base64,${qrB64}" x="${qrX}" y="${height - 120}" width="80" height="80"/>`);
-  body.push(brandFooter(ctx, height - 20, ctx.meta.refNumber));
+  const height = Math.max(cursor + 150, 520);
+  verificationFooter(ctx, body, qrB64, {
+    height,
+    qrSize: 80,
+    qrX: ctx.rtl ? LEFT + 6 : W - LEFT - 80,
+    refText: ctx.meta.refNumber,
+  });
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${height}" viewBox="0 0 ${W} ${height}">
   <rect width="${W}" height="${height}" fill="#ffffff"/>

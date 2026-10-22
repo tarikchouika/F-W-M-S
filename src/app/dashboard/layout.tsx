@@ -71,12 +71,12 @@ export default async function DashboardLayout({
   const displayUserName = (meRow ? localizedName(meRow, locale, "fullName") : "") || session.name;
 
   return (
-    <div className="flex min-h-screen flex-col bg-background md:flex-row">
+    <div className="flex min-h-dvh flex-col bg-background md:flex-row">
       {/* سطح المكتب: شريط جانبي ثابت — الجوال (v0.10.0): زر قائمة في الترويسة يفتح Sheet */}
       <DashboardSidebar role={session.role} brandName={branding.displayName} hiddenKeys={hiddenKeys} />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-40 flex h-14 items-center justify-between gap-2 border-b border-border/60 bg-background/90 px-2 backdrop-blur-md sm:px-5">
+        <header className="fwms-sticky-top sticky top-0 z-40 flex h-14 items-center justify-between gap-2 border-b border-border/60 bg-background/90 px-2 backdrop-blur-md sm:px-5">
           <div className="flex min-w-0 items-center gap-1.5">
             <div className="md:hidden">
               <MobileNav role={session.role} brandName={branding.displayName} hiddenKeys={hiddenKeys} />

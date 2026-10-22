@@ -21,7 +21,7 @@ import {
   buildPlatformSummaryData,
   ReportDataError,
 } from "./data";
-import { verifyUrl } from "./qr";
+import { verifyUrl, verifyUrls } from "./qr";
 import { isLocale } from "@/i18n/config";
 
 export { ReportDataError };
@@ -120,7 +120,9 @@ function newRefNumber(): string {
 
 /** إصدار منطق العرض — يُرفع عند أي إصلاح/تحسين في العارض فيبطل المستندات
  * القديمة (النسخة الجديدة تُنشأ والقديمة تبقى للتدقيق — «لا تعديل بعد التوليد») */
-const RENDERER_VERSION = 11; // v11: العلامات المركّبة (الهمزة تحت الألف) لا تُفصل عن أساسها — كانت تُرسم مربّعًا
+const RENDERER_VERSION = 13; // v13: رابطا التحقق في PNG على سطرين متتاليين (كانا متراكبين) + بنّاء ملخص المنصة يطبع المعرّف/البصمة/الرابطان
+// v12: الوثيقة تُصدر برابطَي تحقق عامّين (pages.dev + vercel.app) بدل رابط واحد
+// v11: العلامات المركّبة (الهمزة تحت الألف) لا تُفصل عن أساسها — كانت تُرسم مربّعًا
 // v10: محرّك PDF جديد (pdfkit + Bidi داخلي) — إصلاح العربية المعكوسة + تصميم الهوية
 // v9: إصلاح قصّ النصوص عند حواف PNG (محاذاة فيزيائية واعية بالاتجاه في png.ts)
 // v8: إصلاح عملة شريط الصافي في PDF (مقاطع الأبجديات — «د.م.» كانت تظهر حرفًا معطوبًا)
@@ -274,10 +276,13 @@ export async function generateReport(
   // ── التوليد الفعلي (عبر العامل الابن — درس Turbopack، انظر render-worker.ts) ──
   const refNumber = await allocateRefNumber(companyId);
   const generatedAt = new Date().toISOString();
+  // الرابطان المطبوعان على الوثيقة (pages.dev + vercel.app) — وQR يحمل الأول
+  const links = verifyUrls(refNumber, contentHash);
   const meta = {
     refNumber,
     contentHash,
-    verifyUrl: verifyUrl(publicOrigin(requestOrigin), refNumber, contentHash),
+    verifyUrl: links[0] ?? verifyUrl(publicOrigin(requestOrigin), refNumber, contentHash),
+    verifyUrls: links,
     generatedAt,
     generatedBy: session.name || session.email,
   };
@@ -468,7 +473,7 @@ async function renderViaWorker(
   data: AnyReportData,
   language: ReportLanguage,
   options: ReportOptions,
-  meta: { refNumber: string; contentHash: string; verifyUrl: string; generatedAt: string; generatedBy: string }
+  meta: { refNumber: string; contentHash: string; verifyUrl: string; verifyUrls?: string[]; generatedAt: string; generatedBy: string }
 ): Promise<Uint8Array> {
   const { spawn } = await import("node:child_process");
   const os = await import("node:os");
@@ -656,7 +661,36 @@ export type VerifyResult =
   | { valid: true; refNumber: string; kind: string; format: string; language: string; version: number; targetLabel: string; companyLegalName: string; generatedAt: string; contentHash: string; hashMatches: boolean }
   | { valid: false; reason: "not_found" | "hash_mismatch"; refNumber?: string };
 
-export async function verifyDocumentByRef(refNumber: string, h?: string | null): Promise<VerifyResult> {
+// ─── التحقق العام الفدرالي (بلاغ المالك 2026-10-23) ──────────
+// الوثائق تُولَّد على الخادم المرجعي (الهاتف، عبر workers.dev)، أما بوابتا
+// pages.dev و vercel.app فتعملان على لقطة Vercel المؤقتة التي لا تحتوي وثائق
+// الإنتاج — فكان الرابط يعمل والحكم «الوثيقة غير حقيقية» (not_found).
+// العلاج: إن لم يجد الحكم المحلي الوثيقة، تسأل البوابة الخادم المرجعي مباشرة
+// وتنسخ حكمه (بلا كشف أي معلومة إضافية — نقطة التحقق عامة ومحدودة أصلًا).
+const FEDERATED_VERIFY_ORIGIN = (
+  process.env.FWMS_VERIFY_FALLBACK_ORIGIN || (process.env.VERCEL ? "https://fwms.tarikc.workers.dev" : "")
+)
+  .trim()
+  .replace(/\/+$/, "");
+
+async function verifyAtAuthoritativeServer(refNumber: string, h?: string | null): Promise<VerifyResult | null> {
+  if (!FEDERATED_VERIFY_ORIGIN) return null;
+  try {
+    const query = h ? `?h=${encodeURIComponent(h)}` : "";
+    const res = await fetch(`${FEDERATED_VERIFY_ORIGIN}/api/reports/verify/${encodeURIComponent(refNumber)}${query}`, {
+      cache: "no-store",
+      headers: { accept: "application/json" },
+      signal: AbortSignal.timeout(8000),
+    });
+    const body = (await res.json()) as VerifyResult;
+    if (!body || typeof body.valid !== "boolean") return null;
+    return body;
+  } catch {
+    return null; // تعذّر بلوغ المرجع: يبقى الحكم المحلي كما هو (لا ندّعي أصالة بلا دليل)
+  }
+}
+
+async function verifyLocally(refNumber: string, h?: string | null): Promise<VerifyResult> {
   const doc = await db.generatedDocument.findFirst({
     where: { refNumber },
     orderBy: { createdAt: "desc" },
@@ -682,6 +716,16 @@ export async function verifyDocumentByRef(refNumber: string, h?: string | null):
     contentHash: doc.contentHash,
     hashMatches,
   };
+}
+
+export async function verifyDocumentByRef(refNumber: string, h?: string | null): Promise<VerifyResult> {
+  const local = await verifyLocally(refNumber, h);
+  if (local.valid) return local;
+  const federated = await verifyAtAuthoritativeServer(refNumber, h);
+  // حكم المرجع يُقدَّم إذا نفى أو **وجد المرجع وبصمته لا تطابق** (تزييف): أمتن دلالةً
+  // من «غير موجود» في نسخة لقطة. وإن لم يجد المرجع نحتفظ بالحكم المحلي كما هو.
+  if (federated && (federated.valid || federated.reason === "hash_mismatch")) return federated;
+  return local;
 }
 
 // ─── الجلسة الكاملة (للـ API routes) ─────────────────────────

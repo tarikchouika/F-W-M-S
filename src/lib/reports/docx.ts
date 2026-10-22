@@ -31,6 +31,7 @@ export type DocxRenderMeta = {
   refNumber: string;
   contentHash: string;
   verifyUrl: string;
+  verifyUrls?: string[]; // بوابات التحقق العامة المطبوعة (pages.dev + vercel.app)
   generatedAt: string;
   generatedBy: string;
 };
@@ -292,7 +293,14 @@ function qrBlock(ctx: Ctx, qrPng: Buffer): Paragraph[] {
       children: [new TextRun({ text: L("reports.doc.qrCaption"), bold: true, size: 17, color: INK, rightToLeft: ctx.rtl, font: ctx.rtl ? "Noto Naskh Arabic" : "Noto Sans" })],
     }),
     new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: ctx.meta.contentHash.slice(0, 32), size: 13, color: MUTED, font: "Noto Sans" })] }),
-    new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: ctx.meta.verifyUrl.replace(/^https?:\/\//, ""), size: 13, color: MUTED, font: "Noto Sans" })] }),
+    // رابطان تحقق عامّان (pages.dev + vercel.app) — بلاغ المالك 2026-10-23
+    ...(ctx.meta.verifyUrls?.length ? ctx.meta.verifyUrls : [ctx.meta.verifyUrl]).slice(0, 2).map(
+      (link) =>
+        new Paragraph({
+          alignment: AlignmentType.CENTER,
+          children: [new TextRun({ text: link.replace(/^https?:\/\//, ""), size: 13, color: MUTED, font: "Noto Sans" })],
+        })
+    ),
   ];
 }
 
