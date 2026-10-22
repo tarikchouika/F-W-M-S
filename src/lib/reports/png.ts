@@ -8,6 +8,7 @@ import { reportDict, tr, docMoney, docHours, monthLabel } from "./i18n";
 import type { ReportDict } from "./i18n";
 import { qrPngBuffer } from "./qr";
 import { LINE_KIND_MAP } from "./line-kinds";
+import { markPng } from "./logo";
 
 export type PngRenderMeta = {
   refNumber: string;
@@ -24,6 +25,7 @@ type Ctx = {
   options: ReportOptions;
   meta: PngRenderMeta;
   branding: ReportBranding; // هوية مالك المنصة (white-label — SPEC §3.2)
+  logoMarkB64: string | null; // العلامة الذهبية الشفافة (data URI) — الشعار المعتمد 2026-10-21
 };
 
 /** تذييل الهوية — سطران مستققلان لتفادي مزج الأبجديات في عنصر واحد (درس المرحلة 7):
@@ -37,12 +39,12 @@ function brandFooter(ctx: Ctx, bottomY: number, refLine: string): string {
   );
 }
 const W = 860; // عرض أساس — density 144 يعطي دقة مشاركة جيدة بالهاتف
-const BRAND = "#0c5c3c";
-const GOLD = "#e1a035";
-const INK = "#101911";
-const MUTED = "#5c675d";
-const LINE_C = "#e4e6e1";
-const HEAD_BG = "#ecf4ee";
+const BRAND = "#0f2242"; // كحلي عميق — لون أرضية اللوغو
+const GOLD = "#d4a437";
+const INK = "#101722";
+const MUTED = "#5a6478";
+const LINE_C = "#e2e6ef";
+const HEAD_BG = "#eef1f7";
 
 function esc(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -105,13 +107,13 @@ function payslipSvg(ctx: Ctx, data: Extract<AnyReportData, { kind: "payslip" }>,
   body.push(`<rect x="0" y="92" width="${W}" height="3" fill="${GOLD}"/>`);
   const logoSize = 46;
   const logoX = ctx.rtl ? W - 50 - logoSize : 50;
-  body.push(logoSvg(logoX, (92 - logoSize) / 2, logoSize, GOLD, "#ffffff"));
+  body.push(logoSvg(logoX, (92 - logoSize) / 2, logoSize, GOLD, "#ffffff", ctx.logoMarkB64));
   const titleX = ctx.rtl ? logoX - 14 : logoX + logoSize + 14;
   body.push(
     `<text x="${titleX}" y="42" text-anchor="start" ${ctxDirection()} font-family="Noto Naskh Arabic" font-size="24" font-weight="700" fill="#ffffff">${esc(L("reports.doc.payslipTitle"))}</text>`
   );
   body.push(
-    `<text x="${titleX}" y="70" text-anchor="start" ${ctxDirection()} font-family="Noto Naskh Arabic" font-size="13" fill="#c3ddce">${esc(data.company.tradeName || data.company.legalName)}</text>`
+    `<text x="${titleX}" y="70" text-anchor="start" ${ctxDirection()} font-family="Noto Naskh Arabic" font-size="13" fill="#c7d3e8">${esc(data.company.tradeName || data.company.legalName)}</text>`
   );
 
   cursor = 124;
@@ -208,8 +210,15 @@ const LOGO_STAR_PATH =
 /** مسار الدبوس المفرّغ في فضاء 64×64 */
 const LOGO_PIN_PATH = "M32 48.23C30.3 43.73 22.4 33.2 22.4 26.5A9.6 9.6 0 1 1 41.6 26.5C41.6 33.2 33.7 43.73 32 48.23Z";
 
-/** الشعار في SVG (نجمة ذهبية + دبوس مفرّغ) — نفس الـgeometry بـpublic/logo.svg */
-function logoSvg(x: number, y: number, size: number, star: string, pin: string): string {
+/** الشعار في SVG: العلامة الذهبية المعتمدة (صورة PNG شفافة مضمّنة) فوق الشريط الكحلي.
+ *  الاحتياطي المتجهي (نجمة زليج + دبوس) يُرسم فقط إن تعذّر تحميل الصورة. */
+function logoSvg(x: number, y: number, size: number, star: string, pin: string, markB64?: string | null): string {
+  if (markB64) {
+    return (
+      `<image x="${x}" y="${y}" width="${size}" height="${size}" ` +
+      `preserveAspectRatio="xMidYMid meet" href="data:image/png;base64,${markB64}"/>`
+    );
+  }
   const s = size / 64;
   return (
     `<g transform="translate(${x} ${y}) scale(${s})">` +
@@ -270,13 +279,13 @@ function platformSvg(ctx: Ctx, data: Extract<AnyReportData, { kind: "platform_su
   body.push(`<rect x="0" y="92" width="${W}" height="3" fill="${GOLD}"/>`);
   const logoSize = 46;
   const logoX = ctx.rtl ? W - 50 - logoSize : 50;
-  body.push(logoSvg(logoX, (92 - logoSize) / 2, logoSize, GOLD, "#ffffff"));
+  body.push(logoSvg(logoX, (92 - logoSize) / 2, logoSize, GOLD, "#ffffff", ctx.logoMarkB64));
   const titleX = ctx.rtl ? logoX - 14 : logoX + logoSize + 14;
   body.push(
     `<text x="${titleX}" y="42" text-anchor="start" ${ctxDirection()} font-family="Noto Naskh Arabic" font-size="24" font-weight="700" fill="#ffffff">${esc(L("reports.doc.platformTitle"))}</text>`
   );
   body.push(
-    `<text x="${titleX}" y="70" text-anchor="start" ${ctxDirection()} font-family="Noto Naskh Arabic" font-size="13" fill="#c3ddce">${esc(`${L("reports.doc.companiesCount")}: ${data.companiesCount}`)}</text>`
+    `<text x="${titleX}" y="70" text-anchor="start" ${ctxDirection()} font-family="Noto Naskh Arabic" font-size="13" fill="#c7d3e8">${esc(`${L("reports.doc.companiesCount")}: ${data.companiesCount}`)}</text>`
   );
 
   let cursor = 130;
@@ -326,7 +335,16 @@ export async function renderReportPng(
   const { default: sharp } = await import("sharp");
 
   currentRtl = language === "ar";
-  const ctx: Ctx = { lang: language, dict: reportDict(language), rtl: currentRtl, options, meta, branding: data.branding };
+  const markBuf = await markPng();
+  const ctx: Ctx = {
+    lang: language,
+    dict: reportDict(language),
+    rtl: currentRtl,
+    options,
+    meta,
+    branding: data.branding,
+    logoMarkB64: markBuf ? markBuf.toString("base64") : null,
+  };
   const qrBuf = await qrPngBuffer(meta.verifyUrl, 240);
   const qrB64 = qrBuf.toString("base64");
 

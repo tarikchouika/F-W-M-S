@@ -39,16 +39,23 @@ export async function generateMetadata(): Promise<Metadata> {
     description: tServer(dict, "meta.description"),
     keywords: ["FWMS", "workforce", "Morocco", "CNSS", "AMO", "IR", "geofencing", "payroll"],
     manifest: "/manifest.json",
-    icons: { icon: "/logo.svg", apple: "/icons/apple-touch-icon.png" },
+    // الفافكون — من اللوغو المعتمد 2026-10-21 (توليد: scripts/gen-brand-assets.mjs)
+    icons: {
+      icon: [
+        { url: "/favicon.ico", sizes: "48x48" },
+        { url: "/icons/favicon-32.png", sizes: "32x32", type: "image/png" },
+        { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      ],
+      apple: "/icons/apple-touch-icon.png",
+    },
   };
 }
 
 export const viewport: Viewport = {
-  // لون شريط المتصفح يتبع مخطط النظام (لا يقرأ localStorage — قيد metadata):
-  // الفاتح أخضر الهوية #14532d (مطابق لـ manifest) والقاتم خلفية .dark (#07100b).
+  // لون شريط المتصفح يتبع الهوية الجديدة (كحلي — لون أرضية اللوغو)
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#14532d" },
-    { media: "(prefers-color-scheme: dark)", color: "#07100b" },
+    { media: "(prefers-color-scheme: light)", color: "#0f2242" },
+    { media: "(prefers-color-scheme: dark)", color: "#0b1b33" },
   ],
   width: "device-width",
   initialScale: 1,

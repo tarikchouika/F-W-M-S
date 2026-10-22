@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useI18n } from "@/i18n/provider";
 import { LangSwitcher } from "@/components/fwms/lang-switcher";
 import { ThemeSwitcher } from "@/components/fwms/theme-switcher";
-import { FwmsLogo } from "@/components/fwms/logo";
+import { FwmsLogo, FwmsMark } from "@/components/fwms/logo";
 import { Separator } from "@/components/ui/separator";
 import { APP_VERSION } from "@/lib/version";
 
@@ -22,7 +22,7 @@ export function PublicLegalShell({ children }: { children: React.ReactNode }) {
   // ⚠️ الخلفية **فاتحة** لا fwms-hero-gradient (الأخضر الداكن):
   // محتوى هذه الصفحات (نص foreground داكن) كان يُرسم على تدرّج أخضر داكن ⇒
   // عنوان الصفحة غير مقروء (بلاغ المالك 2026-10-20). الآن: سطح فاتح + شريط
-  // علوي أخضر رفيع يبقى التوقيع البصري.
+  // علوي رفيع بلون الهوية (كحلي/ذهبي) يبقى التوقيع البصري.
   //
   // px-4 (بلاغ المالك 2026-10-22 «غير متناسب مع الحواسيب» + حواف الجوال):
   // صنف container في Tailwind 4 لم يعد يحمل حشوة أفقية افتراضية — كانت النصوص
@@ -44,21 +44,29 @@ export function PublicLegalShell({ children }: { children: React.ReactNode }) {
 
       <main className="container flex-1 px-4 pb-12 pt-2 sm:px-6">{children}</main>
 
-      <footer className="border-t border-border/60 bg-secondary/40 py-6">
-        <div className="container space-y-3 px-4 sm:px-6">
+      <footer className="fwms-footer-band relative overflow-hidden border-t-2 border-[var(--fwms-gold)]/60">
+        <div className="fwms-zellige pointer-events-none absolute inset-0 opacity-30" aria-hidden />
+        <FwmsMark className="pointer-events-none absolute -end-16 -bottom-20 w-64 select-none opacity-[0.07]" aria-hidden />
+        <div className="container relative space-y-3 px-4 py-7 sm:px-6">
+          <div className="flex items-center gap-3">
+            <FwmsLogo className="size-10 shrink-0" />
+            <p className="text-sm font-semibold text-[var(--fwms-gold)]" dir="ltr">
+              FWMS
+            </p>
+          </div>
           <nav className="flex flex-wrap items-center gap-x-4 gap-y-2">
             {links.map((l) => (
               <Link
                 key={l.href}
                 href={l.href}
-                className="text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                className="text-xs text-white/75 underline-offset-4 hover:text-white hover:underline"
               >
                 {l.label}
               </Link>
             ))}
           </nav>
-          <Separator className="opacity-40" />
-          <p className="text-[11px] text-muted-foreground" dir="ltr">
+          <Separator className="bg-white/15 opacity-60" />
+          <p className="text-[11px] text-white/65" dir="ltr">
             FWMS · v{process.env.NEXT_PUBLIC_APP_VERSION ?? "0.11.0"} —{" "}
             {t("legal.rights.subtitle")}
           </p>

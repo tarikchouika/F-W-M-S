@@ -27,7 +27,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { LangSwitcher } from "@/components/fwms/lang-switcher";
-import { FwmsLogo } from "@/components/fwms/logo";
+import { FwmsLogo, FwmsMark } from "@/components/fwms/logo";
 import { useI18n } from "@/i18n/provider";
 
 type Feature = {
@@ -98,7 +98,9 @@ export default function LandingPage() {
           <Link href="/" className="flex items-center gap-2.5" aria-label="FWMS">
             <FwmsLogo className="size-9" />
             <div className="flex flex-col leading-none">
-              <span className="text-lg font-extrabold tracking-tight text-primary">FWMS</span>
+              <span className="text-lg font-extrabold tracking-tight text-primary" dir="ltr">
+                FWMS
+              </span>
               <span className="hidden text-[11px] text-muted-foreground sm:block">{t("app.fullName")}</span>
             </div>
           </Link>
@@ -119,6 +121,11 @@ export default function LandingPage() {
         {/* ── البطل ── */}
         <section className="fwms-hero-gradient relative overflow-hidden">
           <div className="fwms-zellige absolute inset-0 opacity-60" aria-hidden />
+          {/* العلامة المائية داخل البطل — لوغو ذهبي كبير بخفّة منخفضة (توقيع الهوية) */}
+          <FwmsMark
+            className="pointer-events-none absolute left-1/2 top-1/2 w-[30rem] max-w-[120%] -translate-x-1/2 -translate-y-1/2 select-none opacity-[0.08] sm:w-[34rem]"
+            aria-hidden
+          />
           <div className="relative mx-auto flex max-w-4xl flex-col items-center px-4 py-20 text-center sm:px-6 sm:py-28">
             <Badge variant="secondary" className="fwms-glass mb-6 border-none text-white/90 hover:bg-white/10">
               {t("landing.badge")}
@@ -215,34 +222,39 @@ export default function LandingPage() {
       </main>
 
       {/* ── التذييل ──
-          البنية: عمودان واضحان (الهوية في بداية القراءة · الروابط في نهايتها)
-          مع فاصل ذهبي — التذييل القديم كان يخلط الشعار بالعبارة اللاتينية
-          فبدا «مشوّهًا» في الاتجاه العربي (بلاغ المالك 2026-10-20). ── */}
-      <footer className="mt-auto border-t border-border/60 bg-background">
-        <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:px-6 md:grid-cols-[1fr_auto] md:items-start md:gap-12">
-          <div className="flex items-start gap-3">
-            <FwmsLogo className="size-9 shrink-0" />
-            <div className="space-y-1">
-              <p className="text-sm font-bold text-primary" dir="ltr">
+          البنية: شريط كحلي عميق (لون أرضية اللوغو) يحمل الشعار والعبارة، ثم
+          الروابط — مع خط ذهبي علوي يفصله عن المحتوى (توقيع الهوية الجديدة). ── */}
+      <footer className="fwms-footer-band relative mt-auto overflow-hidden border-t-2 border-[var(--fwms-gold)]/60">
+        <div className="fwms-zellige pointer-events-none absolute inset-0 opacity-40" aria-hidden />
+        {/* العلامة المائية في الفوتر — لوغو ذهبي كبير بخفّة منخفضة */}
+        <FwmsMark
+          className="pointer-events-none absolute -end-20 -bottom-24 w-80 select-none opacity-[0.07] sm:-end-28 sm:w-96"
+          aria-hidden
+        />
+        <div className="relative mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:px-6 md:grid-cols-[1fr_auto] md:items-start md:gap-12">
+          <div className="flex items-start gap-4">
+            <FwmsLogo className="size-14 shrink-0" />
+            <div className="space-y-1.5">
+              <p className="text-lg font-extrabold tracking-tight text-[var(--fwms-gold)]" dir="ltr">
                 FWMS
               </p>
-              <p className="max-w-md text-xs leading-6 text-muted-foreground">{t("app.tagline")}</p>
+              <p className="max-w-md text-xs leading-6 text-white/75">{t("app.tagline")}</p>
             </div>
           </div>
 
-          <nav className="flex flex-col gap-3 text-xs text-muted-foreground md:items-end">
+          <nav className="flex flex-col gap-3 text-xs text-white/70 md:items-end">
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 md:justify-end">
-              <Link href="/references" className="inline-flex items-center gap-1.5 underline-offset-4 hover:text-foreground hover:underline">
+              <Link href="/references" className="inline-flex items-center gap-1.5 underline-offset-4 hover:text-white hover:underline">
                 <Scale className="size-3.5" aria-hidden />
                 {t("landing.referencesCta")}
               </Link>
-              <Link href="/guide" className="underline-offset-4 hover:text-foreground hover:underline">
+              <Link href="/guide" className="underline-offset-4 hover:text-white hover:underline">
                 {t("guide.title")}
               </Link>
-              <Link href="/legal/terms" className="underline-offset-4 hover:text-foreground hover:underline">
+              <Link href="/legal/terms" className="underline-offset-4 hover:text-white hover:underline">
                 {t("legal.terms.title")}
               </Link>
-              <Link href="/legal/privacy" className="underline-offset-4 hover:text-foreground hover:underline">
+              <Link href="/legal/privacy" className="underline-offset-4 hover:text-white hover:underline">
                 {t("legal.privacy.title")}
               </Link>
             </div>
@@ -251,7 +263,7 @@ export default function LandingPage() {
                 href="https://github.com/tarikchouika/F-W-M-S"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 underline-offset-4 hover:text-foreground hover:underline"
+                className="inline-flex items-center gap-1.5 underline-offset-4 hover:text-white hover:underline"
               >
                 <Github className="size-3.5 shrink-0" aria-hidden />
                 <span dir="ltr">tarikchouika/F-W-M-S</span>
@@ -261,7 +273,7 @@ export default function LandingPage() {
             </div>
           </nav>
         </div>
-        <div className="h-1 w-full bg-gradient-to-l from-primary via-[var(--fwms-gold)] to-primary opacity-70" aria-hidden />
+        <div className="h-1 w-full bg-gradient-to-l from-transparent via-[var(--fwms-gold)] to-transparent opacity-80" aria-hidden />
       </footer>
     </div>
   );

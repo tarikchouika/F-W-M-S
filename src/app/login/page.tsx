@@ -5,7 +5,7 @@ import { ShieldCheck } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LangSwitcher } from "@/components/fwms/lang-switcher";
 import { ThemeSwitcher } from "@/components/fwms/theme-switcher";
-import { FwmsLogo } from "@/components/fwms/logo";
+import { FwmsLogo, FwmsMark } from "@/components/fwms/logo";
 import { LoginForm } from "@/components/fwms/login-form";
 import { getSession } from "@/lib/auth/session";
 import { getPlatformBranding } from "@/lib/branding";
@@ -59,6 +59,11 @@ export default async function LoginPage({ searchParams }: LoginProps) {
       className="fwms-hero-gradient relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-4 py-10 lg:px-8"
     >
       <div className="fwms-zellige absolute inset-0 opacity-50" aria-hidden />
+      {/* العلامة المائية — لوغو ذهبي كبير خلف بطاقة الدخول */}
+      <FwmsMark
+        className="pointer-events-none absolute left-1/2 top-1/2 w-[28rem] max-w-[130%] -translate-x-1/2 -translate-y-1/2 select-none opacity-[0.10]"
+        aria-hidden
+      />
 
       {/* لغة الرابط (?lang=) تُطبّق على الكوكي مرة واحدة فيتحدّث نموذج الدخول (عميل) —
           لا شيء يُعرض من هذا المكوّن */}

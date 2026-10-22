@@ -21,6 +21,7 @@ import { reportDict, tr, docMoney, docHours, monthLabel, isRtl } from "./i18n";
 import type { ReportDict } from "./i18n";
 import { qrDataUrl } from "./qr";
 import { LINE_KIND_MAP } from "./line-kinds";
+import { markPng } from "./logo";
 import { bidiPieces } from "./bidi";
 
 const require_ = createRequire(join(process.cwd(), "package.json"));
@@ -59,17 +60,18 @@ type Ctx = {
   options: ReportOptions;
   meta: PdfRenderMeta;
   branding: ReportBranding;
+  logoMark: Buffer | null; // العلامة الذهبية الشفافة (PNG) — الشعار المعتمد 2026-10-21
 };
 
 // ─── لوحة الهوية (globals.css — oklch محوَّل إلى hex) ──────────────────────
-const BRAND = "#0c5c3c"; // --primary (أخضر مغربي عميق)
-const BRAND_SOFT = "#ecf4ee"; // --secondary
-const BRAND_TINT = "#f2f8f4"; // مسحة خضراء فاتحة
-const GOLD = "#e1a035"; // --fwms-gold
-const INK = "#101911"; // --foreground
-const BODY = "#2c3730";
-const MUTED = "#5c675d"; // --muted-foreground
-const LINE = "#e4e6e1";
+const BRAND = "#0f2242"; // --primary (كحلي عميق — لون أرضية اللوغو)
+const BRAND_SOFT = "#eef1f7"; // --secondary
+const BRAND_TINT = "#f5f7fb"; // مسحة كحلية فاتحة
+const GOLD = "#d4a437"; // --fwms-gold
+const INK = "#101722"; // --foreground
+const BODY = "#2b3342";
+const MUTED = "#5a6478"; // --muted-foreground
+const LINE = "#e2e6ef";
 const PAPER = "#ffffff";
 const WARN_BG = "#fdf6e7";
 const WARN_BAR = "#d99b2b";
@@ -240,8 +242,17 @@ function hLine(doc: Doc, x: number, y: number, w: number, color: string, thickne
 const LOGO_PIN_PATH =
   "M32 48.23C30.3 43.73 22.4 33.2 22.4 26.5A9.6 9.6 0 1 1 41.6 26.5C41.6 33.2 33.7 43.73 32 48.23Z";
 
-/** شعار FWMS: نجمة زليج ذهبية + دبوس موقع (رسم متجهي — نفس geometry للSVG) */
-function drawLogo(doc: Doc, x: number, y: number, size: number, star: string, pin: string, hole: string): void {
+/** شعار FWMS: العلامة الذهبية المعتمدة (PNG شفاف) فوق شريط الهوية الكحلي.
+ *  الاحتياطي المتجهي (نجمة زليج + دبوس) يُرسم فقط إن تعذّر تحميل الصورة (بيئة بلا public/). */
+function drawLogo(doc: Doc, x: number, y: number, size: number, star: string, pin: string, hole: string, mark?: Buffer | null): void {
+  if (mark && mark.length > 0) {
+    try {
+      doc.image(mark, x, y, { width: size, height: size });
+      return;
+    } catch {
+      /* يسقط إلى الرسم المتجهي أدناه */
+    }
+  }
   const s = size / 64;
   const cx = 32;
   const cy = 32;
@@ -282,7 +293,7 @@ function drawBrandBand(doc: Doc, ctx: Ctx): void {
   rect(doc, 0, BAND_H, PAGE_W, 2.6, GOLD);
   const logoSize = 31;
   const logoX = ctx.rtl ? PAGE_W - M_X - logoSize : M_X;
-  drawLogo(doc, logoX, (BAND_H - logoSize) / 2, logoSize, GOLD, PAPER, BRAND);
+  drawLogo(doc, logoX, (BAND_H - logoSize) / 2, logoSize, GOLD, PAPER, BRAND, ctx.logoMark);
 
   const company = ctx.branding.displayName || ctx.branding.legalName;
   const namePieces = measurePieces(doc, company, { size: 11.5, bold: true, color: PAPER });
@@ -290,10 +301,10 @@ function drawBrandBand(doc: Doc, ctx: Ctx): void {
   const nameX = ctx.rtl ? logoX - 11 - nameW : logoX + logoSize + 11;
   drawLine(doc, namePieces, nameX, 14.5, { size: 11.5, bold: true, color: PAPER });
 
-  const legalPieces = measurePieces(doc, ctx.branding.legalName, { size: 7.4, color: "#c3ddce" });
+  const legalPieces = measurePieces(doc, ctx.branding.legalName, { size: 7.4, color: "#c7d3e8" });
   const legalW = piecesWidth(legalPieces);
   const legalX = ctx.rtl ? logoX - 11 - legalW : logoX + logoSize + 11;
-  drawLine(doc, legalPieces, legalX, 32.5, { size: 7.4, color: "#c3ddce" });
+  drawLine(doc, legalPieces, legalX, 32.5, { size: 7.4, color: "#c7d3e8" });
 }
 
 /** تذييل كل صفحة */
@@ -473,7 +484,7 @@ function drawKvPanel(
       bold: item.bold === true,
       color: INK,
     });
-    hLine(doc, cellX, cy + 23, colW, "#d9e4dc", 0.5);
+    hLine(doc, cellX, cy + 23, colW, "#dde3ee", 0.5);
   });
 }
 
@@ -527,7 +538,7 @@ function drawKvCard(
       color: INK,
     });
 
-    hLine(doc, cellX, cy + rowH - 6, colW, "#d9e4dc", 0.5);
+    hLine(doc, cellX, cy + rowH - 6, colW, "#dde3ee", 0.5);
   });
   flow.y = top + cardH;
 }
@@ -1094,6 +1105,7 @@ export async function renderReportPdf(
     options,
     meta,
     branding: data.branding,
+    logoMark: await markPng(),
   };
   docRtl = ctx.rtl;
 

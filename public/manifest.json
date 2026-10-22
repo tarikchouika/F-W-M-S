@@ -9,8 +9,8 @@
   "orientation": "portrait-primary",
   "dir": "auto",
   "lang": "ar",
-  "theme_color": "#14532d",
-  "background_color": "#f8faf6",
+  "theme_color": "#0f2242",
+  "background_color": "#f7f4ec",
   "icons": [
     {
       "src": "/icons/icon-192.png",
@@ -25,7 +25,7 @@
       "purpose": "any"
     },
     {
-      "src": "/icons/icon-512.png",
+      "src": "/icons/maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
@@ -41,17 +41,32 @@
     {
       "name": "حضوري",
       "url": "/dashboard/my-attendance",
-      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     },
     {
       "name": "برنامجي",
       "url": "/dashboard/my-schedule",
-      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     },
     {
       "name": "الرسائل الصوتية",
       "url": "/dashboard/voice",
-      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     }
   ]
 }
