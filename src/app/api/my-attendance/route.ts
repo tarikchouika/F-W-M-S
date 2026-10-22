@@ -86,7 +86,7 @@ export async function GET() {
     // المواقع النشطة للشركة بإحداثياتها + السياسة النافذة (يختار العامل موقعه)
     const sites = await db.site.findMany({
       where: { companyId: session!.companyId, status: "active" },
-      select: { id: true, name: true, names: true, address: true, latitude: true, longitude: true, radiusM: true },
+      select: { id: true, companyId: true, name: true, names: true, address: true, latitude: true, longitude: true, radiusM: true },
       orderBy: { name: "asc" },
       take: 50,
     });

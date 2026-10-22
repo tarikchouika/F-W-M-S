@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { ShieldAlert } from "lucide-react";
 import { getSession } from "@/lib/auth/session";
 import { sessionCan } from "@/lib/rbac";
+import { hasPermission } from "@/lib/delegations";
 import { LOCALE_COOKIE, resolveLocale } from "@/i18n/config";
 import { getDictionary, tServer } from "@/i18n/get-dictionary";
 import { SitesManager } from "@/components/fwms/sites-manager";
@@ -32,5 +33,9 @@ export default async function SitesPage() {
     );
   }
 
-  return <SitesManager />;
+  // الحذف النهائي: data.delete — السوبر بطبعه أو مفوَّض (أمر المالك 2026-10-23)
+  const canDelete =
+    session.role === "super_admin" || (await hasPermission(session, "data.delete"));
+
+  return <SitesManager canDelete={canDelete} />;
 }

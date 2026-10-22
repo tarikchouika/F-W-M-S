@@ -48,6 +48,8 @@ export const branchCreateSchema = z.object({
   city: optionalText(80),
   address: optionalText(240),
   names: localeNamesSchema.optional(),
+  // عناوين محلية (بلاغ المالك 2026-10-23 «خلل ترجمة العناوين الجغرافية»)
+  addresses: localeNamesSchema.optional(),
 });
 
 export const branchUpdateSchema = branchCreateSchema.partial().extend({
@@ -75,6 +77,8 @@ export const siteCreateSchema = z.object({
   names: localeNamesSchema.optional(),
   name: nameField,
   address: optionalText(240),
+  // عناوين محلية (بلاغ المالك 2026-10-23 «خلل ترجمة العناوين الجغرافية»)
+  addresses: localeNamesSchema.optional(),
   latitude: z.number().min(-90).max(90),
   longitude: z.number().min(-180).max(180),
   radiusM: z

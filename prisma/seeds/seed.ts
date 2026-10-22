@@ -85,14 +85,22 @@ async function main() {
 
   // 5) مستخدمو الأدوار الخمسة (تجريبيون) + عاملان إضافيان لسيناريو التغطية السريعة (المرحلة 5)
   const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
+  // أسماء محلية للعرض التجريبي (علاج بلاغ المالك 2026-10-23 «خلل ترجمة اسم العامل/المستخدم»)
   const users = [
-    { id: "user-super-admin", email: "owner@fwms.local", fullName: "مالك المنصة", role: "super_admin" },
-    { id: "user-admin", email: "admin@demo.ma", fullName: "مدير العمليات", role: "admin" },
-    { id: "user-accountant", email: "accountant@demo.ma", fullName: "المسؤول عن المحاسبة", role: "accountant" },
-    { id: "user-coadmin", email: "supervisor@demo.ma", fullName: "المشرف الميداني", role: "co_admin" },
-    { id: "user-employee", email: "worker@demo.ma", fullName: "عامل ميداني", role: "employee" },
-    { id: "user-employee-2", email: "worker2@demo.ma", fullName: "عاملة ميدانية بديلة", role: "employee" },
-    { id: "user-employee-3", email: "worker3@demo.ma", fullName: "عامل ميداني ثالث", role: "employee" },
+    { id: "user-super-admin", email: "owner@fwms.local", fullName: "مالك المنصة", role: "super_admin",
+      names: { ar: "مالك المنصة", fr: "Propriétaire de la plateforme", en: "Platform Owner", es: "Propietario de la plataforma" } },
+    { id: "user-admin", email: "admin@demo.ma", fullName: "مدير العمليات", role: "admin",
+      names: { ar: "مدير العمليات", fr: "Directeur des opérations", en: "Operations Manager", es: "Director de operaciones" } },
+    { id: "user-accountant", email: "accountant@demo.ma", fullName: "المسؤول عن المحاسبة", role: "accountant",
+      names: { ar: "المسؤول عن المحاسبة", fr: "Responsable comptable", en: "Accounting Officer", es: "Responsable de contabilidad" } },
+    { id: "user-coadmin", email: "supervisor@demo.ma", fullName: "المشرف الميداني", role: "co_admin",
+      names: { ar: "المشرف الميداني", fr: "Superviseur de terrain", en: "Field Supervisor", es: "Supervisor de campo" } },
+    { id: "user-employee", email: "worker@demo.ma", fullName: "عامل ميداني", role: "employee",
+      names: { ar: "عامل ميداني", fr: "Ouvrier de terrain", en: "Field Worker", es: "Obrero de campo" } },
+    { id: "user-employee-2", email: "worker2@demo.ma", fullName: "عاملة ميدانية بديلة", role: "employee",
+      names: { ar: "عاملة ميدانية بديلة", fr: "Ouvrière de terrain suppléante", en: "Backup Field Worker", es: "Trabajadora de campo suplente" } },
+    { id: "user-employee-3", email: "worker3@demo.ma", fullName: "عامل ميداني ثالث", role: "employee",
+      names: { ar: "عامل ميداني ثالث", fr: "Troisième ouvrier de terrain", en: "Third Field Worker", es: "Tercer obrero de campo" } },
   ];
 
   for (const u of users) {
@@ -103,6 +111,7 @@ async function main() {
         id: u.id,
         email: u.email,
         fullName: u.fullName,
+        names: u.names ? JSON.stringify(u.names) : undefined,
         passwordHash,
         locale: "ar",
         isActive: true,
@@ -156,6 +165,12 @@ async function main() {
       code: "CASA-01",
       city: "الدار البيضاء",
       address: "شارع الزرقطوني، الدار البيضاء",
+      addresses: JSON.stringify({
+        ar: "شارع الزرقطوني، الدار البيضاء",
+        fr: "Boulevard Zerktouni, Casablanca",
+        en: "Zerktouni Boulevard, Casablanca",
+        es: "Bulevar Zerktouni, Casablanca",
+      }),
     },
   });
 
@@ -180,24 +195,31 @@ async function main() {
   });
 
   // مواقع بإحداثيات حقيقية تقريبية بالدار البيضاء — معيار القبول: موقع بنصف قطر يظهر على الخريطة
+  // عناوين محلية للعرض (علاج بلاغ المالك 2026-10-23 «خلل ترجمة العناوين الجغرافية»)
   const demoSites = [
     {
       id: "site-demo-gate",
       name: "موقع الحراسة — البوابة الرئيسية",
       names: JSON.stringify({ ar: "موقع الحراسة — البوابة الرئيسية", fr: "Site Sécurité — Portail Principal", en: "Security Site — Main Gate", es: "Sitio de Seguridad — Portal Principal" }),
-      address: "مدخل البرج، شارع الزرقطوني", latitude: 33.5731, longitude: -7.5898, radiusM: 60,
+      address: "مدخل البرج، شارع الزرقطوني",
+      addresses: JSON.stringify({ ar: "مدخل البرج، شارع الزرقطوني", fr: "Entrée de la tour, boulevard Zerktouni", en: "Tower entrance, Zerktouni Boulevard", es: "Entrada de la torre, bulevar Zerktouni" }),
+      latitude: 33.5731, longitude: -7.5898, radiusM: 60,
     },
     {
       id: "site-demo-mall",
       name: "موقع النظافة — المركز التجاري",
       names: JSON.stringify({ ar: "موقع النظافة — المركز التجاري", fr: "Site Nettoyage — Centre Commercial", en: "Cleaning Site — Shopping Center", es: "Sitio de Limpieza — Centro Comercial" }),
-      address: "Anfa Place، الدار البيضاء", latitude: 33.5922, longitude: -7.632, radiusM: 80,
+      address: "Anfa Place، الدار البيضاء",
+      addresses: JSON.stringify({ ar: "Anfa Place، الدار البيضاء", fr: "Anfa Place, Casablanca", en: "Anfa Place, Casablanca", es: "Anfa Place, Casablanca" }),
+      latitude: 33.5922, longitude: -7.632, radiusM: 80,
     },
     {
       id: "site-demo-garden",
       name: "موقع البستنة — حديقة الجامعة العربية",
       names: JSON.stringify({ ar: "موقع البستنة — حديقة الجامعة العربية", fr: "Site Espaces Verts — Jardin de l'Université Arabe", en: "Landscaping Site — Arab University Garden", es: "Sitio de Jardinería — Jardín de la Universidad Árabe" }),
-      address: "الدار البيضاء", latitude: 33.5913, longitude: -7.6189, radiusM: 50,
+      address: "الدار البيضاء",
+      addresses: JSON.stringify({ ar: "الدار البيضاء", fr: "Casablanca", en: "Casablanca", es: "Casablanca" }),
+      latitude: 33.5913, longitude: -7.6189, radiusM: 50,
     },
   ];
   for (const s of demoSites) {

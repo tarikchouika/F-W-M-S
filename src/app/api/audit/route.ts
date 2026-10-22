@@ -12,7 +12,6 @@ export async function GET(req: NextRequest) {
     const session = await getSession();
     requirePermission(session, "audit.view");
     const locale = await getUiLocale();
-
     const url = new URL(req.url);
     const q = (k: string) => (url.searchParams.get(k) ?? "").trim();
     const page = Math.min(Math.max(parseInt(q("page") || "1", 10) || 1, 1), 500);
@@ -55,7 +54,8 @@ export async function GET(req: NextRequest) {
         skip: (page - 1) * pageSize,
         take: pageSize,
         include: {
-          user: { select: { fullName: true, email: true } },
+          // names: أسماء مستخدم محلية (بلاغ المالك 2026-10-23 — اسم الفاعل يتبع لغة الواجهة)
+          user: { select: { fullName: true, names: true, email: true } },
           company: { select: { legalName: true, names: true } },
         },
       }),
@@ -70,7 +70,7 @@ export async function GET(req: NextRequest) {
         id: l.id,
         at: l.createdAt,
         action: l.action,
-        actor: l.user?.fullName ?? "system",
+        actor: l.user ? localizedName(l.user, locale, "fullName") : "system",
         actorEmail: l.user?.email ?? null,
         company: l.company ? localizedName(l.company, locale, "legalName") : null,
         entity: l.entity,

@@ -2,8 +2,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth/session";
-import { namesColumnValue } from "@/lib/localized-name";
-import { requirePermission, AccessError } from "@/lib/rbac";
+import { namesColumnValue, addressesColumnValue } from "@/lib/localized-name";
+import { requirePermission, roleHas, AccessError } from "@/lib/rbac";
+import { hasPermission } from "@/lib/delegations";
 import { writeAudit } from "@/lib/audit";
 import { siteUpdateSchema, emptyToNull, entityIdSchema } from "@/lib/organization";
 
@@ -59,6 +60,7 @@ export async function PATCH(
       data: {
         name: data.name ?? undefined,
         address: data.address !== undefined ? emptyToNull(data.address) : undefined,
+        addresses: data.addresses !== undefined ? addressesColumnValue(data.addresses) : undefined,
         latitude: data.latitude ?? undefined,
         longitude: data.longitude ?? undefined,
         radiusM: data.radiusM ?? undefined,
@@ -121,14 +123,22 @@ export async function PATCH(
   }
 }
 
-// الحذف = أرشفة (SPEC §11.7: مواقع الحضور وسجلاته لا تُحذف)
+// الحذف = أرشفة (SPEC §11.7: مواقع الحضور وسجلاته لا تُحذف) — والحذف النهائي (?purge=1)
+// للسوبر/المفوّض حين لا سجلات تشغيلية تربط الموقع (أمر المالك 2026-10-23)
 export async function DELETE(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getSession();
-    requirePermission(session, "company.manage");
+    if (!session) throw new AccessError(401, "unauthenticated");
+    const purge = new URL(req.url).searchParams.get("purge") === "1";
+    if (purge) {
+      const allowed = roleHas(session.role, "data.delete") || (await hasPermission(session, "data.delete"));
+      if (!allowed) throw new AccessError(403, "no_delete_permission");
+    } else {
+      requirePermission(session, "company.manage");
+    }
 
     const { id } = await params;
     if (!entityIdSchema.safeParse(id).success) {
@@ -141,6 +151,32 @@ export async function DELETE(
     if (!site) {
       return NextResponse.json({ error: "not_found" }, { status: 404 });
     }
+
+    // ── الحذف النهائي: لا موقع عليه ورديات أو حضور أو مجموعات (سلامة التاريخ) ──
+    if (purge) {
+      const [shifts, recurrences, attendance, groups] = await Promise.all([
+        db.shift.count({ where: { siteId: id } }),
+        db.shiftRecurrence.count({ where: { siteId: id } }),
+        db.attendanceEvent.count({ where: { siteId: id } }),
+        db.workerGroup.count({ where: { siteId: id } }),
+      ]);
+      if (shifts + recurrences + attendance + groups > 0) {
+        return NextResponse.json({ error: "site_has_records" }, { status: 409 });
+      }
+      const reason = (await req.json().catch(() => null))?.reason?.toString?.().slice(0, 500) ?? null;
+      await db.site.delete({ where: { id } });
+      await writeAudit({
+        companyId: session!.companyId,
+        userId: session!.sub,
+        action: "site.delete",
+        entity: "site",
+        entityId: site.id,
+        before: { name: site.name, address: site.address, status: site.status },
+        reason,
+      });
+      return NextResponse.json({ ok: true, purged: true });
+    }
+
     if (site.status === "archived") {
       return NextResponse.json({ ok: true, already: true });
     }

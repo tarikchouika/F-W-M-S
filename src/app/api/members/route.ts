@@ -3,11 +3,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth/session";
 import { requirePermission, AccessError } from "@/lib/rbac";
+import { localizedName } from "@/lib/localized-name";
+import { getUiLocale } from "@/i18n/ui-locale";
 
 export async function GET(_req: NextRequest) {
   try {
     const session = await getSession();
     requirePermission(session, "scheduling.manage");
+    const locale = await getUiLocale();
 
     const memberships = await db.userMembership.findMany({
       where: {
@@ -16,14 +19,14 @@ export async function GET(_req: NextRequest) {
         user: { isActive: true },
       },
       include: {
-        user: { select: { id: true, fullName: true, email: true } },
+        user: { select: { id: true, fullName: true, names: true, email: true } },
       },
     });
 
     const members = memberships
       .map((m) => ({
         userId: m.user.id,
-        fullName: m.user.fullName,
+        fullName: localizedName(m.user, locale, "fullName"),
         email: m.user.email,
         role: m.role,
       }))

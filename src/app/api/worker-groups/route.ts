@@ -5,16 +5,19 @@ import { getSession } from "@/lib/auth/session";
 import { requirePermission, AccessError } from "@/lib/rbac";
 import { writeAudit } from "@/lib/audit";
 import { groupCreateSchema, emptyToNull } from "@/lib/organization";
+import { localizedName } from "@/lib/localized-name";
+import { getUiLocale } from "@/i18n/ui-locale";
 
 export async function GET() {
   try {
     const session = await getSession();
     requirePermission(session, "company.manage");
+    const locale = await getUiLocale();
 
     const groups = await db.workerGroup.findMany({
       where: { companyId: session!.companyId },
       include: {
-        leader: { select: { id: true, fullName: true } },
+        leader: { select: { id: true, fullName: true, names: true } },
         site: { select: { id: true, name: true, latitude: true, longitude: true } },
         members: { where: { status: "active" }, select: { userId: true } },
       },
@@ -30,7 +33,7 @@ export async function GET() {
         status: g.status,
         kind: g.kind,
         leaderUserId: g.leaderUserId,
-        leaderName: g.leader?.fullName ?? null,
+        leaderName: g.leader ? localizedName(g.leader, locale, "fullName") : null,
         siteId: g.siteId,
         siteName: g.site?.name ?? null,
         memberCount: g.members.length,

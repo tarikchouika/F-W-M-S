@@ -2,7 +2,7 @@
 
 // FWMS — مدير المشاريع (المرحلة 2): قائمة + إنشاء/تعديل/أرشفة/استعادة + إسناد فرع
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { FolderKanban, Plus, Pencil, Archive, ArchiveRestore, Search, LoaderCircle } from "lucide-react";
+import { FolderKanban, Plus, Pencil, Archive, ArchiveRestore, Search, LoaderCircle, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -41,7 +41,7 @@ function toDateInput(iso: string | null): string {
   return d.toISOString().slice(0, 10);
 }
 
-export function ProjectsManager() {
+export function ProjectsManager({ canDelete = false }: { canDelete?: boolean }) {
   const { t, locale } = useI18n();
   const { toast } = useToast();
 
@@ -153,6 +153,21 @@ export function ProjectsManager() {
     await load();
   }
 
+  /** الحذف النهائي (?purge=1) — data.delete؛ حرّاس السلامة في الخادم ترشد عند الرفض */
+  async function onPurge(row: ProjectRow) {
+    try {
+      await apiRequest(`/api/projects/${row.id}?purge=1`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: null }),
+      });
+      toast({ description: t("projects.deleted") });
+    } catch (err) {
+      toast({ variant: "destructive", description: apiErrorMessage(t, err) });
+    }
+    await load();
+  }
+
   async function onRestore(row: ProjectRow) {
     try {
       await apiRequest(`/api/projects/${row.id}`, {
@@ -243,6 +258,16 @@ export function ProjectsManager() {
                               {t("common.restore")}
                             </Button>
                           )}
+                            {canDelete && (
+                              <ConfirmAction
+                                triggerLabel={<Trash2 className="size-4" aria-hidden />}
+                                triggerClassName="h-8 gap-1.5 px-2 text-xs text-destructive hover:text-destructive"
+                                title={t("deleteDialog.projectTitle")}
+                                description={t("deleteDialog.projectDesc")}
+                                confirmLabel={t("common.confirmDelete")}
+                                onConfirm={() => onPurge(row)}
+                              />
+                            )}
                         </div>
                       </TableCell>
                     </TableRow>

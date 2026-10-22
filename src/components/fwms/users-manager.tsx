@@ -3,6 +3,8 @@
 // FWMS — إدارة المستخدمين (المرحلة 9): إنشاء الحسابات للسوبر أدمن حصرًا (أو مفوَّض)،
 // تعطيل/تفعيل وتعيين المسمى الوظيفي لمن يملك users.manage، ولوحة تفويض الصلاحيات
 // للسوبر أدمن وحده. كلمة المرور الابتدائية تُعرض مرة واحدة في استجابة الإنشاء فقط.
+// (علاج بلاغ المالك 2026-10-23): أسماء المستخدمين المحلية (تتبع لغة الواجهة) +
+// حذف نهائي لمن يملك data.delete + بطاقات جوال بدل الجدول المعصور.
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import {
   UserPlus,
@@ -28,6 +30,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/provider";
 import { ListState, apiRequest, apiErrorMessage } from "@/components/fwms/org-bits";
 import { JOB_TITLE_CATEGORIES, jobTitleLabel } from "@/lib/job-titles";
+import { LocaleNamesFields, EMPTY_LOCALE_NAMES, localeNamesFromRow, localeNamesBody, type LocaleNamesForm } from "@/components/fwms/locale-names-fields";
 
 const NONE = "none"; // قيمة حارسة (درس Radix Select — قيمة نصية فارغة مرفوضة)
 
@@ -35,6 +38,8 @@ type UserRow = {
   userId: string;
   email: string;
   fullName: string;
+  baseName?: string;
+  names?: string | null;
   phone: string | null;
   role: string;
   isActive: boolean;
@@ -68,10 +73,12 @@ export function UsersManager({
   canCreate,
   isSuperAdmin,
   myUserId,
+  canDelete,
 }: {
   canCreate: boolean;
   isSuperAdmin: boolean;
   myUserId: string;
+  canDelete: boolean;
 }) {
   const { t, locale } = useI18n();
   const { toast } = useToast();
@@ -93,6 +100,12 @@ export function UsersManager({
     jobTitleKey: NONE as string,
     password: "",
   });
+  const [formNames, setFormNames] = useState<LocaleNamesForm>(EMPTY_LOCALE_NAMES);
+
+  // حوار الحذف النهائي (أمر المالك 2026-10-23)
+  const [deleteRow, setDeleteRow] = useState<UserRow | null>(null);
+  const [deleteReason, setDeleteReason] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   // تفويض
   const [delegations, setDelegations] = useState<DelegationRow[]>([]);
@@ -152,6 +165,7 @@ export function UsersManager({
     try {
       const body = JSON.stringify({
         fullName: form.fullName.trim(),
+        names: localeNamesBody(formNames),
         email: form.email.trim(),
         phone: form.phone.trim() || null,
         role: form.role,
@@ -166,6 +180,7 @@ export function UsersManager({
       setCreateOpen(false);
       setInitialPassword({ email: data.user.email, password: data.initialPassword });
       setForm({ fullName: "", email: "", phone: "", role: "employee", jobTitleKey: NONE, password: "" });
+      setFormNames(EMPTY_LOCALE_NAMES);
       await load();
     } catch (err) {
       toast({ variant: "destructive", description: apiErrorMessage(t, err) });
@@ -236,6 +251,27 @@ export function UsersManager({
       await loadDelegations();
     } catch (err) {
       toast({ variant: "destructive", description: apiErrorMessage(t, err) });
+    }
+  }
+
+  /** الحذف النهائي (data.delete): حرّاس السلامة في الخادم — رسالة مرشدة عند الرفض */
+  async function confirmDelete() {
+    if (!deleteRow || deleting) return;
+    setDeleting(true);
+    try {
+      await apiRequest(`/api/users/${deleteRow.userId}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: deleteReason.trim() || null }),
+      });
+      setDeleteRow(null);
+      setDeleteReason("");
+      toast({ description: t("usersPage.deleted") });
+      await load();
+    } catch (err) {
+      toast({ variant: "destructive", description: apiErrorMessage(t, err) });
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -355,7 +391,7 @@ export function UsersManager({
           {filtered.length === 0 ? (
             <p className="px-4 py-10 text-center text-sm text-muted-foreground">{t("common.noData")}</p>
           ) : (
-            <div className="max-h-[520px] overflow-y-auto">
+            <div className="hidden max-h-[520px] overflow-y-auto md:block">
               <Table>
                 <TableHeader className="sticky top-0 bg-muted/95 backdrop-blur">
                   <TableRow>
@@ -417,30 +453,107 @@ export function UsersManager({
                         {r.userId === myUserId ? (
                           <span className="text-[11px] text-muted-foreground">{t("usersPage.you")}</span>
                         ) : (
-                          <Button
-                            variant={r.isActive ? "outline" : "secondary"}
-                            size="sm"
-                            className="h-8 gap-1.5 px-2 text-xs"
-                            onClick={() => void toggleActive(r)}
-                          >
-                            {r.isActive ? (
-                              <>
-                                <Ban className="size-3.5 text-red-600" aria-hidden />
-                                {t("usersPage.deactivate")}
-                              </>
-                            ) : (
-                              <>
-                                <CheckCircle2 className="size-3.5 text-green-600" aria-hidden />
-                                {t("usersPage.activate")}
-                              </>
+                          <div className="flex items-center gap-1.5">
+                            <Button
+                              variant={r.isActive ? "outline" : "secondary"}
+                              size="sm"
+                              className="h-8 gap-1.5 px-2 text-xs"
+                              onClick={() => void toggleActive(r)}
+                            >
+                              {r.isActive ? (
+                                <>
+                                  <Ban className="size-3.5 text-red-600" aria-hidden />
+                                  {t("usersPage.deactivate")}
+                                </>
+                              ) : (
+                                <>
+                                  <CheckCircle2 className="size-3.5 text-green-600" aria-hidden />
+                                  {t("usersPage.activate")}
+                                </>
+                              )}
+                            </Button>
+                            {canDelete && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 gap-1.5 px-2 text-xs text-red-600 hover:text-red-700"
+                                onClick={() => setDeleteRow(r)}
+                              >
+                                <Trash2 className="size-3.5" aria-hidden />
+                                {t("common.delete")}
+                              </Button>
                             )}
-                          </Button>
+                          </div>
                         )}
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
+            </div>
+          )}
+          {/* بطاقات الهاتف — بلا تمرير أفقي مهما طالت أسماء الأدوار بالترجمات (بلاغ 2026-10-23) */}
+          {filtered.length > 0 && (
+            <div className="space-y-3 p-3 md:hidden">
+              {filtered.map((r) => (
+                <div key={r.userId} className="rounded-xl border border-border/70 bg-card p-3.5">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-medium">{r.fullName}</span>
+                    <Badge variant="secondary" className="font-semibold">{t(roleLabelKey(r.role))}</Badge>
+                    {r.isActive ? (
+                      <Badge className="bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300">{t("common.active")}</Badge>
+                    ) : (
+                      <Badge variant="destructive">{t("common.suspended")}</Badge>
+                    )}
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground" dir="ltr">{r.email}</p>
+                  <div className="mt-2.5">
+                    <Select
+                      value={r.jobTitleKey ?? NONE}
+                      onValueChange={(v) => void setJobTitle(r, v)}
+                    >
+                      <SelectTrigger className="h-9 w-full text-xs" aria-label={t("usersPage.jobTitle")}>
+                        <SelectValue placeholder={t("presence.noJobTitle")} />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-72">
+                        <SelectItem value={NONE}>{t("presence.noJobTitle")}</SelectItem>
+                        {JOB_TITLE_CATEGORIES.map((cat) => (
+                          <div key={cat.key}>
+                            <div className="px-2 pt-2 text-[11px] font-bold text-muted-foreground">{cat.labels[locale]}</div>
+                            {cat.titles.map((title) => (
+                              <SelectItem key={title.key} value={title.key} className="text-xs">{title.labels[locale]}</SelectItem>
+                            ))}
+                          </div>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {r.userId !== myUserId && (
+                    <div className="mt-2.5 flex flex-wrap gap-2">
+                      <Button
+                        variant={r.isActive ? "outline" : "secondary"}
+                        size="sm"
+                        className="h-9 gap-1.5 px-3 text-xs"
+                        onClick={() => void toggleActive(r)}
+                      >
+                        {r.isActive ? <><Ban className="size-3.5 text-red-600" aria-hidden />{t("usersPage.deactivate")}</> : <><CheckCircle2 className="size-3.5 text-green-600" aria-hidden />{t("usersPage.activate")}</>}
+                      </Button>
+                      {canDelete && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-9 gap-1.5 px-3 text-xs text-red-600 hover:text-red-700"
+                          onClick={() => setDeleteRow(r)}
+                        >
+                          <Trash2 className="size-3.5" aria-hidden />
+                          {t("common.delete")}
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                  {r.userId === myUserId && <p className="mt-2 text-[11px] text-muted-foreground">{t("usersPage.you")}</p>}
+                </div>
+              ))}
             </div>
           )}
         </CardContent>
@@ -501,6 +614,8 @@ export function UsersManager({
                 <span className="text-[11px] text-muted-foreground">{t("usersPage.passwordHint")}</span>
               </div>
             </div>
+            {/* أسماء بلغات أخرى — الاسم يتبع لغة الواجهة (بلاغ المالك 2026-10-23) */}
+            <LocaleNamesFields form={formNames} setForm={setFormNames} disabled={saving} />
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>{t("common.cancel")}</Button>
               <Button type="submit" disabled={saving} className="gap-2">
@@ -563,6 +678,33 @@ export function UsersManager({
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+      {/* حوار الحذف النهائي (أمر المالك 2026-10-23) */}
+      <Dialog open={deleteRow !== null} onOpenChange={(open) => { if (!open) { setDeleteRow(null); setDeleteReason(""); } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-red-600">{t("deleteDialog.userTitle")}</DialogTitle>
+            <DialogDescription>{t("deleteDialog.userDesc")}</DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-3">
+            <div className="rounded-lg border border-border/70 bg-muted/40 p-3 text-sm">
+              <p className="font-semibold">{deleteRow?.fullName}</p>
+              <p className="text-xs text-muted-foreground" dir="ltr">{deleteRow?.email}</p>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="u-delete-reason">{t("deleteDialog.reasonLabel")}</Label>
+              <Input id="u-delete-reason" value={deleteReason} onChange={(e) => setDeleteReason(e.target.value)} maxLength={500} placeholder={t("deleteDialog.reasonPlaceholder")} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => { setDeleteRow(null); setDeleteReason(""); }}>{t("common.cancel")}</Button>
+            <Button type="button" variant="destructive" disabled={deleting} className="gap-2" onClick={() => void confirmDelete()}>
+              {deleting && <LoaderCircle className="size-4 animate-spin" aria-hidden />}
+              <Trash2 className="size-4" aria-hidden />
+              {t("common.confirmDelete")}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

@@ -64,7 +64,6 @@ export async function PATCH(req: NextRequest) {
           membershipId: raw.membershipId,
           companyId: raw.companyId,
           role: raw.role,
-          issuedAt: Math.floor(Date.now() / 1000),
         });
         await setSessionCookie(token);
         reSigned = true;

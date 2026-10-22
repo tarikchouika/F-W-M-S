@@ -47,7 +47,7 @@ export async function recordAttendance(
     // الموقع: ملكية الشركة + نشط (عزل 3.1 — التخمين لا يكشف شيئاً)
     const site = await db.site.findFirst({
       where: { id: body.siteId, companyId: session!.companyId, status: "active" },
-      select: { id: true, name: true, latitude: true, longitude: true, radiusM: true },
+      select: { id: true, companyId: true, name: true, latitude: true, longitude: true, radiusM: true },
     });
     if (!site) {
       return NextResponse.json({ error: "invalid_reference" }, { status: 400 });

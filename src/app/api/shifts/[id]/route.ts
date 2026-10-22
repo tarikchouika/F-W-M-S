@@ -52,7 +52,7 @@ export async function PATCH(
     const shift = await db.shift.findFirst({
       where: { id, companyId: session!.companyId },
       include: {
-        worker: { select: { id: true, fullName: true } },
+        worker: { select: { id: true, fullName: true, names: true } },
         site: { select: { id: true, name: true, names: true } },
         template: { select: { id: true, name: true } },
       },
@@ -221,7 +221,7 @@ export async function DELETE(
     const shift = await db.shift.findFirst({
       where: { id, companyId: session!.companyId },
       include: {
-        worker: { select: { fullName: true } },
+        worker: { select: { fullName: true, names: true } },
         site: { select: { name: true } },
       },
     });

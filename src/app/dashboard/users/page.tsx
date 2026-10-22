@@ -38,11 +38,14 @@ export default async function UsersPage() {
 
   const canCreate =
     session.role === "super_admin" || (await hasPermission(session, "users.create"));
+  // الحذف النهائي: data.delete — السوبر بطبعه أو مفوَّض (أمر المالك 2026-10-23)
+  const canDelete =
+    session.role === "super_admin" || (await hasPermission(session, "data.delete"));
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
       <PageHeader title={tServer(dict, "usersPage.title")} subtitle={tServer(dict, "usersPage.subtitle")} />
-      <UsersManager canCreate={canCreate} isSuperAdmin={session.role === "super_admin"} myUserId={session.sub} />
+      <UsersManager canCreate={canCreate} isSuperAdmin={session.role === "super_admin"} myUserId={session.sub} canDelete={canDelete} />
     </div>
   );
 }

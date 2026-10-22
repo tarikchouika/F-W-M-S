@@ -2,7 +2,7 @@
 
 // FWMS — مدير الفروع (المرحلة 2): قائمة + إنشاء/تعديل/أرشفة/استعادة
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { GitBranch, Plus, Pencil, Archive, ArchiveRestore, Search, LoaderCircle } from "lucide-react";
+import { GitBranch, Plus, Pencil, Archive, ArchiveRestore, Search, LoaderCircle, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/provider";
 import { LocaleNamesFields, EMPTY_LOCALE_NAMES, localeNamesFromRow, localeNamesBody } from "@/components/fwms/locale-names-fields";
+import { LocaleAddressesFields, EMPTY_LOCALE_ADDRESSES, localeAddressesFromRow, localeAddressesBody } from "@/components/fwms/locale-addresses-fields";
 import { PageHeader, StatusBadge, ConfirmAction, ListState, formatDate, apiRequest, apiErrorMessage } from "@/components/fwms/org-bits";
 
 type BranchRow = {
@@ -24,15 +25,17 @@ type BranchRow = {
   city: string | null;
   address: string | null;
   status: string;
+  baseAddress?: string | null;
+  addresses?: string | null;
   createdAt: string;
   activeSites: number;
 };
 
-type BranchForm = { name: string; code: string; city: string; address: string; namesAr: string; namesFr: string; namesEn: string; namesEs: string };
+type BranchForm = { name: string; code: string; city: string; address: string; namesAr: string; namesFr: string; namesEn: string; namesEs: string; addrAr: string; addrFr: string; addrEn: string; addrEs: string };
 
-const EMPTY_FORM: BranchForm = { ...EMPTY_LOCALE_NAMES, name: "", code: "", city: "", address: "" };
+const EMPTY_FORM: BranchForm = { ...EMPTY_LOCALE_NAMES, ...EMPTY_LOCALE_ADDRESSES, name: "", code: "", city: "", address: "" };
 
-export function BranchesManager() {
+export function BranchesManager({ canDelete = false }: { canDelete?: boolean }) {
   const { t, locale } = useI18n();
   const { toast } = useToast();
 
@@ -81,7 +84,7 @@ export function BranchesManager() {
 
   function openEdit(row: BranchRow) {
     setEditingId(row.id);
-    setForm({ ...localeNamesFromRow(row), name: row.baseName ?? row.name, code: row.code ?? "", city: row.city ?? "", address: row.address ?? "" });
+    setForm({ ...localeNamesFromRow(row), ...localeAddressesFromRow(row), name: row.baseName ?? row.name, code: row.code ?? "", city: row.city ?? "", address: row.baseAddress ?? row.address ?? "" });
     setDialogOpen(true);
   }
 
@@ -98,6 +101,7 @@ export function BranchesManager() {
       code: form.code.trim(),
       city: form.city.trim(),
       address: form.address.trim(),
+      addresses: localeAddressesBody(form),
     });
     setSaving(true);
     try {
@@ -121,6 +125,21 @@ export function BranchesManager() {
     try {
       await apiRequest(`/api/branches/${row.id}`, { method: "DELETE" });
       toast({ description: t("branches.archived") });
+    } catch (err) {
+      toast({ variant: "destructive", description: apiErrorMessage(t, err) });
+    }
+    await load();
+  }
+
+  /** الحذف النهائي (?purge=1) — data.delete؛ حرّاس السلامة في الخادم ترشد عند الرفض */
+  async function onPurge(row: BranchRow) {
+    try {
+      await apiRequest(`/api/branches/${row.id}?purge=1`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: null }),
+      });
+      toast({ description: t("branches.deleted") });
     } catch (err) {
       toast({ variant: "destructive", description: apiErrorMessage(t, err) });
     }
@@ -216,6 +235,16 @@ export function BranchesManager() {
                               {t("common.restore")}
                             </Button>
                           )}
+                            {canDelete && (
+                              <ConfirmAction
+                                triggerLabel={<Trash2 className="size-4" aria-hidden />}
+                                triggerClassName="h-8 gap-1.5 px-2 text-xs text-destructive hover:text-destructive"
+                                title={t("deleteDialog.branchTitle")}
+                                description={t("deleteDialog.branchDesc")}
+                                confirmLabel={t("common.confirmDelete")}
+                                onConfirm={() => onPurge(row)}
+                              />
+                            )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -240,6 +269,8 @@ export function BranchesManager() {
             </div>
 
             <LocaleNamesFields form={form} setForm={setForm} disabled={saving} />
+            {/* العنوان بلغات أخرى — يتبع لغة الواجهة (بلاغ المالك 2026-10-23) */}
+            <LocaleAddressesFields form={form} setForm={setForm} disabled={saving} />
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="flex flex-col gap-2">
                 <Label htmlFor="branch-code">{t("common.code")}</Label>

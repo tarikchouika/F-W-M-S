@@ -6,6 +6,8 @@ import { requirePermission, AccessError } from "@/lib/rbac";
 import { writeAudit } from "@/lib/audit";
 import { emptyToNull } from "@/lib/organization";
 import { recurrenceCreateSchema, isShiftManager, parseRotation } from "@/lib/scheduling";
+import { localizedName } from "@/lib/localized-name";
+import { getUiLocale } from "@/i18n/ui-locale";
 
 export async function GET(req: NextRequest) {
   try {
@@ -14,6 +16,7 @@ export async function GET(req: NextRequest) {
     if (!isShiftManager(session!.role)) {
       return NextResponse.json({ error: "forbidden" }, { status: 403 });
     }
+    const locale = await getUiLocale();
 
     const url = new URL(req.url);
     const status = url.searchParams.get("status") ?? "active";
@@ -25,7 +28,7 @@ export async function GET(req: NextRequest) {
       where,
       orderBy: { createdAt: "desc" },
       include: {
-        worker: { select: { id: true, fullName: true } },
+        worker: { select: { id: true, fullName: true, names: true } },
         site: { select: { id: true, name: true, names: true } },
         template: { select: { id: true, name: true } },
       },
@@ -54,7 +57,7 @@ export async function GET(req: NextRequest) {
         endsOn: r.endsOn,
         rotationStepDays: r.rotationStepDays,
         weekdays: r.mode === "fixed" ? parseWeekdaysLocal(r.weekdaysJson) : null,
-        worker: r.worker ? { id: r.worker.id, fullName: r.worker.fullName } : null,
+        worker: r.worker ? { id: r.worker.id, fullName: localizedName(r.worker, locale, "fullName") } : null,
         site: r.site ? { id: r.site.id, name: r.site.name } : null,
         template: r.template ? { id: r.template.id, name: r.template.name } : null,
         rotation:

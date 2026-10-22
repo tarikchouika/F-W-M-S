@@ -9,9 +9,11 @@ import { hasPermission } from "@/lib/delegations";
 import { writeAudit } from "@/lib/audit";
 import { entityIdSchema, emptyToNull } from "@/lib/organization";
 import { isJobTitleKey } from "@/lib/job-titles";
+import { localizedName } from "@/lib/localized-name";
+import { getUiLocale } from "@/i18n/ui-locale";
 
 async function loadGroup(companyId: string, id: string) {
-  return db.workerGroup.findFirst({ where: { id, companyId }, include: { leader: { select: { id: true, fullName: true } } } });
+  return db.workerGroup.findFirst({ where: { id, companyId }, include: { leader: { select: { id: true, fullName: true, names: true } } } });
 }
 
 async function canManage(session: { companyId: string; sub: string; role: string }): Promise<boolean> {
@@ -32,6 +34,7 @@ export async function GET(
     }
     const group = await loadGroup(session.companyId, id);
     if (!group) return NextResponse.json({ error: "not_found" }, { status: 404 });
+    const locale = await getUiLocale();
 
     // العرض: مسير الفرق، أو قائد هذا الفريق بعينه
     const manage = await canManage(session);
@@ -40,7 +43,7 @@ export async function GET(
 
     const members = await db.workerGroupMember.findMany({
       where: { groupId: id, status: "active" },
-      include: { user: { select: { id: true, fullName: true, email: true } } },
+      include: { user: { select: { id: true, fullName: true, names: true, email: true } } },
       orderBy: { addedAt: "asc" },
     });
 
@@ -50,7 +53,7 @@ export async function GET(
         name: group.name,
         kind: group.kind,
         leaderUserId: group.leaderUserId,
-        leaderName: group.leader?.fullName ?? null,
+        leaderName: group.leader ? localizedName(group.leader, locale, "fullName") : null,
         siteId: group.siteId,
         zone: group.zoneLat != null && group.zoneLng != null
           ? { lat: group.zoneLat, lng: group.zoneLng, radiusM: group.zoneRadiusM ?? 150 }
@@ -58,7 +61,7 @@ export async function GET(
       },
       members: members.map((m) => ({
         userId: m.userId,
-        fullName: m.user.fullName,
+        fullName: localizedName(m.user, locale, "fullName"),
         email: m.user.email,
         jobTitleKey: m.jobTitleKey,
         addedAt: m.addedAt.toISOString(),
@@ -93,6 +96,7 @@ export async function POST(
     }
     const group = await loadGroup(session.companyId, id);
     if (!group) return NextResponse.json({ error: "not_found" }, { status: 404 });
+    const locale = await getUiLocale();
 
     const parsed = addSchema.safeParse(await req.json().catch(() => null));
     if (!parsed.success) {
@@ -160,6 +164,7 @@ export async function DELETE(
     }
     const group = await loadGroup(session.companyId, id);
     if (!group) return NextResponse.json({ error: "not_found" }, { status: 404 });
+    const locale = await getUiLocale();
 
     const member = await db.workerGroupMember.findFirst({
       where: { groupId: id, userId, status: "active" },

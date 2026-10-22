@@ -108,7 +108,7 @@ export async function buildPayslipReportData(
     where: { id: payslipId, companyId },
     include: {
       period: true,
-      worker: { select: { id: true, fullName: true } },
+      worker: { select: { id: true, fullName: true, names: true } }, // names: اسم العامل يتبع لغة الوثيقة (بلاغ المالك 2026-10-23)
     },
   });
   if (!payslip) throw new ReportDataError(404, "payslip_not_found");
@@ -127,7 +127,7 @@ export async function buildPayslipReportData(
   const t = snap.totals;
 
   const worker: ReportWorker = {
-    fullName: payslip.worker.fullName,
+    fullName: localizedName(payslip.worker, language ?? "ar", "fullName"),
     cin: profile?.cin ?? null,
     cnssNumber: profile?.cnssNumber ?? null,
     payType: profile?.payType ?? "hourly",
@@ -186,7 +186,7 @@ export async function buildPayrollSummaryData(
     db.company.findUnique({ where: { id: companyId } }),
     db.payslip.findMany({
       where: { periodId: period.id, companyId },
-      include: { worker: { select: { fullName: true } } },
+      include: { worker: { select: { fullName: true, names: true } } },
       orderBy: { refNumber: "asc" },
     }),
   ]);
@@ -210,7 +210,7 @@ export async function buildPayrollSummaryData(
     const snap = parseSnapshot(ps.snapshotJson, ps.refNumber);
     const t = snap.totals;
     rows.push({
-      fullName: ps.worker.fullName,
+      fullName: localizedName(ps.worker, language ?? "ar", "fullName"),
       refNumber: ps.refNumber,
       workedMinutes: t.workedMinutes ?? ps.workedMinutes,
       overtimeMinutes: t.overtimeMinutes ?? ps.overtimeMinutes,
@@ -322,7 +322,7 @@ export async function buildAttendanceReportData(
     kind,
     branding: await reportBranding(),
     targetUserId,
-    workerName: worker.fullName,
+    workerName: localizedName(worker, language ?? "ar", "fullName"),
     rangeLabel: periodKeyOf(year, month),
     company: reportCompany(company, language),
     rows,

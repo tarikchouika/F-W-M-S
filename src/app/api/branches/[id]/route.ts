@@ -2,8 +2,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth/session";
-import { namesColumnValue } from "@/lib/localized-name";
-import { requirePermission, AccessError } from "@/lib/rbac";
+import { namesColumnValue, addressesColumnValue } from "@/lib/localized-name";
+import { requirePermission, roleHas, AccessError } from "@/lib/rbac";
+import { hasPermission } from "@/lib/delegations";
 import { writeAudit } from "@/lib/audit";
 import { branchUpdateSchema, emptyToNull, entityIdSchema } from "@/lib/organization";
 
@@ -41,6 +42,7 @@ export async function PATCH(
         code: data.code !== undefined ? emptyToNull(data.code) : undefined,
         city: data.city !== undefined ? emptyToNull(data.city) : undefined,
         address: data.address !== undefined ? emptyToNull(data.address) : undefined,
+        addresses: data.addresses !== undefined ? addressesColumnValue(data.addresses) : undefined,
         status: data.status ?? undefined,
         names: data.names !== undefined ? namesColumnValue(data.names) : undefined,
       },
@@ -76,13 +78,21 @@ export async function PATCH(
 }
 
 // الحذف = أرشفة (SPEC §11.7: لا حذف سجلات — الأرشفة تحفظ سلامة المراجع)
+// والحذف النهائي (?purge=1) للسوبر/المفوّض حين لا مشاريع/مواقع تربط الفرع (أمر المالك 2026-10-23)
 export async function DELETE(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getSession();
-    requirePermission(session, "company.manage");
+    if (!session) throw new AccessError(401, "unauthenticated");
+    const purge = new URL(req.url).searchParams.get("purge") === "1";
+    if (purge) {
+      const allowed = roleHas(session.role, "data.delete") || (await hasPermission(session, "data.delete"));
+      if (!allowed) throw new AccessError(403, "no_delete_permission");
+    } else {
+      requirePermission(session, "company.manage");
+    }
 
     const { id } = await params;
     if (!entityIdSchema.safeParse(id).success) {
@@ -95,6 +105,30 @@ export async function DELETE(
     if (!branch) {
       return NextResponse.json({ error: "not_found" }, { status: 404 });
     }
+
+    // ── الحذف النهائي: لا فرع عليه مشاريع أو مواقع (سلامة المراجع) ──
+    if (purge) {
+      const [projects, sites] = await Promise.all([
+        db.project.count({ where: { branchId: id } }),
+        db.site.count({ where: { branchId: id } }),
+      ]);
+      if (projects + sites > 0) {
+        return NextResponse.json({ error: "branch_has_children" }, { status: 409 });
+      }
+      const reason = (await req.json().catch(() => null))?.reason?.toString?.().slice(0, 500) ?? null;
+      await db.branch.delete({ where: { id } });
+      await writeAudit({
+        companyId: session!.companyId,
+        userId: session!.sub,
+        action: "branch.delete",
+        entity: "branch",
+        entityId: branch.id,
+        before: { name: branch.name, code: branch.code, status: branch.status },
+        reason,
+      });
+      return NextResponse.json({ ok: true, purged: true });
+    }
+
     if (branch.status === "archived") {
       return NextResponse.json({ ok: true, already: true });
     }

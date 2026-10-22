@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
       where,
       orderBy: { startsAt: "asc" },
       include: {
-        worker: { select: { id: true, fullName: true } },
+        worker: { select: { id: true, fullName: true, names: true } },
         site: { select: { id: true, name: true, names: true } },
         template: { select: { id: true, name: true } },
       },
@@ -68,7 +68,7 @@ export async function GET(req: NextRequest) {
         status: s.status,
         source: s.source,
         notes: s.notes,
-        worker: s.worker ? { id: s.worker.id, fullName: s.worker.fullName } : null,
+        worker: s.worker ? { id: s.worker.id, fullName: localizedName(s.worker, locale, "fullName") } : null,
         site: { id: s.site.id, name: localizedName(s.site, locale, "name") },
         template: s.template ? { id: s.template.id, name: s.template.name } : null,
       })),

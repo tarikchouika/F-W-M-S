@@ -7,7 +7,7 @@ import { getUiLocale } from "@/i18n/ui-locale";
 import { requirePermission, AccessError } from "@/lib/rbac";
 import { writeAudit } from "@/lib/audit";
 import { branchCreateSchema, emptyToNull } from "@/lib/organization";
-import { namesColumnValue } from "@/lib/localized-name";
+import { namesColumnValue, addressesColumnValue, localizedAddress } from "@/lib/localized-name";
 
 export async function GET() {
   try {
@@ -31,7 +31,9 @@ export async function GET() {
         names: b.names,
         code: b.code,
         city: b.city,
-        address: b.address,
+        // العنوان يتبع لغة الواجهة (بلاغ المالك 2026-10-23)؛ الأساسي في baseAddress
+        address: localizedAddress(b, locale, "address"), baseAddress: b.address,
+        addresses: b.addresses,
         status: b.status,
         createdAt: b.createdAt,
         activeSites: b._count.sites,
@@ -64,6 +66,7 @@ export async function POST(req: NextRequest) {
         code: emptyToNull(parsed.data.code),
         city: emptyToNull(parsed.data.city),
         address: emptyToNull(parsed.data.address),
+        addresses: addressesColumnValue(parsed.data.addresses),
       },
     });
 

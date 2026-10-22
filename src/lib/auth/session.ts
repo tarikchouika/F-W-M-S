@@ -85,12 +85,14 @@ export async function clearSessionCookie(): Promise<void> {
 
 /** إصدار جلسة جديدة لعضوية (يُستخدم عند الدخول وتبديل الشركة) */
 export async function issueSession(
-  payload: Omit<SessionPayload, "email" | "name" | "locale">
+  // issuedAt يُضبط هنا (ثوانٍ Unix) — SignJWT.setIssuedAt يعتمد لحظة التوقيع فعليًا
+  payload: Omit<SessionPayload, "email" | "name" | "locale" | "issuedAt">
 ): Promise<string> {
   const user = await db.user.findUnique({ where: { id: payload.sub } });
   if (!user) throw new Error("user not found");
   const token = await signSession({
     ...payload,
+    issuedAt: Math.floor(Date.now() / 1000),
     email: user.email,
     name: user.fullName,
     locale: user.locale,

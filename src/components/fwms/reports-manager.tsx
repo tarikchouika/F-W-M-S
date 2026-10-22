@@ -533,7 +533,8 @@ export function ReportsManager() {
               <Separator />
 
               <div className="space-y-2">
-                <div className="flex flex-wrap items-center gap-2">
+                {/* الجوال: شبكة أعمدة متساوية بلا التفاف ناقص (علاج توافق الجوال 2026-10-23) */}
+                <div className="flex flex-wrap items-center gap-2 max-sm:grid max-sm:grid-cols-4 max-sm:[&>span]:col-span-4">
                   <span className="text-sm text-muted-foreground">{t("reports.format")}:</span>
                   {(kindInfo?.formats ?? []).map((f) => (
                     <Button
@@ -541,7 +542,7 @@ export function ReportsManager() {
                       size="sm"
                       disabled={generating || !targetReady()}
                       onClick={() => void generate(f)}
-                      className="gap-1.5 uppercase"
+                      className="gap-1.5 uppercase max-sm:w-full"
                       title={
                         f === "csv"
                           ? t("reports.formatHintCsv")
@@ -574,6 +575,9 @@ export function ReportsManager() {
               {recent.length === 0 ? (
                 <p className="py-6 text-center text-sm text-muted-foreground">{t("reports.noExports")}</p>
               ) : (
+                <>
+                {/* جدول الحواسيب — بطاقات الهاتف أدناه (علاج توافق الجوال 2026-10-23) */}
+                <div className="hidden md:block">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -631,6 +635,39 @@ export function ReportsManager() {
                     ))}
                   </TableBody>
                 </Table>
+                </div>
+                {/* بطاقات الهاتف: مرجع كامل بلا اقتطاع مهما طالت الترجمات */}
+                <div className="space-y-3 md:hidden">
+                  {recent.map((d) => (
+                    <div key={d.id} className="rounded-xl border border-border/70 bg-card p-3.5">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="text-sm font-semibold">{t(`reports.kind.${d.kind}`)}</span>
+                        <Badge variant="outline" className="text-[10px] uppercase">{d.format} · v{d.version}</Badge>
+                      </div>
+                      <p className="mt-1 font-mono text-xs break-all" dir="ltr">{d.refNumber}</p>
+                      {d.targetLabel ? <p className="font-mono text-[11px] text-muted-foreground break-all" dir="ltr">{d.targetLabel}</p> : null}
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {localeLabels[d.language as keyof typeof localeLabels] ?? d.language} · <span dir="ltr">{new Date(d.createdAt).toLocaleString()}</span>
+                      </p>
+                      <p className="text-xs text-muted-foreground">{d.createdByName}</p>
+                      <div className="mt-2 flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => { setReviseTarget(d); setReviseNote(""); }}
+                        >
+                          <PencilLine className="size-4" aria-hidden />
+                          {t("reports.revise")}
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => void redownload(d.id)}>
+                          <Download className="size-4" aria-hidden />
+                          {t("reports.download")}
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                </>
               )}
             </CardContent>
           </Card>

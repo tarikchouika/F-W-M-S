@@ -50,7 +50,7 @@ export async function GET(req: NextRequest) {
       where,
       orderBy: [{ occurredAt: "desc" }, { recordedAt: "desc" }],
       include: {
-        worker: { select: { id: true, fullName: true } },
+        worker: { select: { id: true, fullName: true, names: true } },
         site: { select: { id: true, name: true, names: true } },
       },
       take: 500,
@@ -81,7 +81,7 @@ export async function GET(req: NextRequest) {
         type: e.type,
         occurredAt: e.occurredAt,
         recordedAt: e.recordedAt,
-        worker: e.worker ? { id: e.worker.id, fullName: e.worker.fullName } : null,
+        worker: e.worker ? { id: e.worker.id, fullName: localizedName(e.worker, locale, "fullName") } : null,
         site: e.site ? { id: e.site.id, name: localizedName(e.site, locale, "name") } : null,
         shiftId: e.shiftId,
         distanceM: e.distanceM,

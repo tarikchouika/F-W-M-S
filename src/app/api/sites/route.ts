@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth/session";
-import { namesColumnValue } from "@/lib/localized-name";
+import { namesColumnValue, addressesColumnValue, localizedAddress } from "@/lib/localized-name";
 import { localizedName, localizeRow, localizeNested } from "@/lib/localized-name";
 import { getUiLocale } from "@/i18n/ui-locale";
 import { requirePermission, AccessError } from "@/lib/rbac";
@@ -44,7 +44,9 @@ export async function GET(req: NextRequest) {
         id: s.id,
         name: localizedName(s, locale, "name"), baseName: s.name,
         names: s.names,
-        address: s.address,
+        // العنوان يتبع لغة الواجهة (بلاغ المالك 2026-10-23)؛ الأساسي في baseAddress
+        address: localizedAddress(s, locale, "address"), baseAddress: s.address,
+        addresses: s.addresses,
         latitude: s.latitude,
         longitude: s.longitude,
         radiusM: s.radiusM,
@@ -73,7 +75,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "invalid_input" }, { status: 400 });
     }
 
-    const { name, address, latitude, longitude, radiusM, branchId, projectId, names } = parsed.data;
+    const { name, address, latitude, longitude, radiusM, branchId, projectId, names, addresses } = parsed.data;
 
     // تحقق ملكية المراجع داخل الشركة (عزل 3.1)
     const branchIdValue = emptyToNull(branchId);
@@ -99,6 +101,7 @@ export async function POST(req: NextRequest) {
         name,
         names: namesColumnValue(names),
         address: emptyToNull(address),
+        addresses: addressesColumnValue(addresses),
         latitude,
         longitude,
         radiusM,

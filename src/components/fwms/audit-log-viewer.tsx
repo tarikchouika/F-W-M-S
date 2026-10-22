@@ -1,4 +1,8 @@
 // FWMS — عارض سجل التدقيق (جولة 2026-10-19): فلاتر + ترقيم + تفاصيل قبل/بعد
+// (علاج بلاغ المالك 2026-10-23 «خلل ترجمة بعض العبارات»): الإجراءات والكيانات
+// كانت تُعرض كمفاتيح خام (report.downloaded / user...) أمام كل اللغات — صارت
+// تُترجم من قواميس audit.actions.* وaudit.entities.* مع القيمة التقنية أداةً
+// تلميحية، + بطاقات جوال بدل الجدول المعصور (علاج «عدم توافق الهاتف عند تغيير اللغة»).
 "use client";
 
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
@@ -8,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -81,6 +86,71 @@ export function AuditLogViewer({ isSuperAdmin }: { isSuperAdmin: boolean }) {
     [locale]
   );
 
+  /** ترجمة الإجراء من قاموس التدقيق مع سقوط آمن للمفتاح الخام (قيم جديدة غير مفهرسة)
+   *  مفاتيح القاموس بشرطات سفلية (auth_login) لأن مفاتيح i18n تُفكّ على النقاط */
+  const actionLabel = useCallback(
+    (action: string): string => {
+      const translated = t(`audit.actions.${action.replace(/\./g, "_")}`);
+      return translated.startsWith("audit.actions.") ? action : translated;
+    },
+    [t]
+  );
+
+  /** ترجمة الكيان كذلك */
+  const entityLabel = useCallback(
+    (entity: string | null): string | null => {
+      if (!entity) return null;
+      const translated = t(`audit.entities.${entity}`);
+      return translated === `audit.entities.${entity}` ? entity : translated;
+    },
+    [t]
+  );
+
+  const detailsCell = (l: AuditRow) => {
+    const before = pretty(l.beforeJson);
+    const after = pretty(l.afterJson);
+    if (!before && !after) {
+      return <span className="text-xs text-muted-foreground">{t("audit.noDetails")}</span>;
+    }
+    return (
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => setExpanded(expanded === l.id ? null : l.id)}
+        aria-expanded={expanded === l.id}
+      >
+        {t("audit.colDetails")}
+      </Button>
+    );
+  };
+
+  const expandedRow = (l: AuditRow, colSpan: number) => {
+    const before = pretty(l.beforeJson);
+    const after = pretty(l.afterJson);
+    if (expanded !== l.id) return null;
+    return (
+      <TableRow>
+        <TableCell colSpan={colSpan} className="bg-muted/40">
+          <div className="grid gap-3 md:grid-cols-2">
+            <div>
+              <p className="mb-1 text-xs font-semibold">{t("audit.before")}</p>
+              <pre className="max-h-56 overflow-auto rounded-lg bg-background p-3 text-[11px] leading-5" dir="ltr">
+                {before ?? t("audit.noDetails")}
+              </pre>
+            </div>
+            <div>
+              <p className="mb-1 text-xs font-semibold">{t("audit.after")}</p>
+              <pre className="max-h-56 overflow-auto rounded-lg bg-background p-3 text-[11px] leading-5" dir="ltr">
+                {after ?? t("audit.noDetails")}
+              </pre>
+            </div>
+          </div>
+          {l.reason ? <p className="mt-2 text-xs"><strong>{t("audit.colReason")}:</strong> {l.reason}</p> : null}
+        </TableCell>
+      </TableRow>
+    );
+  };
+
   return (
     <div className="space-y-6">
       <PageHeader title={t("audit.title")} subtitle={t("audit.subtitle")} />
@@ -123,7 +193,8 @@ export function AuditLogViewer({ isSuperAdmin }: { isSuperAdmin: boolean }) {
         </p>
       ) : null}
 
-      <div className="overflow-x-auto rounded-xl border border-border/70">
+      {/* جدول الحواسيب — بطاقات الهاتف أدناه (علاج توافق الجوال مع تغيير اللغة) */}
+      <div className="hidden overflow-x-auto rounded-xl border border-border/70 md:block">
         <Table>
           <TableHeader>
             <TableRow>
@@ -148,22 +219,21 @@ export function AuditLogViewer({ isSuperAdmin }: { isSuperAdmin: boolean }) {
                 </TableCell>
               </TableRow>
             ) : (
-              data.logs.map((l) => {
-                const before = pretty(l.beforeJson);
-                const after = pretty(l.afterJson);
-                return (
-                  <Fragment key={l.id}>
+              data.logs.map((l) => (
+                <Fragment key={l.id}>
                   <TableRow>
                     <TableCell className="whitespace-nowrap text-xs" dir="ltr">{fmt.format(new Date(l.at))}</TableCell>
                     <TableCell className="text-xs">
                       <span className="font-medium">{l.actor}</span>
                       {l.actorEmail ? <span className="block text-muted-foreground" dir="ltr">{l.actorEmail}</span> : null}
                     </TableCell>
-                    <TableCell className="font-mono text-xs" dir="ltr">{l.action}</TableCell>
+                    <TableCell className="text-xs">
+                      <Badge variant="secondary" className="font-semibold">{actionLabel(l.action)}</Badge>
+                    </TableCell>
                     <TableCell className="text-xs">
                       {l.entity ? (
                         <span>
-                          {l.entity}
+                          {entityLabel(l.entity)}
                           {l.entityId ? <span className="block text-muted-foreground" dir="ltr">{l.entityId}</span> : null}
                         </span>
                       ) : (
@@ -172,48 +242,67 @@ export function AuditLogViewer({ isSuperAdmin }: { isSuperAdmin: boolean }) {
                     </TableCell>
                     {isSuperAdmin ? <TableCell className="text-xs">{l.company ?? "—"}</TableCell> : null}
                     <TableCell className="font-mono text-xs" dir="ltr">{l.ip ?? "—"}</TableCell>
-                    <TableCell>
-                      {before || after ? (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setExpanded(expanded === l.id ? null : l.id)}
-                          aria-expanded={expanded === l.id}
-                        >
-                          {t("audit.colDetails")}
-                        </Button>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">{t("audit.noDetails")}</span>
-                      )}
-                    </TableCell>
-                    {expanded === l.id ? (
-                      <TableRow>
-                        <TableCell colSpan={isSuperAdmin ? 7 : 6} className="bg-muted/40">
-                          <div className="grid gap-3 md:grid-cols-2">
-                            <div>
-                              <p className="mb-1 text-xs font-semibold">{t("audit.before")}</p>
-                              <pre className="max-h-56 overflow-auto rounded-lg bg-background p-3 text-[11px] leading-5" dir="ltr">
-                                {before ?? t("audit.noDetails")}
-                              </pre>
-                            </div>
-                            <div>
-                              <p className="mb-1 text-xs font-semibold">{t("audit.after")}</p>
-                              <pre className="max-h-56 overflow-auto rounded-lg bg-background p-3 text-[11px] leading-5" dir="ltr">
-                                {after ?? t("audit.noDetails")}
-                              </pre>
-                            </div>
-                          </div>
-                          {l.reason ? <p className="mt-2 text-xs"><strong>{t("audit.colReason")}:</strong> {l.reason}</p> : null}
-                        </TableCell>
-                      </TableRow>
-                    ) : null}
+                    <TableCell>{detailsCell(l)}</TableCell>
                   </TableRow>
-                  </Fragment>
-                );
-              })
+                  {expandedRow(l, isSuperAdmin ? 7 : 6)}
+                </Fragment>
+              ))
             )}
           </TableBody>
         </Table>
+      </div>
+
+      {/* بطاقات الهاتف: عمود واحد قابل للقراءة بلا تمرير أفقي مهما طالت الترجمات */}
+      <div className="space-y-3 md:hidden">
+        {loading ? (
+          <p className="py-10 text-center text-sm text-muted-foreground">…</p>
+        ) : !data || data.logs.length === 0 ? (
+          <p className="py-10 text-center text-sm text-muted-foreground">{t("audit.empty")}</p>
+        ) : (
+          data.logs.map((l) => {
+            const before = pretty(l.beforeJson);
+            const after = pretty(l.afterJson);
+            const hasDetails = Boolean(before || after);
+            return (
+              <div key={l.id} className="rounded-xl border border-border/70 bg-card p-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="secondary" className="font-semibold">{actionLabel(l.action)}</Badge>
+                  {l.entity ? <span className="text-xs text-muted-foreground">· {entityLabel(l.entity)}</span> : null}
+                </div>
+                <p className="mt-2 text-sm font-medium">{l.actor}</p>
+                {l.actorEmail ? <p className="text-xs text-muted-foreground" dir="ltr">{l.actorEmail}</p> : null}
+                {isSuperAdmin && l.company ? <p className="mt-1 text-xs text-muted-foreground">{l.company}</p> : null}
+                <p className="mt-1 text-xs text-muted-foreground" dir="ltr">{fmt.format(new Date(l.at))}</p>
+                {hasDetails ? (
+                  <>
+                    <Button variant="outline" size="sm" className="mt-2" onClick={() => setExpanded(expanded === l.id ? null : l.id)} aria-expanded={expanded === l.id}>
+                      {t("audit.colDetails")}
+                    </Button>
+                    {expanded === l.id ? (
+                      <div className="mt-2 grid gap-3">
+                        <div>
+                          <p className="mb-1 text-xs font-semibold">{t("audit.before")}</p>
+                          <pre className="max-h-56 overflow-auto rounded-lg bg-muted/50 p-3 text-[11px] leading-5" dir="ltr">
+                            {before ?? t("audit.noDetails")}
+                          </pre>
+                        </div>
+                        <div>
+                          <p className="mb-1 text-xs font-semibold">{t("audit.after")}</p>
+                          <pre className="max-h-56 overflow-auto rounded-lg bg-muted/50 p-3 text-[11px] leading-5" dir="ltr">
+                            {after ?? t("audit.noDetails")}
+                          </pre>
+                        </div>
+                        {l.reason ? <p className="text-xs"><strong>{t("audit.colReason")}:</strong> {l.reason}</p> : null}
+                      </div>
+                    ) : null}
+                  </>
+                ) : (
+                  <p className="mt-2 text-xs text-muted-foreground">{t("audit.noDetails")}</p>
+                )}
+              </div>
+            );
+          })
+        )}
       </div>
 
       {data && data.pages > 1 ? (

@@ -62,6 +62,14 @@ export default async function DashboardLayout({
   ]);
   const isFieldUser = memberCount > 0 || ledCount > 0;
 
+  // اسم المستخدم المعروض يتبع لغة الواجهة (بلاغ المالك 2026-10-23) — أسماء محلية
+  // مع سقوط آمن إلى الاسم الأساسي المخزَّن في الجلسة
+  const meRow = await db.user.findUnique({
+    where: { id: session.sub },
+    select: { names: true, fullName: true },
+  });
+  const displayUserName = (meRow ? localizedName(meRow, locale, "fullName") : "") || session.name;
+
   return (
     <div className="flex min-h-screen flex-col bg-background md:flex-row">
       {/* سطح المكتب: شريط جانبي ثابت — الجوال (v0.10.0): زر قائمة في الترويسة يفتح Sheet */}
@@ -84,7 +92,7 @@ export default async function DashboardLayout({
             <ThemeSwitcher />
             <div className="hidden items-center gap-2 text-end sm:flex">
               <div className="flex flex-col leading-tight">
-                <span className="text-sm font-semibold text-foreground">{session.name}</span>
+                <span className="text-sm font-semibold text-foreground">{displayUserName}</span>
                 <span className="text-[11px] text-muted-foreground" dir="ltr">
                   {session.email}
                 </span>

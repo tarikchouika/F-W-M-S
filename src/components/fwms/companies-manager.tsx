@@ -4,7 +4,7 @@
 // إنشاء شركة يمنح المنشئ عضوية super_admin فيها (للتبديل الصريح) — راجع API
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Building2, Plus, Pencil, Ban, PlayCircle, Search, LoaderCircle } from "lucide-react";
+import { Building2, Plus, Pencil, Ban, PlayCircle, Search, LoaderCircle, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -71,6 +71,12 @@ export function CompaniesManager({ currentCompanyId }: { currentCompanyId: strin
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<CompanyForm>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
+
+  // حوار الحذف النهائي (أمر المالك 2026-10-23): تأكيد بكتابة اسم الشركة
+  const [deleteRow, setDeleteRow] = useState<CompanyRow | null>(null);
+  const [deleteName, setDeleteName] = useState("");
+  const [deleteReason, setDeleteReason] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -184,6 +190,33 @@ export function CompaniesManager({ currentCompanyId }: { currentCompanyId: strin
     await load();
   }
 
+  /** الحذف النهائي المتتالي — data.delete؛ تأكيد مزدوج: كتابة الاسم + سبب اختياري */
+  async function confirmDelete() {
+    if (!deleteRow || deleting) return;
+    if (deleteName.trim() !== (deleteRow.baseName ?? deleteRow.legalName).trim()) {
+      toast({ variant: "destructive", description: t("deleteDialog.typeNameMismatch") });
+      return;
+    }
+    setDeleting(true);
+    try {
+      await apiRequest(`/api/companies/${deleteRow.id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: deleteReason.trim() || null }),
+      });
+      setDeleteRow(null);
+      setDeleteName("");
+      setDeleteReason("");
+      toast({ description: t("companies.deleted") });
+      await load();
+      router.refresh();
+    } catch (err) {
+      toast({ variant: "destructive", description: apiErrorMessage(t, err) });
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
       <PageHeader title={t("companies.title")} subtitle={t("companies.subtitle")}>
@@ -263,6 +296,18 @@ export function CompaniesManager({ currentCompanyId }: { currentCompanyId: strin
                               {t("companies.activate")}
                             </Button>
                           )}
+                          {row.id !== currentCompanyId && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="size-8 text-destructive hover:text-destructive"
+                              onClick={() => { setDeleteRow(row); setDeleteName(""); setDeleteReason(""); }}
+                              aria-label={t("common.delete")}
+                              title={t("common.delete")}
+                            >
+                              <Trash2 className="size-4" aria-hidden />
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -326,6 +371,42 @@ export function CompaniesManager({ currentCompanyId }: { currentCompanyId: strin
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* حوار الحذف النهائي — تأكيد بكتابة اسم الشركة (أمر المالك 2026-10-23) */}
+      <Dialog open={deleteRow !== null} onOpenChange={(open) => { if (!open) { setDeleteRow(null); setDeleteName(""); setDeleteReason(""); } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-red-600">{t("deleteDialog.companyTitle")}</DialogTitle>
+            <DialogDescription>{t("deleteDialog.companyDesc")}</DialogDescription>
+          </DialogHeader>
+          {deleteRow && (
+            <div className="flex flex-col gap-3">
+              <div className="rounded-lg border border-border/70 bg-muted/40 p-3 text-sm">
+                <p className="font-semibold">{deleteRow.legalName}</p>
+                <p className="text-xs text-muted-foreground">
+                  {t("companies.members")}: {deleteRow.membersCount} · {t("companies.activeSites")}: {deleteRow.sitesCount}
+                </p>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="c-delete-name">{t("deleteDialog.typeName", { name: deleteRow.baseName ?? deleteRow.legalName })}</Label>
+                <Input id="c-delete-name" value={deleteName} onChange={(e) => setDeleteName(e.target.value)} maxLength={120} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="c-delete-reason">{t("deleteDialog.reasonLabel")}</Label>
+                <Input id="c-delete-reason" value={deleteReason} onChange={(e) => setDeleteReason(e.target.value)} maxLength={500} placeholder={t("deleteDialog.reasonPlaceholder")} />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => { setDeleteRow(null); setDeleteName(""); setDeleteReason(""); }}>{t("common.cancel")}</Button>
+            <Button type="button" variant="destructive" disabled={deleting || deleteName.trim() !== (deleteRow?.baseName ?? deleteRow?.legalName ?? "").trim()} className="gap-2" onClick={() => void confirmDelete()}>
+              {deleting && <LoaderCircle className="size-4 animate-spin" aria-hidden />}
+              <Trash2 className="size-4" aria-hidden />
+              {t("common.confirmDelete")}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

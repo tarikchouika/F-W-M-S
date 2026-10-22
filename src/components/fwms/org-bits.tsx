@@ -60,6 +60,15 @@ export function apiErrorMessage(t: (key: string) => string, error: unknown): str
   if (code === "not_reviewable") return t("attendance.notReviewable");
   if (code === "face_acknowledgment_required") return t("policies.faceAckRequired");
   if (code === "policy_narrowing_violation") return t("policies.narrowingViolation");
+  // أخطاء الحذف النهائي (أمر المالك 2026-10-23) — رسائل مرشدة من قواميس errors.*
+  if (code === "user_has_records") return t("errors.user_has_records");
+  if (code === "cannot_delete_self") return t("errors.cannot_delete_self");
+  if (code === "cannot_delete_super_admin") return t("errors.cannot_delete_super_admin");
+  if (code === "company_is_active_session") return t("errors.company_is_active_session");
+  if (code === "project_has_sites") return t("errors.project_has_sites");
+  if (code === "site_has_records") return t("errors.site_has_records");
+  if (code === "branch_has_children") return t("errors.branch_has_children");
+  if (code === "no_delete_permission") return t("errors.no_delete_permission");
   return t("common.operationFailed");
 }
 
@@ -79,7 +88,7 @@ export function PageHeader({
         <h1 className="text-2xl font-bold tracking-tight text-foreground">{title}</h1>
         {subtitle && <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{subtitle}</p>}
       </div>
-      {children && <div className="flex shrink-0 flex-wrap items-center gap-2">{children}</div>}
+      {children && <div className="flex min-w-0 flex-wrap items-center gap-2">{children}</div>}
     </div>
   );
 }

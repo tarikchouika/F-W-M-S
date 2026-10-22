@@ -95,3 +95,41 @@ export function localizeNested<T extends NamedRow, K extends keyof T>(
   if (!row) return null;
   return localizeRow(row, locale, fallback);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// العناوين الجغرافية المحلية (علاج بلاغ المالك 2026-10-23 «خلل ترجمة العناوين
+// الجغرافية»): نفس نمط الأسماء — العنوان الأساسي بلغة واحدة + JSON اختياري
+// {ar,fr,en,es} يتبع لغة الواجهة مع سقوط آمن إلى العنوان الأساسي.
+// ─────────────────────────────────────────────────────────────────────────────
+export type AddressedRow = { addresses?: string | null } & Record<string, unknown>;
+
+/** العنوان المعروض بحسب لغة الواجهة: addresses[locale] وإلا العنوان الأساسي */
+export function localizedAddress<T extends AddressedRow>(
+  row: T,
+  locale: string | null | undefined,
+  fallback: keyof T
+): string {
+  const map = parseNames(row.addresses);
+  const hit = map?.[locale as LocaleCode];
+  if (hit) return hit;
+  const base = row[fallback];
+  return typeof base === "string" ? base : "";
+}
+
+/** نسخة صف مع عنوان مُترجم: العنوان يُستبدل وفق اللغة والأساسي يُحفظ في baseAddress */
+export function localizeRowAddress<T extends AddressedRow, K extends keyof T>(
+  row: T,
+  locale: string | null | undefined,
+  fallback: K
+): T & { baseAddress: string } {
+  const base = row[fallback];
+  const baseStr = typeof base === "string" ? base : "";
+  const localized = localizedAddress(row, locale, fallback);
+  if (localized === baseStr || !localized) {
+    return { ...row, baseAddress: baseStr };
+  }
+  return { ...row, [fallback]: localized, baseAddress: baseStr } as T & { baseAddress: string };
+}
+
+/** قيمة عمود العناوين من نموذج الإرسال: JSON أو null إن خلت (نفس namesColumnValue) */
+export const addressesColumnValue = namesColumnValue;

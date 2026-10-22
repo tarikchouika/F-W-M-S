@@ -135,6 +135,95 @@ async function main() {
   ]);
   await writeFile(path.join(ROOT, "public", "favicon.ico"), ico);
 
+  // 5) أيقونات تطبيق أندرويد (أمر المالك 2026-10-23 «يجب استخدام اللوغو الجديد
+  //    كرمز وأيقونة لتطبيق الأندرويد») — تُخزَّن في infra/android/launcher/ ويستنسخها
+  //    سير عمل البناء فوق أيقونات Capacitor الافتراضية قبل gradle:
+  //      mipmap-{mdpi..xxxhdpi}/ic_launcher.png          — أيقونة مربعة (اللوغو كاملًا)
+  //      mipmap-{d}/ic_launcher_round.png                — دائرية
+  //      mipmap-{d}/ic_launcher_foreground.png           — طبقة adaptive (العلامة داخل المنطقة الآمنة)
+  //      mipmap-{d}/ic_launcher_monochrome.png           — أيقونة متغيّرة الألوان (أندرويد 13+)
+  //      mipmap-anydpi-v26/ic_launcher{,_round}.xml      — تعريف adaptive
+  //      values/ic_launcher_colors.xml                   — خلفية كحلية #0F2242
+  const ANDROID_LAUNCHER = path.join(ROOT, "infra", "android", "launcher");
+  const DENSITIES = [
+    ["mdpi", 48, 108],
+    ["hdpi", 72, 162],
+    ["xhdpi", 96, 216],
+    ["xxhdpi", 144, 324],
+    ["xxxhdpi", 192, 432],
+  ];
+  const NAVY = { r: 15, g: 34, b: 66 }; // #0F2242 — نفس theme_color في manifest
+  for (const [d, legacy, adaptive] of DENSITIES) {
+    const dir = path.join(ANDROID_LAUNCHER, `mipmap-${d}`);
+    await mkdir(dir, { recursive: true });
+    // مربعة: اللوغو كما هو (الخلفية الكحلية جزء من اللوغو)
+    await writeFile(path.join(dir, "ic_launcher.png"), await icon(legacy));
+    // دائرية: اللوغو مكبَّرًا 12% بوسط قصّ هندسي (يملأ الدائرة أكثر) ثم قناع دائري
+    const big = Math.round(legacy * 1.12);
+    const crop = Math.round((big - legacy) / 2);
+    const zoomed = await sharp(SRC)
+      .resize(big, big, { fit: "cover" })
+      .extract({ left: crop, top: crop, width: legacy, height: legacy })
+      .png()
+      .toBuffer();
+    const circleMask = Buffer.from(
+      `<svg width="${legacy}" height="${legacy}"><circle cx="${legacy / 2}" cy="${legacy / 2}" r="${legacy / 2}" fill="#fff"/></svg>`
+    );
+    const roundIcon = await sharp({
+      create: { width: legacy, height: legacy, channels: 4, background: NAVY },
+    })
+      .composite([{ input: zoomed }, { input: circleMask, blend: "dest-in" }])
+      .png({ compressionLevel: 9 })
+      .toBuffer();
+    await writeFile(path.join(dir, "ic_launcher_round.png"), roundIcon);
+    // adaptive foreground: العلامة الذهبية داخل المنطقة الآمنة (مركز 66/108dp)
+    const fgSize = Math.round(adaptive * 0.6);
+    const off = Math.round((adaptive - fgSize) / 2);
+    const fg = await sharp({ create: { width: adaptive, height: adaptive, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } })
+      .composite([{ input: await goldMark(fgSize), top: off, left: off }])
+      .png({ compressionLevel: 9 })
+      .toBuffer();
+    await writeFile(path.join(dir, "ic_launcher_foreground.png"), fg);
+    // monochrome (أندرويد 13+): شكل أبيض صريح بألفا العلامة — النظام يلوّنه بنسق الجهاز
+    const markAlpha = await sharp(await goldMark(fgSize))
+      .ensureAlpha()
+      .extractChannel("alpha")
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+    const whiteRgb = Buffer.alloc(fgSize * fgSize * 3, 255);
+    const whiteMark = await sharp(whiteRgb, { raw: { width: fgSize, height: fgSize, channels: 3 } })
+      .joinChannel(markAlpha.data, { raw: { width: markAlpha.info.width, height: markAlpha.info.height, channels: 1 } })
+      .png({ compressionLevel: 9 })
+      .toBuffer();
+    const mono = await sharp({ create: { width: adaptive, height: adaptive, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } })
+      .composite([{ input: whiteMark, top: off, left: off }])
+      .png({ compressionLevel: 9 })
+      .toBuffer();
+    await writeFile(path.join(dir, "ic_launcher_monochrome.png"), mono);
+  }
+  // تعريف الأيقونة التكيفية + لون الخلفية
+  const anydpi = path.join(ANDROID_LAUNCHER, "mipmap-anydpi-v26");
+  await mkdir(anydpi, { recursive: true });
+  const adaptiveXml = (withMono) => `<?xml version="1.0" encoding="utf-8"?>
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/ic_launcher_background"/>
+    <foreground android:drawable="@mipmap/ic_launcher_foreground"/>${withMono ? `
+    <monochrome android:drawable="@mipmap/ic_launcher_monochrome"/>` : ""}
+</adaptive-icon>
+`;
+  await writeFile(path.join(anydpi, "ic_launcher.xml"), adaptiveXml(true));
+  await writeFile(path.join(anydpi, "ic_launcher_round.xml"), adaptiveXml(true));
+  const valuesDir = path.join(ANDROID_LAUNCHER, "values");
+  await mkdir(valuesDir, { recursive: true });
+  await writeFile(
+    path.join(valuesDir, "ic_launcher_colors.xml"),
+    `<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ic_launcher_background">#0F2242</color>
+</resources>
+`
+  );
+
   console.log("✔ assets generated");
   for (const f of [
     "public/brand/logo-square.jpg",

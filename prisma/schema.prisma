@@ -92,6 +92,9 @@ model User {
   email                 String    @unique
   phone                 String?
   fullName              String
+  /// أسماء محلية اختيارية JSON {ar,fr,en,es} للعرض بحسب لغة الواجهة — وإلا الاسم الأساسي
+  /// (علاج بلاغ المالك 2026-10-23 «خلل ترجمة اسم العامل/المستخدم»)
+  names                 String?
   passwordHash          String
   isActive              Boolean   @default(true)
   twoFactorEnabled      Boolean   @default(false)
@@ -174,6 +177,9 @@ model Branch {
   code      String?
   city      String?
   address   String?
+  /// عناوين محلية اختيارية JSON {ar,fr,en,es} — العرض بحسب لغة الواجهة وإلا العنوان الأساسي
+  /// (علاج بلاغ المالك 2026-10-23 «خلل ترجمة العناوين الجغرافية»)
+  addresses String?
   status    String   @default("active") // active | archived
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -221,6 +227,9 @@ model Site {
   /// أسماء محلية اختيارية JSON {ar,fr,en,es} — العرض بحسب لغة الواجهة وإلا الاسم الأساسي
   names             String?
   address   String?
+  /// عناوين محلية اختيارية JSON {ar,fr,en,es} — العرض بحسب لغة الواجهة وإلا العنوان الأساسي
+  /// (علاج بلاغ المالك 2026-10-23 «خلل ترجمة العناوين الجغرافية»)
+  addresses String?
   latitude  Float // [-90, 90]
   longitude Float // [-180, 180]
   radiusM   Int      @default(50) // نصف قطر التحقق بالمتر (SPEC §4.2: افتراضي 50 م)

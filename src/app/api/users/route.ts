@@ -15,6 +15,8 @@ import { hasPermission } from "@/lib/delegations";
 import { hashPassword } from "@/lib/auth/password";
 import { writeAudit } from "@/lib/audit";
 import { isJobTitleKey } from "@/lib/job-titles";
+import { getUiLocale } from "@/i18n/ui-locale";
+import { localizedName, localeNamesSchema, namesColumnValue } from "@/lib/localized-name";
 
 function randomInitialPassword(): string {
   const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
@@ -37,6 +39,7 @@ export async function GET() {
     if (!roleHas(session.role, "users.manage") && !(await hasPermission(session, "users.manage"))) {
       throw new AccessError(403, "forbidden");
     }
+    const locale = await getUiLocale();
 
     const memberships = await db.userMembership.findMany({
       where: { companyId: session.companyId, revokedAt: null },
@@ -46,6 +49,7 @@ export async function GET() {
             id: true,
             email: true,
             fullName: true,
+            names: true,
             phone: true,
             isActive: true,
             lastLoginAt: true,
@@ -65,7 +69,10 @@ export async function GET() {
       users: memberships.map((m) => ({
         userId: m.user.id,
         email: m.user.email,
-        fullName: m.user.fullName,
+        // اسم العرض يتبع لغة الواجهة؛ الأساسي محفوظ في baseName لنماذج التعديل
+        fullName: localizedName(m.user, locale, "fullName"),
+        baseName: m.user.fullName,
+        names: m.user.names,
         phone: m.user.phone,
         role: m.role,
         isActive: m.user.isActive,
@@ -86,6 +93,7 @@ export async function GET() {
 const createSchema = z.object({
   email: z.string().trim().toLowerCase().email().max(190),
   fullName: z.string().trim().min(2).max(120),
+  names: localeNamesSchema.optional(),
   phone: z.string().trim().max(32).optional().nullable(),
   password: z.string().min(8).max(72).optional(),
   role: z.enum(ROLES),
@@ -134,6 +142,7 @@ export async function POST(req: NextRequest) {
         data: {
           email: data.email,
           fullName: data.fullName,
+          names: namesColumnValue(data.names),
           phone: data.phone ? data.phone : null,
           passwordHash,
           locale: session.locale || "ar",

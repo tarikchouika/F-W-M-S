@@ -4,7 +4,7 @@
 // الأمان: الصلاحية تُفحص في الخادم (API) — هذه الواجهة عرض فقط
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import dynamic from "next/dynamic";
-import { MapPin, Plus, Pencil, Archive, ArchiveRestore, Crosshair, Search, LoaderCircle } from "lucide-react";
+import { MapPin, Plus, Pencil, Archive, ArchiveRestore, Crosshair, Search, LoaderCircle, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/provider";
 import { LocaleNamesFields, EMPTY_LOCALE_NAMES, localeNamesFromRow, localeNamesBody } from "@/components/fwms/locale-names-fields";
+import { LocaleAddressesFields, EMPTY_LOCALE_ADDRESSES, localeAddressesFromRow, localeAddressesBody } from "@/components/fwms/locale-addresses-fields";
 import { cn } from "@/lib/utils";
 import { RADIUS_MIN_M, RADIUS_MAX_M, RADIUS_DEFAULT_M } from "@/lib/organization";
 import { PageHeader, StatusBadge, ConfirmAction, ListState, formatDate, apiRequest, apiErrorMessage } from "@/components/fwms/org-bits";
@@ -33,6 +34,8 @@ type SiteRow = {
   id: string;
   name: string;
   address: string | null;
+  baseAddress?: string | null;
+  addresses?: string | null;
   latitude: number;
   longitude: number;
   radiusM: number;
@@ -56,10 +59,15 @@ type SiteForm = {
   namesFr: string;
   namesEn: string;
   namesEs: string;
+  addrAr: string;
+  addrFr: string;
+  addrEn: string;
+  addrEs: string;
 };
 
 const EMPTY_FORM: SiteForm = {
   ...EMPTY_LOCALE_NAMES,
+  ...EMPTY_LOCALE_ADDRESSES,
   name: "",
   address: "",
   branchId: "none", // Radix Select لا يقبل قيمة فارغة — none تعني «بدون»
@@ -69,7 +77,7 @@ const EMPTY_FORM: SiteForm = {
   radiusM: RADIUS_DEFAULT_M,
 };
 
-export function SitesManager() {
+export function SitesManager({ canDelete = false }: { canDelete?: boolean }) {
   const { t, locale } = useI18n();
   const { toast } = useToast();
 
@@ -151,8 +159,10 @@ export function SitesManager() {
     setEditingId(site.id);
     setForm({
       ...localeNamesFromRow(site),
+      ...localeAddressesFromRow(site),
       name: site.baseName ?? site.name,
-      address: site.address ?? "",
+      // العنوان الأساسي من baseAddress (لا من العرض المترجم) كي لا تتلوث النماذج بلغة الواجهة
+      address: site.baseAddress ?? site.address ?? "",
       branchId: site.branch?.id ?? "none",
       projectId: site.project?.id ?? "none",
       latitude: String(site.latitude),
@@ -192,6 +202,7 @@ export function SitesManager() {
       name: form.name.trim(),
       names: localeNamesBody(form),
       address: form.address.trim(),
+      addresses: localeAddressesBody(form),
       latitude,
       longitude,
       radiusM: form.radiusM,
@@ -221,6 +232,21 @@ export function SitesManager() {
     try {
       await apiRequest(`/api/sites/${site.id}`, { method: "DELETE" });
       toast({ description: t("sites.archived") });
+    } catch (err) {
+      toast({ variant: "destructive", description: apiErrorMessage(t, err) });
+    }
+    await load();
+  }
+
+  /** الحذف النهائي (?purge=1) — data.delete؛ حرّاس السلامة في الخادم ترشد عند الرفض */
+  async function onPurge(site: SiteRow) {
+    try {
+      await apiRequest(`/api/sites/${site.id}?purge=1`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: null }),
+      });
+      toast({ description: t("sites.deleted") });
     } catch (err) {
       toast({ variant: "destructive", description: apiErrorMessage(t, err) });
     }
@@ -364,6 +390,16 @@ export function SitesManager() {
                               {t("common.restore")}
                             </Button>
                           )}
+                          {canDelete && (
+                            <ConfirmAction
+                              triggerLabel={<Trash2 className="size-4" aria-hidden />}
+                              triggerClassName="h-8 gap-1.5 px-2 text-xs text-destructive hover:text-destructive"
+                              title={t("deleteDialog.siteTitle")}
+                              description={t("deleteDialog.siteDesc")}
+                              confirmLabel={t("common.confirmDelete")}
+                              onConfirm={() => onPurge(site)}
+                            />
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -417,6 +453,8 @@ export function SitesManager() {
               </div>
 
               <LocaleNamesFields form={form} setForm={setForm} disabled={saving} />
+              {/* العنوان بلغات أخرى — يتبع لغة الواجهة (بلاغ المالك 2026-10-23) */}
+              <LocaleAddressesFields form={form} setForm={setForm} disabled={saving} />
 
               <div className="flex flex-col gap-2 sm:col-span-2">
                 <Label htmlFor="site-address">{t("common.address")}</Label>

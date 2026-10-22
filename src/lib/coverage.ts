@@ -107,7 +107,7 @@ export async function getCoverageBoard(
       breakMinutes: s.breakMinutes,
       status: s.status,
       source: s.source,
-      worker: s.worker ? { id: s.worker.id, fullName: s.worker.fullName } : null,
+      worker: s.worker ? { id: s.worker.id, fullName: localizedName(s.worker, locale, "fullName") } : null,
       site: { id: s.site.id, name: localizedName(s.site, locale, "name") },
       template: s.template ? { id: s.template.id, name: s.template.name } : null,
       attendance,
@@ -194,7 +194,7 @@ export async function getAvailableWorkers(
 
     workers.push({
       userId: m.user.id,
-      fullName: m.user.fullName,
+      fullName: localizedName(m.user, locale, "fullName"),
       email: m.user.email,
       sameDayShifts: sameDay.map((s) => ({
         startLabel: minutesToLabel(minutesInZone(s.startsAt, tz)),
@@ -295,7 +295,7 @@ export async function replaceShiftWorker(
     localDate: shift.localDate,
     startLabel: minutesToLabel(minutesInZone(shift.startsAt, tz)),
     endLabel: minutesToLabel(minutesInZone(shift.endsAt, tz)),
-    previousWorkerName: shift.worker?.fullName ?? undefined,
+    previousWorkerName: shift.worker ? localizedName(shift.worker, locale, "fullName") : undefined,
     shiftId: shift.id,
   };
 

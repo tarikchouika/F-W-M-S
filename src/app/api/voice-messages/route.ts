@@ -18,6 +18,8 @@ import { AccessError, roleHas } from "@/lib/rbac";
 import { hasPermission } from "@/lib/delegations";
 import { rateLimit } from "@/lib/rate-limit";
 import { writeAudit } from "@/lib/audit";
+import { localizedName } from "@/lib/localized-name";
+import { getUiLocale } from "@/i18n/ui-locale";
 
 export const VOICE_MAX_BYTES = 2_500_000;
 export const VOICE_MAX_DURATION_SEC = 120;
@@ -86,6 +88,7 @@ export async function GET(req: NextRequest) {
     const canUse = roleHas(session.role, "voice.use") || (await hasPermission(session as never, "voice.use"));
     if (!canUse) throw new AccessError(403, "forbidden");
     const access = await voiceAccess(session);
+    const locale = await getUiLocale();
     const url = new URL(req.url);
 
     // 1) قائمة المحادثين: أعضاء فرقي (بمساهماتهم) أو كل مستخدمي الشركة للإشراف
@@ -98,7 +101,7 @@ export async function GET(req: NextRequest) {
             user: {
               select: {
                 id: true,
-                fullName: true,
+                fullName: true, names: true,
                 employeeProfiles: {
                   where: { companyId: session.companyId, status: "active" },
                   select: { jobTitleKey: true },
@@ -112,7 +115,7 @@ export async function GET(req: NextRequest) {
           .filter((m) => m.userId !== session.sub)
           .map((m) => ({
             userId: m.user.id,
-            fullName: m.user.fullName,
+            fullName: localizedName(m.user, locale, "fullName"),
             role: m.role,
             jobTitleKey: m.user.employeeProfiles[0]?.jobTitleKey ?? null,
           }));
@@ -123,7 +126,7 @@ export async function GET(req: NextRequest) {
             user: {
               select: {
                 id: true,
-                fullName: true,
+                fullName: true, names: true,
                 employeeProfiles: {
                   where: { companyId: session.companyId, status: "active" },
                   select: { jobTitleKey: true },
@@ -139,7 +142,7 @@ export async function GET(req: NextRequest) {
             leader: {
               select: {
                 id: true,
-                fullName: true,
+                fullName: true, names: true,
                 employeeProfiles: {
                   where: { companyId: session.companyId, status: "active" },
                   select: { jobTitleKey: true },
@@ -152,12 +155,12 @@ export async function GET(req: NextRequest) {
         const map = new Map<string, { userId: string; fullName: string; jobTitleKey: string | null }>();
         for (const m of members) {
           if (m.userId !== session.sub) {
-            map.set(m.user.id, { userId: m.user.id, fullName: m.user.fullName, jobTitleKey: m.user.employeeProfiles[0]?.jobTitleKey ?? null });
+            map.set(m.user.id, { userId: m.user.id, fullName: localizedName(m.user, locale, "fullName"), jobTitleKey: m.user.employeeProfiles[0]?.jobTitleKey ?? null });
           }
         }
         for (const g of leaders) {
           if (g.leader && g.leader.id !== session.sub) {
-            map.set(g.leader.id, { userId: g.leader.id, fullName: g.leader.fullName, jobTitleKey: g.leader.employeeProfiles[0]?.jobTitleKey ?? null });
+            map.set(g.leader.id, { userId: g.leader.id, fullName: localizedName(g.leader, locale, "fullName"), jobTitleKey: g.leader.employeeProfiles[0]?.jobTitleKey ?? null });
           }
         }
         rows = Array.from(map.values()).map((r) => ({ ...r, role: "member" }));
