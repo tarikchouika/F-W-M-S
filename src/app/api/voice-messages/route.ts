@@ -23,6 +23,8 @@ import { getUiLocale } from "@/i18n/ui-locale";
 // (بلاغ المالك 2026-10-24): منطق الوصول المشترك بين الصوتيات والمرئيات —
 // نفس الدوال كانت محلية هنا؛ استُخرجت دون أي تغيير سلوكي (اختبارات المرحلة 9 كما هي)
 import { messagingAccess, canConverseWith, contextGroupId, canOpenThread, existingThreadPartners, hasExistingThread, isSupervisor, latestThreadGroupId } from "@/lib/direct-messaging";
+// (بلاغ المالك 2026-10-24): الصوتيات مؤقتة — مسح كسول للمنتهية + حقول حالة المسح
+import { purgeExpiredVoiceMessages } from "@/lib/voice-ephemeral";
 
 export const VOICE_MAX_BYTES = 2_500_000;
 export const VOICE_MAX_DURATION_SEC = 120;
@@ -34,6 +36,8 @@ const listMeta = (m: {
   durationSec: number;
   sizeBytes: number;
   listenedAt: Date | null;
+  purgedAt: Date | null;
+  purgedBy: string | null;
   createdAt: Date;
 }) => ({
   id: m.id,
@@ -42,6 +46,8 @@ const listMeta = (m: {
   durationSec: m.durationSec,
   sizeBytes: m.sizeBytes,
   listenedAt: m.listenedAt ? m.listenedAt.toISOString() : null,
+  purgedAt: m.purgedAt ? m.purgedAt.toISOString() : null,
+  purgedBy: m.purgedBy ?? null,
   createdAt: m.createdAt.toISOString(),
 });
 
@@ -149,6 +155,8 @@ export async function GET(req: NextRequest) {
         select: { id: true, name: true },
       });
       if (!group) return NextResponse.json({ error: "not_found" }, { status: 404 });
+      // صوتيات مؤقتة: مسح كسول للمنتهية قبل العرض (لا مجدول خارجي في البيئات السائلة)
+      await purgeExpiredVoiceMessages();
       const messages = await db.voiceMessage.findMany({
         where: { groupId },
         orderBy: { createdAt: "asc" },
@@ -166,6 +174,8 @@ export async function GET(req: NextRequest) {
     if (!(await canOpenThread(access, session, withParam))) {
       throw new AccessError(403, "forbidden");
     }
+    // صوتيات مؤقتة: مسح كسول للمنتهية قبل العرض
+    await purgeExpiredVoiceMessages();
     const messages = await db.voiceMessage.findMany({
       where: {
         OR: [

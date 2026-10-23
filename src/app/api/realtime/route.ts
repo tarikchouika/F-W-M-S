@@ -7,6 +7,9 @@
 //  - event: dm       رسالة مرئية/موقعية جديدة تخصّني
 //  - event: notif    إشعار جديد يخصّني
 //  - event: presence نبضة موقع من أحد أفراد فرقي (للقائد/الإشراف)
+//  - event: call     إشارة اتصال مباشر تخصّني (ring/offer/answer/ice/end/decline)
+//                    — بلاغ المالك 2026-10-24: تأشير WebRTC فقط؛ الوسائط
+//                    تتدفق P2P ولا تمرّ هنا أبدًا.
 // عند انقطاع الاتصال يعيد العميل الاتصال مع ?since=<ISO> فيُلحق ما فاته
 // (catch-up) ثم يستمر حيًّا — لا حدث يضيع. البث heartbeat كل 15ث يبقي
 // الوسطاء (بوابة Pages/النفق) من إغلاق الاتصال، وX-Accel-Buffering: no
@@ -23,6 +26,9 @@ export const maxDuration = 60; // ألف الثانية (حوسبة Vercel ال�
 const TICK_MS = 2_000;
 const HEARTBEAT_MS = 15_000;
 const CATCHUP_MAX_MS = 10 * 60 * 1000; // أقصى نافذة لحاق (بعدها يبدأ من الآن)
+// إشارات الاتصال قصيرة العمر: ما تجاوز دقيقتين انتهى غرضه (الاتصال إما تم
+// أو فات) — الحذف الكسول في كل جولة يبقي الجدول صغيرًا بلا مجدول خارجي
+const SIGNAL_TTL_MS = 2 * 60 * 1000;
 
 const sse = (event: string, data: unknown) =>
   `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
@@ -89,7 +95,7 @@ export async function GET(req: NextRequest) {
         async function sweep(): Promise<Date> {
           let latest = cursor;
           try {
-            const [voices, dms, notifs, pings] = await Promise.all([
+            const [voices, dms, notifs, pings, signals] = await Promise.all([
               db.voiceMessage.findMany({
                 where: { recipientId: me, createdAt: { gt: cursor } },
                 orderBy: { createdAt: "asc" },
@@ -116,8 +122,15 @@ export async function GET(req: NextRequest) {
                     select: { id: true, userId: true, groupId: true, reportedAt: true },
                   })
                 : Promise.resolve([] as { id: string; userId: string; groupId: string | null; reportedAt: Date }[]),
+              // تأشير الاتصال الموجه إليّ (بلاغ المالك 2026-10-24)
+              db.callSignal.findMany({
+                where: { toUserId: me, createdAt: { gt: cursor } },
+                orderBy: { createdAt: "asc" },
+                take: 50,
+                select: { id: true, callId: true, fromUserId: true, kind: true, payloadJson: true, createdAt: true },
+              }).catch(() => [] as { id: string; callId: string; fromUserId: string; kind: string; payloadJson: string; createdAt: Date }[]),
             ]);
-            for (const m of [...voices, ...dms, ...notifs]) {
+            for (const m of [...voices, ...dms, ...notifs, ...signals]) {
               const at = m.createdAt;
               if (at > latest) latest = at;
             }
@@ -128,6 +141,21 @@ export async function GET(req: NextRequest) {
             if (dms.length) push(sse("dm", { items: dms.map((d) => ({ ...meta(d), kind: d.kind })) }));
             if (notifs.length) push(sse("notif", { items: notifs.map((n) => ({ id: n.id, at: n.createdAt.toISOString() })) }));
             if (pings.length) push(sse("presence", { items: pings.map((p) => ({ id: p.id, from: p.userId, groupId: p.groupId, at: p.reportedAt.toISOString() })) }));
+            // إشارات الاتصال تصل كلٌّ على حدة (تشغيل فوري في العميل) — والحمولة
+            // JSON صغيرة تمرّ كما هي (SDP/ICE — لا وسائط هنا أبدًا)
+            for (const s of signals) {
+              let payload: unknown = {};
+              try {
+                payload = JSON.parse(s.payloadJson);
+              } catch {
+                payload = {};
+              }
+              push(sse("call", { items: [{ id: s.id, callId: s.callId, from: s.fromUserId, kind: s.kind, payload, at: s.createdAt.toISOString() }] }));
+            }
+            // تنظيف كسول لإشارات انتهت صلاحيتها (انتهى غرض التأشير)
+            if (signals.length > 0 || Math.random() < 0.05) {
+              await db.callSignal.deleteMany({ where: { createdAt: { lt: new Date(Date.now() - SIGNAL_TTL_MS) } } }).catch(() => null);
+            }
           } catch {
             // خطأ في هذه الجولة — الجولة التالية تعيد المحاولة؛ القناة لا تُسقط
           }

@@ -4,13 +4,15 @@
 // ---------------------------------------------------------------------------
 // محادثات مباشرة بين المستخدمين بكل الوسائط حسب الصلاحيات:
 //   صوت (Mic) · صورة من الكاميرا · فيديو قصير من الكاميرا · مشاركة الموقع
+//   + اتصال مباشر آنٍ صوت/صورة (أزرار الهاتف — WebRTC P2P لا يُخزَّن في المنصة)
 // العزل في الخادم حصرًا (direct-messaging.ts): العامل/الحرفي/القائد داخل فريقه
 // فقط، والوضع الإشرافي يصل إلى الجميع + تصفح رسائل أي فريق (صوتيات).
 // المزامنة الآنية (SSE /api/realtime): الرسائل تصل لحظة إرسالها — والاستطلاع
 // يبقى احتياطًا (60ث) لو رُفضت القناة. التسجيل: صوت ≤120ث، فيديو ≤60ث،
 // صورة JPEG ≤3MB، فيديو ≤8MB؛ الإرسال multipart.
-// الاستماع يعلّم «مستمعًا إليه» مرة (المستقبِل فقط) — ومشاهدة الصورة/الفيديو/
-// الموقع تعلّمها «شوهدت» كذلك؛ استعراض الإشراف لا يعلّم شيئًا.
+// الصوتيات مؤقتة (بلاغ المالك 2026-10-24): استماع المتلقّي أو المعني بالأمر
+// (إشراف) يستهلكها فتُمسح فورًا؛ وما لم يُستهلك يُمسح بعد 72 ساعة — والسجل
+// الوصفي وحده يبقى للتدقيق (حالة «مُستهلكة» غير قابلة للتشغيل).
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
@@ -23,11 +25,13 @@ import {
   MapPin,
   Mic,
   Pause,
+  Phone,
   Play,
   Radio,
   RefreshCcw,
   ShieldCheck,
   Square,
+  Trash2,
   Users,
   Video,
   X,
@@ -49,6 +53,7 @@ import { useI18n } from "@/i18n/provider";
 import { ListState, apiRequest } from "@/components/fwms/org-bits";
 import { jobTitleLabel } from "@/lib/job-titles";
 import { openRealtime, type RealtimeHandle } from "@/lib/realtime-client";
+import { requestStartCall } from "@/lib/call-events";
 
 type Contact = { userId: string; fullName: string; role: string; jobTitleKey: string | null };
 type VoiceMsg = {
@@ -58,6 +63,8 @@ type VoiceMsg = {
   durationSec: number;
   sizeBytes: number;
   listenedAt: string | null;
+  purgedAt: string | null; // استُهلكت ومُسح محتواها (متلقٍّ/إشراف/TTL)
+  purgedBy: string | null;
   createdAt: string;
 };
 type DirectMsg = {
@@ -560,6 +567,8 @@ export function VoiceConsole({ myUserId }: { myUserId: string }) {
   }
 
   function togglePlay(msg: VoiceMsg) {
+    // مُستهلكة: المحتوى مُسح من الخادم — غير قابلة للتشغيل أصلًا
+    if (msg.purgedAt) return;
     if (playingId === msg.id) {
       audioRef.current?.pause();
       setPlayingId(null);
@@ -577,7 +586,23 @@ export function VoiceConsole({ myUserId }: { myUserId: string }) {
         body: JSON.stringify({ listened: true }),
       })
         .then(() => {
-          setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, listenedAt: new Date().toISOString() } : m)));
+          // الاستماع = استهلاك: المحتوى مُسح في الخادم (سيظهر كذلك بعد التحديث)
+          setMessages((prev) =>
+            prev.map((m) => (m.id === msg.id ? { ...m, listenedAt: new Date().toISOString(), purgedAt: new Date().toISOString(), purgedBy: myUserId } : m)),
+          );
+        })
+        .catch(() => null);
+    } else if (msg.senderId !== myUserId) {
+      // المعني بالأمر (إشراف voice.admin يتصفح خيوط/مجموعات غيره): تشغيله استهلاك
+      // أيضًا — يمسح المحتوى (بلا تعليم listenedAt للمستقبِل)
+      void fetch(`/api/voice-messages/${msg.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ consumed: true }),
+      })
+        .then(() => {
+          setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, purgedAt: new Date().toISOString(), purgedBy: myUserId } : m)));
+          setBrowseMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, purgedAt: new Date().toISOString(), purgedBy: myUserId } : m)));
         })
         .catch(() => null);
     }
@@ -687,11 +712,18 @@ export function VoiceConsole({ myUserId }: { myUserId: string }) {
                           </span>
                           <span className="text-[11px] text-muted-foreground tabular-nums" dir="auto">
                             {fmtTime(m.createdAt)} · {hoursLabel(m.durationSec)}
+                            {m.purgedAt ? ` · ${t("voice.purgedBadge")}` : ""}
                           </span>
                         </div>
-                        <Button variant="outline" size="sm" className="size-8 shrink-0" onClick={() => togglePlay(m)} aria-label={t("voice.play")}>
-                          {playingId === m.id ? <Pause className="size-3.5" aria-hidden /> : <Play className="size-3.5" aria-hidden />}
-                        </Button>
+                        {m.purgedAt ? (
+                          <span className="flex size-8 shrink-0 items-center justify-center" aria-hidden>
+                            <Trash2 className="size-3.5 text-muted-foreground" />
+                          </span>
+                        ) : (
+                          <Button variant="outline" size="sm" className="size-8 shrink-0" onClick={() => togglePlay(m)} aria-label={t("voice.play")}>
+                            {playingId === m.id ? <Pause className="size-3.5" aria-hidden /> : <Play className="size-3.5" aria-hidden />}
+                          </Button>
+                        )}
                       </li>
                     );
                   })}
@@ -777,9 +809,34 @@ export function VoiceConsole({ myUserId }: { myUserId: string }) {
                     </span>
                   </div>
                 </div>
-                <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                  <Clock className="size-3.5" aria-hidden />
-                  {live ? t("voice.liveOn") : t("voice.liveFallback")}
+                <div className="flex items-center gap-1">
+                  {/* أزرار التواصل المباشر (بلاغ المالك 2026-10-24): اتصال آنٍ صوت/صورة
+                      — WebRTC نظير-إلى-نظير: يُستهلك لحظيًا بين الطرفين ولا يُخزّن
+                      في المنصة أبدًا (مدير الاتصال في تخطيط اللوحة يتولى الشاشة) */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-8 text-emerald-600 hover:text-emerald-700"
+                    onClick={() => requestStartCall({ userId: selected.userId, name: selected.fullName, media: "audio" })}
+                    aria-label={t("voice.callAudio")}
+                    title={t("voice.callAudio")}
+                  >
+                    <Phone className="size-4" aria-hidden />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-8 text-emerald-600 hover:text-emerald-700"
+                    onClick={() => requestStartCall({ userId: selected.userId, name: selected.fullName, media: "video" })}
+                    aria-label={t("voice.callVideo")}
+                    title={t("voice.callVideo")}
+                  >
+                    <Video className="size-4" aria-hidden />
+                  </Button>
+                  <span className="ms-1 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                    <Clock className="size-3.5" aria-hidden />
+                    {live ? t("voice.liveOn") : t("voice.liveFallback")}
+                  </span>
                 </div>
               </CardHeader>
               <CardContent className="flex min-h-[320px] flex-col gap-3 p-4">
@@ -798,6 +855,25 @@ export function VoiceConsole({ myUserId }: { myUserId: string }) {
                         return (
                           <li key={`${item.type}-${id}`} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
                             {item.type === "voice" ? (
+                              item.msg.purgedAt ? (
+                                /* مُستهلكة ومُسحت (متلقٍّ أو معني بالأمر أو انتهاء العمر) */
+                                <div
+                                  className={`flex max-w-[85%] items-center gap-2.5 rounded-2xl border border-dashed px-3.5 py-2.5 ${
+                                    mine ? "border-primary/40 bg-primary/5" : "border-border bg-muted/40"
+                                  }`}
+                                  aria-label={t("voice.purgedBadge")}
+                                >
+                                  <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted">
+                                    <Trash2 className="size-4 text-muted-foreground" aria-hidden />
+                                  </span>
+                                  <div className="flex flex-col leading-tight">
+                                    <span className="text-xs font-semibold text-muted-foreground">{t("voice.purgedBadge")}</span>
+                                    <span className="text-[10px] text-muted-foreground tabular-nums" dir="auto">
+                                      {fmtTime(item.msg.createdAt)} · {hoursLabel(item.msg.durationSec)}
+                                    </span>
+                                  </div>
+                                </div>
+                              ) : (
                               <div
                                 className={`flex max-w-[85%] items-center gap-2.5 rounded-2xl px-3.5 py-2.5 ${
                                   mine ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
@@ -829,6 +905,7 @@ export function VoiceConsole({ myUserId }: { myUserId: string }) {
                                   </span>
                                 </div>
                               </div>
+                              )
                             ) : item.msg.kind === "photo" ? (
                               <button
                                 type="button"
@@ -981,7 +1058,7 @@ export function VoiceConsole({ myUserId }: { myUserId: string }) {
                     </div>
                   )}
                   <span className="block text-[11px] text-muted-foreground">
-                    {t("voice.composeHint")}
+                    {t("voice.composeHint")} — {t("voice.ephemeralNote")}
                   </span>
                 </div>
               </CardContent>

@@ -10,6 +10,9 @@ import { LogoutButton } from "@/components/fwms/logout-button";
 import { LangSwitcher } from "@/components/fwms/lang-switcher";
 import { ThemeSwitcher } from "@/components/fwms/theme-switcher";
 import { NotificationBell } from "@/components/fwms/notification-bell";
+// (بلاغ المالك 2026-10-24): مدير الاتصال المباشر — يعيش في التخطيط فيصلك
+// الرن في أي صفحة (WebRTC نظير-إلى-نظير: الوسائط لا تمر بالخادم ولا تُخزَّن)
+import { CallManager } from "@/components/fwms/call-manager";
 import { getPlatformBranding, parseModules, isModuleEnabled, MODULE_KEYS } from "@/lib/branding";
 
 /** مفاتيح عناصر الشريط الجانبي التي تحكمها وحدة مالك المنصة (white-label — SPEC §3.2) */
@@ -105,6 +108,8 @@ export default async function DashboardLayout({
         <main className="flex-1 p-4 sm:p-6">{children}</main>
       </div>
       {isFieldUser && <LocationWatcher />}
+      {/* الاتصال المباشر لكل مستخدم (حسب صلاحيات المراسلة في الخادم) */}
+      <CallManager myUserId={session.sub} />
     </div>
   );
 }

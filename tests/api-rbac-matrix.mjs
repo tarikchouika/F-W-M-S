@@ -5,7 +5,7 @@
 // ملاحظة: يتطلّب قاعدة بذور (bunx prisma db seed) — ينشئ بيانات تجريبية بلاحقة زمنية.
 // FWMS — اختبار RBAC شامل عبر API للحسابات الخمسة
 // يستعمل: node rbac-api-test.mjs
-const BASE = "http://localhost:3000";
+const BASE = process.env.BASE ?? "http://localhost:3000";
 
 const ACCOUNTS = [
   { email: "owner@fwms.local", role: "super_admin", label: "المالك" },

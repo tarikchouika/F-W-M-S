@@ -9,7 +9,8 @@ export type RealtimeEvent =
   | { type: "voice"; items: { id: string; from: string | null; at: string | null; kind: string }[] }
   | { type: "dm"; items: { id: string; from: string | null; at: string | null; kind: string }[] }
   | { type: "notif"; items: { id: string; at: string }[] }
-  | { type: "presence"; items: { id: string; from: string; groupId: string | null; at: string }[] };
+  | { type: "presence"; items: { id: string; from: string; groupId: string | null; at: string }[] }
+  | { type: "call"; items: { id: string; callId: string; from: string; kind: string; payload: unknown; at: string }[] };
 
 export type RealtimeHandle = {
   close: () => void;
@@ -30,7 +31,7 @@ export function openRealtime(onEvent: (e: RealtimeEvent) => void): RealtimeHandl
     const url = lastEventAt ? `/api/realtime?since=${encodeURIComponent(lastEventAt)}` : "/api/realtime";
     source = new EventSource(url);
 
-    for (const name of ["hello", "voice", "dm", "notif", "presence"] as const) {
+    for (const name of ["hello", "voice", "dm", "notif", "presence", "call"] as const) {
       source.addEventListener(name, (ev) => {
         try {
           const data = JSON.parse((ev as MessageEvent).data) as RealtimeEvent;

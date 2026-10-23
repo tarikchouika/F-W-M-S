@@ -4,7 +4,7 @@
 //   BASE=http://localhost:3000 node tests/api-functional-core.mjs
 // ملاحظة: يتطلّب قاعدة بذور (bunx prisma db seed) — ينشئ بيانات تجريبية بلاحقة زمنية.
 // FWMS — اختبار وظيفي شامل: إنشاء شركة/فرع/مشروع/موقع/حساب مستخدم/تفويض صلاحية
-const BASE = "http://localhost:3000";
+const BASE = process.env.BASE ?? "http://localhost:3000";
 const TS = Date.now().toString().slice(-8); // روابط فريدة لإعادة التشغيل
 const PW = "Fwms#2026";
 

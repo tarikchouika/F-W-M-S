@@ -62,6 +62,23 @@ type DeclarationRow = { id: string; authority: string; kind: string; periodKey: 
 
 const LANGS = ["ar", "fr", "en", "es"] as const;
 
+// حالة الفترة بمفاتيح مسطحة (درس بلاغ المالك 2026-10-24: المفتاح المتداخل
+// payroll.status.${status} غير موجود في القواميس — كان يظهر خامًا «payroll.status.draft»
+// في قوائم اختيار الفترات هنا؛ payroll-manager يستعمل المسطح منذ الأصل)
+const PERIOD_STATUS_LABEL: Record<string, string> = {
+  draft: "payroll.statusDraft",
+  reviewing: "payroll.statusReviewing",
+  approved: "payroll.statusApproved",
+};
+
+// تقرير المطابقة يقارن ملفًا رسميًا معتمدًا (data.ts: declaration_not_approved)
+// — الحالات المؤهلة وحدها قابلة للاختيار، والبقية تُعرض معليّة بحالتها
+const DECL_ELIGIBLE = ["approved", "exported", "filed"];
+
+function periodStatusLabel(status: string): string {
+  return PERIOD_STATUS_LABEL[status] ?? "";
+}
+
 function sizeLabel(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
@@ -171,9 +188,12 @@ export function ReportsManager() {
         return !!periodId;
       case "attendance_statement":
       case "hours_statement":
-        return true; // العامل: نفسه تلقائيًا — الآخرون يختارون
+        // العامل: نفسه تلقائيًا (لا قائمة عمال له — صلاحية payroll.approve تمنعها)
+        // الأدوار الأخرى: اختيار عامل إلزامي — «self» يرفضه الخادم لهذه الأدوار
+        // (درس بلاغ المالك 2026-10-24: worker_not_in_company برسالة عامة)
+        return workers.length > 0 ? !!workerId : true;
       case "compliance_report":
-        return !!declId;
+        return !!declId && DECL_ELIGIBLE.includes(declarations.find((d) => d.id === declId)?.status ?? "");
       default:
         return true;
     }
@@ -225,6 +245,10 @@ export function ReportsManager() {
         toast({ variant: "destructive", description: t("reports.draftBlocked") });
       } else if (code.includes("no_wage_access")) {
         toast({ variant: "destructive", description: t("reports.noWageAccess") });
+      } else if (code.includes("worker_not_in_company")) {
+        toast({ variant: "destructive", description: t("reports.workerMissing") });
+      } else if (code.includes("declaration_not_approved")) {
+        toast({ variant: "destructive", description: t("reports.declarationNotApproved") });
       } else {
         toast({ variant: "destructive", description: t("reports.exportFailed") });
       }
@@ -352,7 +376,7 @@ export function ReportsManager() {
                         <SelectContent>
                           {periods.map((p) => (
                             <SelectItem key={p.id} value={p.id}>
-                              {p.year}-{String(p.month).padStart(2, "0")} · {t(`payroll.status.${p.status}`)}
+                              {p.year}-{String(p.month).padStart(2, "0")} · {periodStatusLabel(p.status) ? t(periodStatusLabel(p.status)) : p.status}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -381,12 +405,12 @@ export function ReportsManager() {
                   <Label>{t("reports.selectPeriod")}</Label>
                   <Select value={periodId} onValueChange={setPeriodId}>
                     <SelectTrigger className="w-full">
-                      <SelectValue />
+                      <SelectValue placeholder={t("reports.periodRequired")} />
                     </SelectTrigger>
                     <SelectContent>
                       {periods.map((p) => (
                         <SelectItem key={p.id} value={p.id}>
-                          {p.year}-{String(p.month).padStart(2, "0")} · {t(`payroll.status.${p.status}`)}
+                          {p.year}-{String(p.month).padStart(2, "0")} · {periodStatusLabel(p.status) ? t(periodStatusLabel(p.status)) : p.status}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -401,10 +425,9 @@ export function ReportsManager() {
                       <Label>{t("reports.selectWorker")}</Label>
                       <Select value={workerId} onValueChange={setWorkerId}>
                         <SelectTrigger className="w-full">
-                          <SelectValue placeholder={t("common.loading")} />
+                          <SelectValue placeholder={t("reports.workerRequired")} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="self">{t("myAttendance.title")}</SelectItem>
                           {workers.map((w) => (
                             <SelectItem key={w.userId} value={w.userId}>
                               {w.fullName}
@@ -412,6 +435,8 @@ export function ReportsManager() {
                           ))}
                         </SelectContent>
                       </Select>
+                      {/* إلزامية الاختيار مذكورة صراحةً — الزر معطّل حتى الاختيار */}
+                      <p className="text-xs text-muted-foreground">{t("reports.workerRequiredHint")}</p>
                     </div>
                   )}
                   <div className="grid grid-cols-2 gap-3">
@@ -454,18 +479,26 @@ export function ReportsManager() {
               {kind === "compliance_report" && (
                 <div className="space-y-1.5">
                   <Label>{t("reports.selectDeclaration")}</Label>
-                  <Select value={declId} onValueChange={setDeclId}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {declarations.map((d) => (
-                        <SelectItem key={d.id} value={d.id}>
-                          {d.authority.toUpperCase()} · {t(`specRegistry.kinds.${d.kind}`)} · {d.periodKey}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  {declarations.length === 0 ? (
+                    /* لا تصاريح أصلًا: سبب واضح بدل قائمة فارغة وأزرار معطلة بلا تفسير */
+                    <p className="text-xs text-muted-foreground">{t("reports.noDeclarations")}</p>
+                  ) : (
+                    <>
+                    <Select value={declId} onValueChange={setDeclId}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder={t("reports.declarationRequired")} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {declarations.map((d) => (
+                          <SelectItem key={d.id} value={d.id} disabled={!DECL_ELIGIBLE.includes(d.status)}>
+                            {d.authority.toUpperCase()} · {t(`specRegistry.kinds.${d.kind}`)} · {d.periodKey} — {t(`declarations.statuses.${d.status}`)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">{t("reports.declarationEligibleHint")}</p>
+                    </>
+                  )}
                 </div>
               )}
 

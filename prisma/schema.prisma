@@ -46,7 +46,7 @@ model Company {
   legalName       String
   tradeName       String?
   /// أسماء محلية اختيارية JSON {ar,fr,en,es} — العرض بحسب لغة الواجهة وإلا الاسم الأساسي
-  names             String?
+  names           String?
   taxId           String? // ICE
   cnssNumber      String?
   locale          String   @default("ar")
@@ -121,6 +121,8 @@ model User {
   receivedVoices      VoiceMessage[]         @relation("VoiceRecipient")
   sentDirect          DirectMessage[]        @relation("DirectSender")
   receivedDirect      DirectMessage[]        @relation("DirectRecipient")
+  startedCalls        CallSession[]          @relation("CallCaller")
+  receivedCalls       CallSession[]          @relation("CallCallee")
   grantedDelegations  PermissionDelegation[] @relation("DelegationGrantor")
   receivedDelegations PermissionDelegation[] @relation("DelegationGrantee")
 
@@ -170,12 +172,12 @@ model AccountantGrant {
 
 /// فرع الشركة (SPEC §5: branches) — يضم مشاريع ومواقع
 model Branch {
-  id        String   @id @default(cuid())
+  id        String @id @default(cuid())
   companyId String
   name      String
 
   /// أسماء محلية اختيارية JSON {ar,fr,en,es} — العرض بحسب لغة الواجهة وإلا الاسم الأساسي
-  names             String?
+  names     String?
   code      String?
   city      String?
   address   String?
@@ -195,13 +197,13 @@ model Branch {
 
 /// مشروع/عقد داخل الشركة (SPEC §5: projects) — يُسنَد له مواقع
 model Project {
-  id        String    @id @default(cuid())
+  id        String  @id @default(cuid())
   companyId String
   branchId  String?
   name      String
 
   /// أسماء محلية اختيارية JSON {ar,fr,en,es} — العرض بحسب لغة الواجهة وإلا الاسم الأساسي
-  names             String?
+  names     String?
   code      String?
   status    String    @default("active") // active | archived
   startsAt  DateTime?
@@ -220,14 +222,14 @@ model Project {
 /// موقع العمل: نقطة مركز + نصف قطر للتحقق الجغرافي (SPEC §4.2 و§5: sites)
 /// latitude/longitude عشرية Float — نطاقها يُتحقق في طبقة التطبيق (zod)؛ SQLite بلا PostGIS
 model Site {
-  id        String   @id @default(cuid())
+  id        String  @id @default(cuid())
   companyId String
   branchId  String?
   projectId String?
   name      String
 
   /// أسماء محلية اختيارية JSON {ar,fr,en,es} — العرض بحسب لغة الواجهة وإلا الاسم الأساسي
-  names             String?
+  names     String?
   address   String?
   /// عناوين محلية اختيارية JSON {ar,fr,en,es} — العرض بحسب لغة الواجهة وإلا العنوان الأساسي
   /// (علاج بلاغ المالك 2026-10-23 «خلل ترجمة العناوين الجغرافية»)
@@ -325,7 +327,7 @@ model MemberLocationPing {
 model VoiceMessage {
   id          String    @id @default(cuid())
   companyId   String
-  groupId     String?   // فريق السياق (بلا فريق = رسالة إشرافية مباشرة من الإدارة لمستخدم بلا فريق) — رسائل الأعضاء محصورة في فريق مشترك حصرًا
+  groupId     String? // فريق السياق (بلا فريق = رسالة إشرافية مباشرة من الإدارة لمستخدم بلا فريق) — رسائل الأعضاء محصورة في فريق مشترك حصرًا
   senderId    String
   recipientId String
   durationSec Int       @default(0)
@@ -334,12 +336,15 @@ model VoiceMessage {
   audio       Bytes // المحتوى الثنائي (SQLite BLOB) — مقاطع قصيرة ≤ 120ث
   listenedAt  DateTime? // وقت استماع المستقبِل (أول تشغيل)
   createdAt   DateTime  @default(now())
+  purgedAt    DateTime? // لحظة مسح المحتوى الصوتي (استهلاك أو TTL) — بعدها البث 410
+  purgedBy    String? // من مسحها: معرّف المستقبِل/المشرف أو "ttl"
 
   sender    User @relation("VoiceSender", fields: [senderId], references: [id])
   recipient User @relation("VoiceRecipient", fields: [recipientId], references: [id])
 
   @@index([companyId, groupId, createdAt])
   @@index([recipientId, listenedAt])
+  @@index([purgedAt])
 }
 
 /// مراسلة مباشرة بين المستخدمين: مرئية (صورة/فيديو) وموقعية (بلاغ المالك
@@ -353,8 +358,8 @@ model DirectMessage {
   recipientId String
   kind        String // "photo" | "video" | "location"
   mime        String    @default("") // image/jpeg | video/webm | video/mp4 — "" للموقع
-  sizeBytes   Int     @default(0)
-  durationSec Int     @default(0) // للفيديو فقط
+  sizeBytes   Int       @default(0)
+  durationSec Int       @default(0) // للفيديو فقط
   lat         Float?
   lng         Float?
   accuracyM   Float?
@@ -367,6 +372,45 @@ model DirectMessage {
 
   @@index([companyId, groupId, createdAt])
   @@index([recipientId, viewedAt])
+}
+
+/// جلسة اتصال مباشر (بلاغ المالك 2026-10-24): صوت/صورة آني بين مستخدمَين عبر
+/// WebRTC — الوسائط تتدفق نظير-إلى-نظير مشفّرة (DTLS-SRTP) ولا تمرّ بالخادم
+/// ولا تُخزّن في المنصة إطلاقًا؛ هذا السجل بيانات وصفية للتدقيق فقط
+/// (من اتصل بمن، متى، المدة، الحالة) بلا أي محتوى وسائط.
+model CallSession {
+  id        String    @id @default(cuid())
+  companyId String
+  callerId  String
+  calleeId  String
+  media     String // audio | video
+  status    String    @default("ringing") // ringing | active | ended | declined | missed
+  startedAt DateTime? // لحظة اتصال الوسائط فعليًا
+  endedAt   DateTime?
+  createdAt DateTime  @default(now())
+
+  caller User @relation("CallCaller", fields: [callerId], references: [id])
+  callee User @relation("CallCallee", fields: [calleeId], references: [id])
+
+  @@index([companyId, createdAt])
+  @@index([calleeId, status, createdAt])
+}
+
+/// إشارة تأشير WebRTC (بلاغ المالك 2026-10-24): ring/offer/answer/ice/end/decline
+/// — إشارات تأسيس الاتصال وحدها تمرّ بالخادم (SDP ومرشحو ICE)
+/// وهي قصيرة العمر: تُحذف بعد دقائق من إنشائها؛ الوسائط نفسها لا تلمس الخادم أبدًا.
+model CallSignal {
+  id          String   @id @default(cuid())
+  companyId   String
+  callId      String
+  fromUserId  String
+  toUserId    String
+  kind        String // ring | offer | answer | ice | end | decline | busy
+  payloadJson String // JSON قصير (SDP أو مرشح ICE بلا حمولة) — مؤقت بطبيعته
+  createdAt   DateTime @default(now())
+
+  @@index([toUserId, createdAt])
+  @@index([createdAt])
 }
 
 /// تفويض صلاحية (المرحلة 9) — السوبر أدمن وحده يفوّض؛ يمنح صلاحية فوق دور المنحوح له

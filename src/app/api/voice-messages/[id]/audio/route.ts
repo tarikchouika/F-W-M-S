@@ -1,5 +1,7 @@
 // FWMS — بث محتوى رسالة صوتية: المرسل أو المستقبِل أو وضع الإشراف (voice.admin).
 // بلا تخزين مؤقت (private) — المحتوى شخصي ولا يجوز وسيطه.
+// (بلاغ المالك 2026-10-24): الصوتيات مؤقتة — المُستهلكة/المنتهية تُرجع 410 Gone
+// (المحتوى مُسح؛ السجل الوصفي وحده باقٍ للتدقيق).
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth/session";
@@ -17,7 +19,7 @@ export async function GET(
     const { id } = await params;
     const message = await db.voiceMessage.findFirst({
       where: { id, companyId: session.companyId },
-      select: { senderId: true, recipientId: true, mime: true, audio: true },
+      select: { senderId: true, recipientId: true, mime: true, audio: true, purgedAt: true },
     });
     if (!message) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
@@ -25,6 +27,11 @@ export async function GET(
     const isParty = message.senderId === session.sub || message.recipientId === session.sub;
     if (!isParty && !admin) {
       throw new AccessError(403, "forbidden");
+    }
+
+    // مُستهلكة (متلقٍّ أو معنيّ بالأمر) أو منتهية العمر (TTL): المحتوى مُسح
+    if (message.purgedAt) {
+      return NextResponse.json({ error: "voice_purged" }, { status: 410 });
     }
 
     const bytes = Buffer.from(message.audio as unknown as Uint8Array);
