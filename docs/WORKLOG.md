@@ -14,6 +14,13 @@
 | اختبار تخطيط الشاشة | Chromium بمقاس هاتف 412×915 على **الموقع العام** | `viewport-fit=cover` ✓ · بلا غلاف إزاحة 0px ✓ · بمحاكاة غلاف: `padding-top=28px`/`padding-bottom=48px`/`min-height=915px` والترويسة `sticky top=28px` ✓ · بعد الإزالة رجوع إلى 0px ✓ |
 | اختبار الرابطين في الوثائق | وثائق مولَّدة على قاعدة معزولة ثم استخراج النص/الصورة | DOCX: السطران بنصّهما · PDF: `pdftotext` **و**`pypdf` (مستخرجان مستقلان) · PNG: OCR للسطرين + **فكّ QR (jsQR)** ⇒ `https://fwms-dg8.pages.dev/verify/<ref>?h=<hash16>` |
 
+### متابعة (2026-10-23 00:10) — توجيه بوابة Pages إلى الخادم المرجعي (أمر المالك + توكن الحساب)
+
+- **التغيير:** `ORIGIN` في `infra/cloudflare/fwms-pages/public/_worker.js` من `fwms-orpin.vercel.app` إلى **`fwms.tarikc.workers.dev`**، ونُشر بـ`wrangler pages deploy public --project-name=fwms --branch=main` (التوكن عبر متغيّر بيئة فقط — لم يُكتب في أي ملف ولا في المستودع).
+- **الشرط الموثَّق محقَّق:** الهاتف على v0.12.1 (كان README يمنع التبديل قبل ≥0.9.2).
+- **الأدلة المقيسة بعد النشر:** `/_gateway/health` ⇒ `{"ok":true,"origin":"fwms.tarikc.workers.dev"}` · `/api/health` ⇒ `0.12.1 · database ok` · `/login` ⇒ 200 · `/api/reports/verify/RD-261020-KM8J?h=2cf2c2925dece696` ⇒ `valid:true` · ترويسات الاستجابة: `cf-ray` + بلا `x-vercel-id` ⇒ تُخدم من الهاتف فعلًا.
+- **المقابل المعلن:** هذه البوابة صارت تعتمد على بقاء النفق/الهاتف (503 عند الغياب) — والتحقق الفدرالي في التطبيق يبقى شبكة أمان على بوابات Vercel. حُدِّثت `docs/DEPLOYMENT.md` §3.2 و`README` جدول الأصل.
+
 ### العلاجات
 
 1. **الغلاف يشير إلى الخادم المرجعي:** `android-build.yml` — `server.url` افتراضيًا `https://fwms.tarikc.workers.dev` (لا بوابة Vercel التي تُضيّع الوثائق في لقطة `/tmp`)، و`workflow_dispatch.app_url` ما زال يتيح التجاوز. السبب مُوثَّق أعلى السير (ثلاثة دروس مقيسة).
