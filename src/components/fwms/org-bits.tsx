@@ -74,20 +74,31 @@ export function apiErrorMessage(t: (key: string) => string, error: unknown): str
 
 /** ترويسة موحدة لصفحات إدارة المرحلة 2 */
 export function PageHeader({
+  icon,
   title,
   subtitle,
+  actions,
   children,
 }: {
+  icon?: ReactNode;
   title: string;
   subtitle?: string;
+  actions?: ReactNode;
   children?: ReactNode;
 }) {
+  // (تدقيق 2026-10-24): icon وactions كانا يُمرَّران من platform-owner-manager
+  // وتُسقطان بصمت (غير معرّفين في التوقيع سابقًا) ⇒ أيقونة الصفحة وزر «تحديث»
+  // لا يُرسمان أصلًا — خلل وظيفي خفي كُشف بالتدقيق، لا مجرد خطأ أنواع.
   return (
     <div className="flex flex-wrap items-start justify-between gap-3">
-      <div className="min-w-0">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">{title}</h1>
-        {subtitle && <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{subtitle}</p>}
+      <div className="flex min-w-0 items-start gap-3">
+        {icon && <span className="mt-0.5 shrink-0 text-primary">{icon}</span>}
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">{title}</h1>
+          {subtitle && <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{subtitle}</p>}
+        </div>
       </div>
+      {actions && <div className="flex min-w-0 flex-wrap items-center gap-2">{actions}</div>}
       {children && <div className="flex min-w-0 flex-wrap items-center gap-2">{children}</div>}
     </div>
   );

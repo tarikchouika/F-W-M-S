@@ -4,11 +4,37 @@
     "fullName": "Sistema de gestión de la mano de obra de campo",
     "tagline": "Precisión de campo. Seguridad estricta. Nómina marroquí fiable."
   },
+  "appPage": {
+    "title": "Aplicación Android oficial",
+    "subtitle": "Descarga la aplicación FWMS directamente desde la fuente — sin tienda de aplicaciones ni intermediarios. El enlace permanente sirve siempre la última versión firmada con la clave de la plataforma.",
+    "downloadCta": "Descargar la aplicación (APK)",
+    "downloadSub": "La aplicación oficial de la plataforma FWMS: la misma cuenta y los mismos datos, con pantalla completa al 100%, modo inmersivo y descarga nativa de documentos dentro de la aplicación.",
+    "permanentNote": "enlace permanente que sirve siempre la última versión",
+    "releasesLink": "Registro de versiones",
+    "stepsTitle": "Instalación en 3 pasos",
+    "s1t": "1 · Descargar el archivo",
+    "s1b": "Pulsa el botón de descarga desde el navegador de tu teléfono (Chrome o Samsung Internet) y espera a que termine la descarga de FWMS.apk — aparece en las notificaciones.",
+    "s2t": "2 · Permitir la instalación desde esta fuente",
+    "s2b": "Al abrir el archivo, Android pedirá permitir la fuente de descarga: elige «Ajustes» y activa «Instalar aplicaciones desconocidas» para el navegador usado (solo una vez).",
+    "s3t": "3 · Instalar y abrir",
+    "s3b": "Vuelve y pulsa «Instalar» — al terminar, abre la aplicación desde el menú de aplicaciones o la notificación.",
+    "ppTitle": "Saltar el aviso de Play Protect",
+    "ppBody": "Durante la instalación Play Protect puede mostrar: «Aplicación desconocida». El motivo es simple: la aplicación se distribuye directamente desde la plataforma FWMS, no por la Play Store — es intencional (aplicación interna firmada con la clave fija del propietario). El archivo es seguro y viene de la fuente oficial.",
+    "pp1": "Cuando aparezca el aviso, pulsa «Más detalles» (More details).",
+    "pp2": "Elige «Instalar esta aplicación no segura» — en algunos dispositivos: «Instalar de todos modos» (Install anyway).",
+    "pp3": "Si el aviso reaparece tras la instalación, elige «Ignorar» — no volverá a mostrarse para la misma versión.",
+    "ppReassure": "¿Por qué aparece el aviso? Porque la aplicación está fuera de la Play Store. Su firma es fija desde el 2026-10-19, su clave pertenece al propietario de la plataforma, y cada actualización se instala sobre la existente con la misma firma.",
+    "updatesTitle": "Las actualizaciones se instalan sobre la existente",
+    "updatesBody": "No desinstales para actualizar — descarga la nueva versión desde el mismo enlace e instálala directamente: la misma clave de firma significa una actualización silenciosa que conserva tus datos y tu sesión.",
+    "accountTitle": "La misma cuenta en todas partes",
+    "accountBody": "La aplicación abre la misma plataforma (el servidor de referencia) que usas en el navegador — inicia sesión con el mismo correo y contraseña. Si cambiaste la contraseña, usa la más reciente en todos los dispositivos."
+  },
   "nav": {
     "home": "Inicio",
     "login": "Iniciar sesión",
     "logout": "Cerrar sesión",
-    "dashboard": "Panel de control"
+    "dashboard": "Panel de control",
+    "appDownload": "App de Android"
   },
   "lang": {
     "label": "Idioma",

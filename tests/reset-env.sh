@@ -12,7 +12,11 @@ RUNTIME="${TEST_RUNTIME:-bun --bun}"  # node = بيئة سحابية (درس KNO
 
 DB_PATH="${DATABASE_URL:-file:./db/custom.db}"
 DB_PATH="${DB_PATH#file:}"
-if [ ! -f "$DB_PATH" ] || [ -z "$DB_PATH" ]; then
+# (تدقيق 2026-10-24): إذا عُيّن DATABASE_URL صراحةً فنثق به حتى لو لم يُنشأ الملف
+# بعد — db push ينشئه (الفحص الشرطي السابق كان يسقط على ./db/custom.db حين
+# لا يوجد الملف قبل الإنشاء: الرسالة تكذب على القاعدة الفعلية، وrm يمسّ ملفًا
+# آخر غير المقصود). الاحتياط يبقى للقيمة غير المضبوطة أصلًا.
+if [ -z "$DB_PATH" ]; then
   DB_PATH="$(pwd)/db/custom.db"
 fi
 echo "→ القاعدة الفعلية: $DB_PATH"

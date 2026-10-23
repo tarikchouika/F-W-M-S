@@ -26,6 +26,9 @@ const buttonVariants = cva(
         sm: "h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5",
         lg: "h-10 rounded-md px-6 has-[>svg]:px-4",
         icon: "size-9",
+        // (تدقيق 2026-10-24): متغير مطلوب في platform-owner-manager — كان
+        // يُمرَّر بقيمة غير معرّفة فيتساقط فحص الأنواع؛ أضيف هنا بدل تكرار صنف يدوي.
+        "icon-sm": "size-7",
       },
     },
     defaultVariants: {

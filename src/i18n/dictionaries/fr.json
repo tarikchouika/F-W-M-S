@@ -4,11 +4,37 @@
     "fullName": "Système de gestion de la main-d'œuvre terrain",
     "tagline": "Précision terrain. Sécurité stricte. Paie marocaine fiable."
   },
+  "appPage": {
+    "title": "Application Android officielle",
+    "subtitle": "Téléchargez l'application FWMS directement depuis la source — sans boutique d'applications ni intermédiaire. Le lien permanent sert toujours la dernière version signée par la clé de la plateforme.",
+    "downloadCta": "Télécharger l'application (APK)",
+    "downloadSub": "L'application officielle de la plateforme FWMS : même compte et mêmes données, avec écran plein 100%, mode immersif et téléchargement natif des documents dans l'application.",
+    "permanentNote": "lien permanent qui sert toujours la dernière version",
+    "releasesLink": "Journal des versions",
+    "stepsTitle": "Installation en 3 étapes",
+    "s1t": "1 · Télécharger le fichier",
+    "s1b": "Appuyez sur le bouton de téléchargement depuis le navigateur de votre téléphone (Chrome ou Samsung Internet) et attendez la fin du téléchargement de FWMS.apk — visible dans les notifications.",
+    "s2t": "2 · Autoriser l'installation depuis cette source",
+    "s2b": "À l'ouverture du fichier, Android demandera d'autoriser la source de téléchargement : choisissez « Paramètres » puis activez « Installer des applications inconnues » pour le navigateur utilisé (une seule fois).",
+    "s3t": "3 · Installer et ouvrir",
+    "s3b": "Revenez puis appuyez sur « Installer » — une fois terminé, ouvrez l'application depuis le menu des applications ou la notification.",
+    "ppTitle": "Passer l'avertissement Play Protect",
+    "ppBody": "Pendant l'installation, Play Protect peut afficher : « Application inconnue ». La raison est simple : l'application est distribuée directement par la plateforme FWMS, pas via le Play Store — c'est voulu (application interne signée par la clé fixe du propriétaire). Le fichier est sain et provient de la source officielle.",
+    "pp1": "Quand l'avertissement apparaît, appuyez sur « Plus de détails » (More details).",
+    "pp2": "Choisissez « Installer cette application non sécurisée » (Install this unsafe app) — sur certains appareils : « Installer quand même » (Install anyway).",
+    "pp3": "Si l'avertissement réapparaît après l'installation, choisissez « Ignorer » — il ne reviendra plus pour la même version.",
+    "ppReassure": "Pourquoi cet avertissement ? Parce que l'application est hors du Play Store. Sa signature est fixe depuis le 2026-10-19, sa clé appartient au propriétaire de la plateforme, et chaque mise à jour s'installe par-dessus l'existant avec la même signature.",
+    "updatesTitle": "Mises à jour par-dessus l'installation existante",
+    "updatesBody": "Ne désinstallez pas pour mettre à jour — téléchargez la nouvelle version depuis le même lien et installez-la directement : la même clé de signature signifie une mise à jour silencieuse qui conserve vos données et votre session.",
+    "accountTitle": "Le même compte partout",
+    "accountBody": "L'application ouvre la même plateforme (serveur de référence) que le navigateur — connectez-vous avec le même e-mail et mot de passe. Si vous avez changé le mot de passe, utilisez le plus récent sur tous les appareils."
+  },
   "nav": {
     "home": "Accueil",
     "login": "Connexion",
     "logout": "Déconnexion",
-    "dashboard": "Tableau de bord"
+    "dashboard": "Tableau de bord",
+    "appDownload": "Application Android"
   },
   "lang": {
     "label": "Langue",

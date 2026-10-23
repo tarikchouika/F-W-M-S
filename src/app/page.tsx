@@ -29,6 +29,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { LangSwitcher } from "@/components/fwms/lang-switcher";
 import { FwmsLogo, FwmsMark } from "@/components/fwms/logo";
 import { useI18n } from "@/i18n/provider";
+// (بلاغ المالك 2026-10-24): اختصار تحميل تطبيق أندرويد من الرابط الدائم —
+// زر مباشر على التطبيق + رابط دليل التثبيت وتجاوز Play Protect (/app).
+import { Smartphone, Download } from "lucide-react";
+import { APP_DOWNLOAD_URL } from "@/lib/app-download";
 
 type Feature = {
   titleKey: string;
@@ -232,13 +236,34 @@ export default function LandingPage() {
           aria-hidden
         />
         <div className="relative mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:px-6 md:grid-cols-[1fr_auto] md:items-start md:gap-12">
-          <div className="flex items-start gap-4">
-            <FwmsLogo className="size-14 shrink-0" />
-            <div className="space-y-1.5">
-              <p className="text-lg font-extrabold tracking-tight text-[var(--fwms-gold)]" dir="ltr">
-                FWMS
-              </p>
-              <p className="max-w-md text-xs leading-6 text-white/75">{t("app.tagline")}</p>
+          <div className="space-y-6">
+            <div className="flex items-start gap-4">
+              <FwmsLogo className="size-14 shrink-0" />
+              <div className="space-y-1.5">
+                <p className="text-lg font-extrabold tracking-tight text-[var(--fwms-gold)]" dir="ltr">
+                  FWMS
+                </p>
+                <p className="max-w-md text-xs leading-6 text-white/75">{t("app.tagline")}</p>
+              </div>
+            </div>
+            {/* اختصار التحميل المباشر (بلاغ المالك 2026-10-24): زر من الرابط الدائم + رابط الدليل */}
+            <div className="flex flex-wrap items-center gap-3">
+              <a
+                href={APP_DOWNLOAD_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-10 items-center gap-2 rounded-lg bg-[var(--fwms-gold)] px-4 text-sm font-bold text-[#0f2242] shadow-lg transition-transform hover:scale-[1.02] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--fwms-gold)]"
+              >
+                <Download className="size-4" aria-hidden />
+                {t("appPage.downloadCta")}
+              </a>
+              <Link
+                href="/app"
+                className="inline-flex h-10 items-center gap-2 rounded-lg border border-white/25 bg-white/10 px-4 text-sm font-semibold text-white/90 backdrop-blur transition-colors hover:bg-white/20 hover:text-white"
+              >
+                <Smartphone className="size-4" aria-hidden />
+                {t("nav.appDownload")}
+              </Link>
             </div>
           </div>
 

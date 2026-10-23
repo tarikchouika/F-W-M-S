@@ -357,7 +357,7 @@ export function PlatformOwnerManager() {
         <Alert variant="destructive" className="border-2">
           <KeyRound className="size-4" aria-hidden />
           <AlertTitle>{t("platform.credentialsTitle")}</AlertTitle>
-          <AlertDescription asChild>
+          <AlertDescription>
             <div className="space-y-2 pt-1">
               <p className="font-semibold">{t("platform.credentialsHint")}</p>
               <div className="space-y-1.5 font-mono text-xs">
@@ -536,7 +536,7 @@ export function PlatformOwnerManager() {
                 <Alert>
                   <Eye className="size-4" aria-hidden />
                   <AlertTitle>{t("platform.codeIssuedTitle")}</AlertTitle>
-                  <AlertDescription asChild>
+                  <AlertDescription>
                     <div className="space-y-1">
                       <code dir="ltr" className="rounded bg-muted px-2 py-1 font-mono text-sm tracking-widest">{issuedCode}</code>
                       <p className="text-xs">{t("platform.issueCodeHint")}</p>

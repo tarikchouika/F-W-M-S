@@ -103,7 +103,8 @@ export default async function LoginPage({ searchParams }: LoginProps) {
         </Card>
       </div>
 
-      {/* (جولة 2026-10-19): روابط الصفحات القانونية والدليل — بكل لغات الواجهة */}
+      {/* (جولة 2026-10-19): روابط الصفحات القانونية والدليل — بكل لغات الواجهة
+          (جولة 2026-10-24): + اختصار تطبيق أندرويد (دليل التثبيت والتحميل المباشر) */}
       <nav className="relative z-10 mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
         {[
           { href: "/legal/terms", label: tServer(dict, "legal.terms.title") },
@@ -111,6 +112,7 @@ export default async function LoginPage({ searchParams }: LoginProps) {
           { href: "/legal/safety", label: tServer(dict, "legal.safety.title") },
           { href: "/legal/rights", label: tServer(dict, "legal.rights.title") },
           { href: "/guide", label: tServer(dict, "guide.title") },
+          { href: "/app", label: tServer(dict, "nav.appDownload") },
         ].map((l) => (
           <a
             key={l.href}

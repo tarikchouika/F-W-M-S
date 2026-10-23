@@ -4,11 +4,37 @@
     "fullName": "Field Workforce Management System",
     "tagline": "Field precision. Strict security. Trusted Moroccan payroll."
   },
+  "appPage": {
+    "title": "Official Android app",
+    "subtitle": "Download the FWMS app straight from the source — no app store, no middleman. The permanent link always serves the latest release signed with the platform's key.",
+    "downloadCta": "Download the app (APK)",
+    "downloadSub": "The official FWMS platform app: same account and same data, with a full 100% screen, immersive mode and native document downloads inside the app.",
+    "permanentNote": "permanent link that always serves the latest release",
+    "releasesLink": "Release notes",
+    "stepsTitle": "Install in 3 steps",
+    "s1t": "1 · Download the file",
+    "s1b": "Tap the download button from your phone's browser (Chrome or Samsung Internet) and wait for FWMS.apk to finish downloading — it shows in notifications and the download bar.",
+    "s2t": "2 · Allow installs from this source",
+    "s2b": "When opening the file, Android will ask to allow the download source: choose “Settings” then enable “Install unknown apps” for the browser you downloaded with (one time only).",
+    "s3t": "3 · Install and open",
+    "s3b": "Go back and tap “Install” — once finished, open the app from the app drawer or the download notification.",
+    "ppTitle": "Bypassing the Play Protect warning",
+    "ppBody": "During installation Play Protect may show an “unknown app” warning. The reason is simple: the app is distributed directly by the FWMS platform, not through the Play Store — by design (an in-house app signed with the owner's fixed key). The file is safe and comes from the official source.",
+    "pp1": "When the warning appears, tap “More details”.",
+    "pp2": "Choose “Install this unsafe app” — on some devices: “Install anyway”.",
+    "pp3": "If the warning reappears after installation, choose “Ignore” — it won't show again for the same version.",
+    "ppReassure": "Why does the warning appear? Because the app is outside the Play Store. Its signature has been fixed since 2026-10-19, its key belongs to the platform owner, and every update installs over the existing one with the same signature.",
+    "updatesTitle": "Updates install over the existing app",
+    "updatesBody": "Don't uninstall to update — download the new version from the same link and install it directly: the same signing key means a silent update that keeps your data and session.",
+    "accountTitle": "Same account everywhere",
+    "accountBody": "The app opens the same platform (the reference server) you use from the browser — sign in with the same email and password. If you changed your password, use the newest one on all devices."
+  },
   "nav": {
     "home": "Home",
     "login": "Sign in",
     "logout": "Sign out",
-    "dashboard": "Dashboard"
+    "dashboard": "Dashboard",
+    "appDownload": "Android app"
   },
   "lang": {
     "label": "Language",

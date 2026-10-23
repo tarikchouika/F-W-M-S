@@ -8,6 +8,10 @@ import { LangSwitcher } from "@/components/fwms/lang-switcher";
 import { ThemeSwitcher } from "@/components/fwms/theme-switcher";
 import { FwmsLogo, FwmsMark } from "@/components/fwms/logo";
 import { Separator } from "@/components/ui/separator";
+// (تدقيق 2026-10-24): الإصدار من مصدره الواحد version.ts — كان يقرأ
+// NEXT_PUBLIC_APP_VERSION وهي غير معرّفة في أي مكان ⇒ احتياطي «0.11.0» متقادم
+// ظاهر في تذييل كل الصفحات القانونية بينما المنصة على 0.12.2 (خلل خفي من
+// نوع «إصدار قديم غير مكتمل» — درس 2026-10-18).
 import { APP_VERSION } from "@/lib/version";
 
 export function PublicLegalShell({ children }: { children: React.ReactNode }) {
@@ -18,6 +22,8 @@ export function PublicLegalShell({ children }: { children: React.ReactNode }) {
     { href: "/legal/safety", label: t("legal.safety.title") },
     { href: "/legal/rights", label: t("legal.rights.title") },
     { href: "/guide", label: t("guide.title") },
+    // (بلاغ المالك 2026-10-24): اختصار تطبيق أندرويد على كل الصفحات العامة
+    { href: "/app", label: t("nav.appDownload") },
   ];
   // ⚠️ الخلفية **فاتحة** لا fwms-hero-gradient (الأخضر الداكن):
   // محتوى هذه الصفحات (نص foreground داكن) كان يُرسم على تدرّج أخضر داكن ⇒
@@ -67,8 +73,7 @@ export function PublicLegalShell({ children }: { children: React.ReactNode }) {
           </nav>
           <Separator className="bg-white/15 opacity-60" />
           <p className="text-[11px] text-white/65" dir="ltr">
-            FWMS · v{process.env.NEXT_PUBLIC_APP_VERSION ?? "0.11.0"} —{" "}
-            {t("legal.rights.subtitle")}
+            FWMS · v{APP_VERSION} — {t("legal.rights.subtitle")}
           </p>
         </div>
       </footer>
