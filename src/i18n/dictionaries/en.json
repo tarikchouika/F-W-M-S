@@ -160,7 +160,7 @@
     "declarations": "Official declarations",
     "platform": "Platform ownership",
     "teamPresence": "Team presence",
-    "voice": "Voice messages",
+    "voice": "Direct messaging",
     "openMenu": "Open menu",
     "welcomeWithName": "Hello, {name}"
   },
@@ -1354,8 +1354,8 @@
     "notLeaderHint": "This page is for team leaders and viewers (co-admin and above) — you are not a team leader"
   },
   "voice": {
-    "title": "Voice messages",
-    "subtitle": "Direct voice communication within your team — team isolation is enforced server-side; supervision (super/admin/co-admin) reaches everyone",
+    "title": "Direct messaging",
+    "subtitle": "Direct contact by voice, photo, video and location inside your team — inter-team isolation enforced server-side, supervision reaches everyone, delivery is live",
     "modeTeam": "Team mode: conversations with your team members only",
     "modeAdmin": "Supervision mode: you can message and listen with all teams and users",
     "browseGroup": "Browse a team's messages",
@@ -1367,7 +1367,7 @@
     "noContacts": "No contacts available — check your team membership",
     "back": "Back",
     "pollHint": "Auto-refresh every 15s",
-    "threadEmpty": "No messages in this conversation — record the first one",
+    "threadEmpty": "No messages in this conversation yet — send the first one (voice · photo · video · location)",
     "play": "Play",
     "recording": "Recording",
     "cancel": "Cancel",
@@ -1379,7 +1379,29 @@
     "micUnsupported": "Your browser does not support recording",
     "tooLarge": "Clip too large (2.5MB limit)",
     "sendFailed": "Failed to send — try again",
-    "pickContact": "Pick a contact to start"
+    "pickContact": "Pick a contact to start",
+    "liveOn": "Live sync",
+    "liveFallback": "Minute fallback",
+    "takePhoto": "Photo from camera",
+    "recordVideo": "Video from camera",
+    "shareLocation": "Share my location",
+    "kindPhoto": "Photo",
+    "kindVideo": "Video",
+    "kindLocation": "Current location",
+    "camPhotoHint": "Aim and capture",
+    "camVideoHint": "Record a short clip",
+    "camDenied": "Camera permission denied — enable it in your browser settings",
+    "camUnsupported": "Your browser does not support the camera",
+    "photoTooLarge": "Photo too large (limit 3MB)",
+    "videoTooLarge": "Video too large (limit 8MB)",
+    "locDenied": "Location permission denied — enable it in your browser settings",
+    "locUnsupported": "Your device does not support geolocation",
+    "switchCamera": "Switch camera",
+    "capture": "Capture",
+    "retake": "Retake",
+    "stopVideo": "Stop & send",
+    "close": "Close",
+    "composeHint": "Voice ≤120s · video ≤60s · photo ≤3MB · live delivery"
   },
   "usersPage": {
     "title": "Users",
@@ -1632,7 +1654,7 @@
   "legal": {
     "terms": {
       "title": "FWMS Terms of Use",
-      "subtitle": "By using the platform you accept these terms — last updated: version 0.11.0",
+      "subtitle": "By using the platform you accept these terms — last updated: version {version}",
       "s1h": "1. Nature of the service",
       "s1b": "FWMS is a field workforce management platform: attendance with geographic verification, scheduling and coverage, payroll with legal deductions, and official declarations. The service is provided \"as is\" to companies established in Morocco; payroll data is governed by Moroccan law in force (Labor Code 65-99 and its implementing texts).",
       "s2h": "2. Accounts and permissions",

@@ -18,6 +18,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/provider";
 import { apiRequest, ApiError, ListState, PageHeader } from "@/components/fwms/org-bits";
+// (بلاغ المالك 2026-10-24 «لا أستطيع تحرير أو تصدير أو تحميل بعض الوثائق مثل ملخص الأجور"):
+// تسليم الملف عبر الجسر الأصلي — <a download> على روابط blob لا يعمل داخل WebView
+// أندرويد (لا DownloadListener في الغلاف) فيبدو التصدير معطوبًا في التطبيق.
+import { deliverFile } from "@/lib/native-bridge";
 import { formatMoney } from "@/lib/money";
 
 type PeriodDetail = {
@@ -261,15 +265,8 @@ export function PayrollPeriodView({ periodId, canApprove }: { periodId: string; 
       });
       const file = await fetch(res.downloadUrl, { cache: "no-store" });
       if (!file.ok) throw new Error("download_failed");
-      const blob = await file.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = res.fileName;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      // الجسر الأصلي داخل تطبيق أندرويد (مشاركة النظام) — وتنزيل عادي في المتصفح
+      await deliverFile(await file.blob(), res.fileName);
       toast({ description: t("reports.exportOk") });
     } catch {
       toast({ variant: "destructive", description: t("reports.exportFailed") });

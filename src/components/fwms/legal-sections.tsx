@@ -7,6 +7,15 @@
 // عمود أوسع على الحواسيب (max-w-5xl) + خط أكبر للقراءة المريحة (15px/سطر 32px)
 // + ترقيم مقاطع بهوية ذهبية يعطي إحساس «وثيقة» لا «تطبيق جوال».
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+// (بلاغ المالك 2026-10-24 «عبارة أخر تحديث 0.11.0 مكتوبة من إصدار قديم»):
+// القواميس تحمل الآن عنصرًا {version} — يُستبدل هنا من مصدر الإصدار الواحد
+// version.ts حصرًا (قاعدة جلسة 2026-10-18: لا يُثبَّت رقم إصدار في قاموس أبدًا).
+import { APP_VERSION } from "@/lib/version";
+
+/** استبدال عناصر القوالب في نص شجرة القاموس — حاليًا {version} فقط */
+function fillVars(text: string): string {
+  return text.replaceAll("{version}", APP_VERSION);
+}
 
 export type LegalSection = { h: string; b: string; bullets: string[] };
 
@@ -19,9 +28,9 @@ export function sectionsOf(tree: Record<string, string>): LegalSection[] {
     const bullets: string[] = [];
     for (let l = 1; l <= 4; l++) {
       const v = tree[`s${i}l${l}`];
-      if (typeof v === "string" && v.trim()) bullets.push(v);
+      if (typeof v === "string" && v.trim()) bullets.push(fillVars(v));
     }
-    out.push({ h: h ?? "", b: b ?? "", bullets });
+    out.push({ h: fillVars(h ?? ""), b: fillVars(b ?? ""), bullets });
   }
   return out;
 }
@@ -32,9 +41,9 @@ export function LegalSections({ tree }: { tree: Record<string, string> }) {
     <div className="mx-auto w-full max-w-3xl space-y-6 py-6 lg:max-w-5xl">
       <header className="space-y-3 pb-2 pt-4">
         <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-4xl">
-          {tree.title}
+          {fillVars(tree.title)}
         </h1>
-        <p className="text-base leading-8 text-muted-foreground sm:text-lg">{tree.subtitle}</p>
+        <p className="text-base leading-8 text-muted-foreground sm:text-lg">{fillVars(tree.subtitle)}</p>
         {/* خط ذهبي بهوية المنصة تحت العنوان — يصل الصفحات العامة بالوثائق المولَّدة */}
         <div className="h-1 w-24 rounded-full bg-gold" aria-hidden />
       </header>

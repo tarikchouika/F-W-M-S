@@ -14,6 +14,10 @@ import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/provider";
 import { apiRequest, ListState, PageHeader } from "@/components/fwms/org-bits";
 import { formatMoney } from "@/lib/money";
+// (بلاغ المالك 2026-10-24 «لا أستطيع تحرير أو تصدير أو تحميل بعض الوثائق مثل قسيمة الأجر"):
+// تسليم الملف عبر الجسر الأصلي — <a download> على روابط blob لا يعمل داخل WebView
+// أندرويد (لا DownloadListener في الغلاف) فيبدو التصدير معطوبًا في التطبيق.
+import { deliverFile } from "@/lib/native-bridge";
 
 type MyPayslip = {
   id: string;
@@ -69,7 +73,8 @@ function hoursLabel(minutes: number): string {
   return `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, "0")}`;
 }
 
-/** تصدير قسيمة وتنزيلها من نسختها الثابتة (SPEC §4.4.1) */
+/** تصدير قسيمة وتنزيلها من نسختها الثابتة (SPEC §4.4.1) — عبر الجسر الأصلي
+ * داخل تطبيق أندرويد (مشاركة النظام: حفظ/فتح/إرسال) وتنزيل عادي في المتصفح */
 async function exportPayslip(payslipId: string, format: string, language: string): Promise<void> {
   const res = await apiRequest<{ downloadUrl: string; fileName: string; reused: boolean }>("/api/reports/generate", {
     method: "POST",
@@ -78,15 +83,7 @@ async function exportPayslip(payslipId: string, format: string, language: string
   });
   const file = await fetch(res.downloadUrl, { cache: "no-store" });
   if (!file.ok) throw new Error("download_failed");
-  const blob = await file.blob();
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = res.fileName;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
+  await deliverFile(await file.blob(), res.fileName);
 }
 
 export function MyPayslipsView() {

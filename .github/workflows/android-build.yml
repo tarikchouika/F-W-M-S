@@ -415,9 +415,44 @@ jobs:
               xml = re.sub(r'(\s+)android:launchMode="singleTask"',
                            r'\1android:windowSoftInputMode="adjustResize"\1android:launchMode="singleTask"',
                            xml, count=1)
+          # ── (3b) صلاحيات الكاميرا والمايكروفون والموقع الجغرافي (بلاغ المالك
+          # 2026-10-24): غلاف WebView يحتاج إعلانها في الـManifest وإلا رفض أندرويد
+          # طلبات وقت التشغيل تلقائيًا. غلاف Capacitor (BridgeWebChromeClient 6.2.2)
+          # يعالج onPermissionRequest (AUDIO/VIDEO_CAPTURE ⇒ RECORD_AUDIO/CAMERA +
+          # MODIFY_AUDIO_SETTINGS) وonGeolocationPermissionsShowPrompt (FINE+COARSE
+          # مع سقوط coarse على Android 12+) — يكفي الإعلان هنا ليظهر حوار النظام
+          # ويُمنح الويب المورد عند الموافقة.
+          PERMS = (
+              '    <!-- Camera + microphone + geolocation (owner request 2026-10-24) -->\n'
+              '    <uses-permission android:name="android.permission.CAMERA" />\n'
+              '    <uses-permission android:name="android.permission.RECORD_AUDIO" />\n'
+              '    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />\n'
+              '    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n'
+              '    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />\n'
+              '    <!-- required=false: الأجهزة بلا هذه العتاد تثبّت التطبيق وتعمل — الإذن يُطلب عند الحاجة -->\n'
+              '    <uses-feature android:name="android.hardware.camera" android:required="false" />\n'
+              '    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />\n'
+              '    <uses-feature android:name="android.hardware.microphone" android:required="false" />\n'
+              '    <uses-feature android:name="android.hardware.location" android:required="false" />\n'
+              '    <uses-feature android:name="android.hardware.location.gps" android:required="false" />\n'
+          )
+          if 'android.permission.CAMERA' not in xml:
+              m = re.search(r'(\n\s*)<application', xml)
+              if m:
+                  # إدراج قبل <application> — ترتيب العناصر داخل <manifest> لا يهم
+                  anchor = m.start(1)
+                  xml = xml[:anchor] + "\n" + PERMS.rstrip("\n") + xml[anchor:]
+              else:
+                  xml = xml.replace("</manifest>", PERMS.rstrip("\n") + "\n</manifest>")
           open(path, "w", encoding="utf-8").write(xml)
           PY
           grep -q "windowSoftInputMode" "$MANIFEST" || { echo "✗ رقعة لوحة المفاتيح مفقودة"; exit 1; }
+          # تحقّق حتمي: الصلاحيات الخمس + العتاد غير الإلزامي — أي نقص يُسقط البناء
+          for P in CAMERA RECORD_AUDIO MODIFY_AUDIO_SETTINGS ACCESS_FINE_LOCATION ACCESS_COARSE_LOCATION; do
+            grep -q "android.permission.$P" "$MANIFEST" || { echo "✗ إذن $P مفقود من Manifest"; exit 1; }
+          done
+          grep -q 'android.hardware.camera" android:required="false"' "$MANIFEST" || { echo "✗ uses-feature الكاميرا مفقودة"; exit 1; }
+          grep -q 'android.hardware.location" android:required="false"' "$MANIFEST" || { echo "✗ uses-feature الموقع مفقودة"; exit 1; }
 
           # ── (4) androidx.core صريحة (WindowInsetsCompat في MainActivity) ──
           printf '\ndependencies {\n    implementation "androidx.core:core:1.12.0"\n}\n' >> android/app/build.gradle

@@ -28,6 +28,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/provider";
 import { apiRequest, ApiError, ListState, PageHeader } from "@/components/fwms/org-bits";
+// (بلاغ المالك 2026-10-24): تسليم الملفات عبر الجسر الأصلي — <a download> على روابط
+// blob لا يعمل داخل WebView أندرويد (لا DownloadListener في الغلاف).
+import { deliverFile } from "@/lib/native-bridge";
 
 type DeclarationRow = {
   id: string;
@@ -78,15 +81,8 @@ export function DeclarationsManager() {
       });
       const file = await fetch(res.downloadUrl, { cache: "no-store" });
       if (!file.ok) throw new Error("download_failed");
-      const blob = await file.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = res.fileName;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      // الجسر الأصلي داخل تطبيق أندرويد (مشاركة النظام) — وتنزيل عادي في المتصفح
+      await deliverFile(await file.blob(), res.fileName);
       toast({ description: t("reports.exportOk") });
     } catch {
       toast({ variant: "destructive", description: t("reports.exportFailed") });
@@ -188,15 +184,10 @@ export function DeclarationsManager() {
       toast({ description: t(`declarations.transitioned.${action}`, { defaultValue: t("declarations.transitionedOk") }) });
       await load();
       await openDetail(id);
-      // إن كان تصديرًا: نزّل الملف فورًا
+      // إن كان تصديرًا: نسلّم الملف فورًا (الجسر الأصلي في التطبيق / تنزيل في المتصفح)
       if (action === "export" && typeof result.content === "string") {
         const blob = new Blob([result.content], { type: result.format === "xml" ? "application/xml" : "text/plain" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `fwms-${result.format}-${String(result.sha256).slice(0, 12)}.${result.format === "xml" ? "xml" : "txt"}`;
-        a.click();
-        URL.revokeObjectURL(url);
+        await deliverFile(blob, `fwms-${result.format}-${String(result.sha256).slice(0, 12)}.${result.format === "xml" ? "xml" : "txt"}`);
       }
     } catch (e) {
       if (e instanceof ApiError) {

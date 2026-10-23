@@ -160,7 +160,7 @@
     "declarations": "Déclarations officielles",
     "platform": "Propriété de la plateforme",
     "teamPresence": "Présence des équipes",
-    "voice": "Messages vocaux",
+    "voice": "Messagerie directe",
     "openMenu": "Ouvrir le menu",
     "welcomeWithName": "Bonjour, {name}"
   },
@@ -1354,8 +1354,8 @@
     "notLeaderHint": "Cette page est réservée aux responsables d'équipe et aux détenteurs de la permission de consultation (co-admin et au-dessus) — vous n'êtes pas responsable d'équipe"
   },
   "voice": {
-    "title": "Messages vocaux",
-    "subtitle": "Communication vocale directe au sein de votre équipe — l'isolement entre équipes est appliqué côté serveur ; la supervision (super/admin/co-admin) accède à tous",
+    "title": "Messagerie directe",
+    "subtitle": "Contact direct par voix, photo, vidéo et position au sein de votre équipe — l'inter-équipes est isolé côté serveur, la supervision atteint tout le monde, la livraison est en direct",
     "modeTeam": "Mode équipe : conversations avec les membres de votre équipe uniquement",
     "modeAdmin": "Mode supervision : vous pouvez écrire et écouter avec toutes les équipes et tous les utilisateurs",
     "browseGroup": "Parcourir les messages d'une équipe",
@@ -1367,7 +1367,7 @@
     "noContacts": "Aucun contact disponible — vérifiez votre appartenance à une équipe",
     "back": "Retour",
     "pollHint": "Mise à jour toutes les 15 s",
-    "threadEmpty": "Aucun message dans cette conversation — enregistrez le premier",
+    "threadEmpty": "Aucun message dans cette conversation — envoyez le premier (voix · photo · vidéo · position)",
     "play": "Lecture",
     "recording": "Enregistrement",
     "cancel": "Annuler",
@@ -1379,7 +1379,29 @@
     "micUnsupported": "Votre navigateur ne prend pas en charge l'enregistrement",
     "tooLarge": "Clip trop volumineux (limite 2,5 Mo)",
     "sendFailed": "Échec de l'envoi — réessayez",
-    "pickContact": "Choisissez un contact pour commencer"
+    "pickContact": "Choisissez un contact pour commencer",
+    "liveOn": "Sync en direct",
+    "liveFallback": "Repli chaque minute",
+    "takePhoto": "Photo depuis la caméra",
+    "recordVideo": "Vidéo depuis la caméra",
+    "shareLocation": "Partager ma position",
+    "kindPhoto": "Photo",
+    "kindVideo": "Vidéo",
+    "kindLocation": "Position actuelle",
+    "camPhotoHint": "Visez puis capturez",
+    "camVideoHint": "Enregistrez un court clip",
+    "camDenied": "Autorisation caméra refusée — activez-la dans les réglages du navigateur",
+    "camUnsupported": "Votre navigateur ne prend pas en charge la caméra",
+    "photoTooLarge": "Photo trop volumineuse (limite 3 Mo)",
+    "videoTooLarge": "Vidéo trop volumineuse (limite 8 Mo)",
+    "locDenied": "Autorisation de localisation refusée — activez-la dans les réglages du navigateur",
+    "locUnsupported": "Votre appareil ne prend pas en charge la géolocalisation",
+    "switchCamera": "Changer de caméra",
+    "capture": "Capturer",
+    "retake": "Refaire",
+    "stopVideo": "Arrêter et envoyer",
+    "close": "Fermer",
+    "composeHint": "Voix ≤120s · vidéo ≤60s · photo ≤3 Mo · livraison en direct"
   },
   "usersPage": {
     "title": "Utilisateurs",
@@ -1632,7 +1654,7 @@
   "legal": {
     "terms": {
       "title": "Conditions d'utilisation de FWMS",
-      "subtitle": "En utilisant la plateforme, vous acceptez ces conditions — dernière mise à jour : version 0.11.0",
+      "subtitle": "En utilisant la plateforme, vous acceptez ces conditions — dernière mise à jour : version {version}",
       "s1h": "1. Nature du service",
       "s1b": "FWMS est une plateforme de gestion de la main-d'œuvre de terrain : présence avec vérification géographique, planification et couverture, paie et retenues légales, et déclarations officielles. Le service est fourni « en l'état » aux sociétés établies au Maroc ; les données de paie relèvent de la législation marocaine en vigueur (Code du travail n° 65-99 et ses textes d'application).",
       "s2h": "2. Comptes et permissions",
@@ -1781,10 +1803,10 @@
       "sante": "Remboursements AMO et services de santé.",
       "equipement": "Projets, infrastructures et équipements.",
       "maroc": "Portail national et services publics de l'État.",
-      "eservices": "Portail des services électroniques au citizen."
+      "eservices": "Portail des services électroniques au citoyen."
     },
     "laws": {
-      "cnss-recueil-rg": "Cotisations salarié et regimes de sécurité sociale (base juridique de chaque prélèvement CNSS).",
+      "cnss-recueil-rg": "Cotisations salarié et régimes de sécurité sociale (base juridique de chaque prélèvement CNSS).",
       "cnss-recueil-amo": "Remboursement des soins (AMO/TADAMON) et calcul des cotisations.",
       "amo-loi-65-00": "Assurance maladie obligatoire de base (AMO) et plafond de remboursement.",
       "amo-dahir": "Dernière modification du régime AMO (dahir de promulgation).",

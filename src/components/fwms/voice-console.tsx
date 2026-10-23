@@ -1,34 +1,54 @@
 "use client";
 
-// FWMS — واجهة الرسائل الصوتية (المرحلة 9 — v0.10.0)
+// FWMS — واجهة المراسلة الموحدة (المرحلة 9 + بلاغ المالك 2026-10-24)
 // ---------------------------------------------------------------------------
-// محادثات صوتية مباشرة: العامل/الحرفي/القائد داخل فريقه فقط (عزل الفرق في الخادم)،
-// والوضع الإشرافي (سوبر/أدمن/كوأدمن) يصل إلى الجميع + تصفح رسائل أي فريق.
-// التسجيل: MediaRecorder (webm/opus) ≤ 120ث؛ الإرسال multipart ≤ 2.5MB.
-// الاستماع يعلّم «مستمع إليه» مرة واحدة (المستقبِل فقط) — استماع المشرف لا يعلّمها.
-import { useCallback, useEffect, useRef, useState } from "react";
+// محادثات مباشرة بين المستخدمين بكل الوسائط حسب الصلاحيات:
+//   صوت (Mic) · صورة من الكاميرا · فيديو قصير من الكاميرا · مشاركة الموقع
+// العزل في الخادم حصرًا (direct-messaging.ts): العامل/الحرفي/القائد داخل فريقه
+// فقط، والوضع الإشرافي يصل إلى الجميع + تصفح رسائل أي فريق (صوتيات).
+// المزامنة الآنية (SSE /api/realtime): الرسائل تصل لحظة إرسالها — والاستطلاع
+// يبقى احتياطًا (60ث) لو رُفضت القناة. التسجيل: صوت ≤120ث، فيديو ≤60ث،
+// صورة JPEG ≤3MB، فيديو ≤8MB؛ الإرسال multipart.
+// الاستماع يعلّم «مستمعًا إليه» مرة (المستقبِل فقط) — ومشاهدة الصورة/الفيديو/
+// الموقع تعلّمها «شوهدت» كذلك؛ استعراض الإشراف لا يعلّم شيئًا.
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
-  Mic,
-  Radio,
-  Square,
-  LoaderCircle,
-  Play,
-  Pause,
+  Camera,
   CheckCheck,
   Clock,
+  Image as ImageIcon,
+  LoaderCircle,
+  MapPin,
+  Mic,
+  Pause,
+  Play,
+  Radio,
+  RefreshCcw,
   ShieldCheck,
+  Square,
   Users,
+  Video,
+  X,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useI18n } from "@/i18n/provider";
 import { ListState, apiRequest } from "@/components/fwms/org-bits";
 import { jobTitleLabel } from "@/lib/job-titles";
+import { openRealtime, type RealtimeHandle } from "@/lib/realtime-client";
 
 type Contact = { userId: string; fullName: string; role: string; jobTitleKey: string | null };
 type VoiceMsg = {
@@ -40,12 +60,31 @@ type VoiceMsg = {
   listenedAt: string | null;
   createdAt: string;
 };
+type DirectMsg = {
+  id: string;
+  senderId: string;
+  recipientId: string;
+  kind: "photo" | "video" | "location";
+  durationSec: number;
+  sizeBytes: number;
+  lat: number | null;
+  lng: number | null;
+  accuracyM: number | null;
+  viewedAt: string | null;
+  createdAt: string;
+};
 
 const MAX_RECORD_SEC = 120;
-const POLL_MS = 15_000;
+const MAX_VIDEO_SEC = 60;
+// الاستطلاع احتياط فقط — القناة الآنية (SSE) توصل الرسائل خلال ~2ث
+const POLL_FALLBACK_MS = 60_000;
 
 // قيمة حارسة لأن SelectItem يرفض القيمة الفارغة (درس المرحلة 2)
 const NONE = "none";
+
+function hoursLabel(sec: number): string {
+  return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
+}
 
 export function VoiceConsole({ myUserId }: { myUserId: string }) {
   const { t, dir, locale } = useI18n();
@@ -58,15 +97,20 @@ export function VoiceConsole({ myUserId }: { myUserId: string }) {
 
   const [selected, setSelected] = useState<Contact | null>(null);
   const [messages, setMessages] = useState<VoiceMsg[]>([]);
+  const [dmMessages, setDmMessages] = useState<DirectMsg[]>([]);
   const [threadLoading, setThreadLoading] = useState(false);
 
   // وضع الإشراف: تصفح رسائل فريق
   const [adminGroups, setAdminGroups] = useState<{ id: string; name: string }[]>([]);
   const [browseGroup, setBrowseGroup] = useState<string>(NONE);
   const [browseMessages, setBrowseMessages] = useState<VoiceMsg[]>([]);
-  const [browseInfo, setBrowseInfo] = useState<{ sender: string; recipient: string } | null>(null);
 
-  // التسجيل
+  // غير المقروء آنيًا (قبل فتح المحادثة) — من أحداث SSE
+  const [liveUnread, setLiveUnread] = useState<Record<string, number>>({});
+  // حالة القناة الآنية: true = موصولة
+  const [live, setLive] = useState(false);
+
+  // التسجيل الصوتي
   const [recording, setRecording] = useState(false);
   const [recordSec, setRecordSec] = useState(0);
   const [sending, setSending] = useState(false);
@@ -79,6 +123,32 @@ export function VoiceConsole({ myUserId }: { myUserId: string }) {
   // التشغيل
   const [playingId, setPlayingId] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // الكاميرا (صورة/فيديو) — حوار موحّد
+  const [camOpen, setCamOpen] = useState(false);
+  const [camMode, setCamMode] = useState<"photo" | "video">("photo");
+  const [camFacing, setCamFacing] = useState<"environment" | "user">("environment");
+  const [camError, setCamError] = useState<string | null>(null);
+  const [camBusy, setCamBusy] = useState(false);
+  const camVideoRef = useRef<HTMLVideoElement | null>(null);
+  const camStreamRef = useRef<MediaStream | null>(null);
+  const camRecorderRef = useRef<MediaRecorder | null>(null);
+  const camChunksRef = useRef<BlobPart[]>([]);
+  const camTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const camAutoStopRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [camRecording, setCamRecording] = useState(false);
+  const [camRecordSec, setCamRecordSec] = useState(0);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null); // dataURL
+  const [videoPreview, setVideoPreview] = useState<{ url: string; blob: Blob; durationSec: number } | null>(null);
+
+  // عارض الصورة/الفيديو داخل المحادثة
+  const [viewer, setViewer] = useState<DirectMsg | null>(null);
+
+  // مشاركة الموقع
+  const [locBusy, setLocBusy] = useState(false);
+  const [dmError, setDmError] = useState<string | null>(null);
+
+  const realtimeRef = useRef<RealtimeHandle | null>(null);
 
   const loadContacts = useCallback(async () => {
     try {
@@ -108,8 +178,21 @@ export function VoiceConsole({ myUserId }: { myUserId: string }) {
   const loadThread = useCallback(async (other: string) => {
     setThreadLoading(true);
     try {
-      const data = await apiRequest<{ messages: VoiceMsg[] }>(`/api/voice-messages?with=${encodeURIComponent(other)}`);
-      setMessages(data.messages);
+      const [voiceData, directData] = await Promise.all([
+        apiRequest<{ messages: VoiceMsg[] }>(`/api/voice-messages?with=${encodeURIComponent(other)}`),
+        apiRequest<{ messages: DirectMsg[] }>(`/api/direct-messages?with=${encodeURIComponent(other)}`).catch(
+          () => ({ messages: [] as DirectMsg[] }),
+        ),
+      ]);
+      setMessages(voiceData.messages);
+      setDmMessages(directData.messages ?? []);
+      // فتح المحادثة يمحو عدّاد الآني غير المقروء لهذا المرسل
+      setLiveUnread((prev) => {
+        if (!prev[other]) return prev;
+        const next = { ...prev };
+        delete next[other];
+        return next;
+      });
     } catch {
       setMessages([]);
     } finally {
@@ -120,7 +203,6 @@ export function VoiceConsole({ myUserId }: { myUserId: string }) {
   const loadBrowse = useCallback(async (groupId: string) => {
     if (groupId === NONE) {
       setBrowseMessages([]);
-      setBrowseInfo(null);
       return;
     }
     try {
@@ -128,7 +210,6 @@ export function VoiceConsole({ myUserId }: { myUserId: string }) {
         `/api/voice-messages?group=${encodeURIComponent(groupId)}`,
       );
       setBrowseMessages(data.messages);
-      setBrowseInfo({ sender: "", recipient: "" });
     } catch {
       setBrowseMessages([]);
     }
@@ -138,13 +219,40 @@ export function VoiceConsole({ myUserId }: { myUserId: string }) {
     void loadContacts();
   }, [loadContacts]);
 
-  // استطلاع المحادثة المفتوحة + تصفح الإشراف
+  // المزامنة الآنية (SSE): تحديث فوري للمحادثة المفتوحة + عدّادات غير المقروء
+  useEffect(() => {
+    realtimeRef.current = openRealtime((ev) => {
+      if (ev.type === "hello") {
+        setLive(true);
+        return;
+      }
+      if (ev.type === "voice" || ev.type === "dm") {
+        const senders = new Set(ev.items.map((i) => i.from).filter(Boolean) as string[]);
+        // المحادثة المفتوحة مع أحدهم؟ تحميل فوري — وإلا عدّاد آني غير مقروء
+        if (selected && senders.has(selected.userId)) {
+          void loadThread(selected.userId);
+        } else {
+          setLiveUnread((prev) => {
+            const next = { ...prev };
+            for (const s of senders) next[s] = (next[s] ?? 0) + 1;
+            return next;
+          });
+        }
+      }
+    });
+    return () => {
+      realtimeRef.current?.close();
+      realtimeRef.current = null;
+    };
+  }, []);
+
+  // احتياط الاستطلاع (لو رُفضت القناة الآنية أو انقطعت) — يظل العمل
   useEffect(() => {
     if (!selected) return;
     void loadThread(selected.userId);
     const id = setInterval(() => {
       if (document.visibilityState === "visible") void loadThread(selected.userId);
-    }, POLL_MS);
+    }, POLL_FALLBACK_MS);
     return () => clearInterval(id);
   }, [selected, loadThread]);
 
@@ -152,7 +260,7 @@ export function VoiceConsole({ myUserId }: { myUserId: string }) {
     if (browseGroup !== NONE) void loadBrowse(browseGroup);
   }, [browseGroup, loadBrowse]);
 
-  // ── التسجيل ──
+  // ── التسجيل الصوتي ──
   function stopTimer() {
     if (timerRef.current) clearInterval(timerRef.current);
     if (autoStopRef.current) clearTimeout(autoStopRef.current);
@@ -244,16 +352,221 @@ export function VoiceConsole({ myUserId }: { myUserId: string }) {
     }
   }
 
-  // ── التشغيل ──
-  function togglePlay(msg: VoiceMsg, names?: { sender: string; recipient: string }) {
+  // ── الكاميرا: صورة/فيديو ──
+  async function openCamera(kind: "photo" | "video", facing: "environment" | "user" = camFacing) {
+    setDmError(null);
+    setCamError(null);
+    setPhotoPreview(null);
+    setVideoPreview((v) => {
+      if (v) URL.revokeObjectURL(v.url);
+      return null;
+    });
+    setCamMode(kind);
+    setCamOpen(true);
+    setCamBusy(true);
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setCamError("unsupported");
+      setCamBusy(false);
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: facing, width: { ideal: 1280 }, height: { ideal: 960 } },
+        audio: kind === "video",
+      });
+      camStreamRef.current = stream;
+      if (camVideoRef.current) {
+        camVideoRef.current.srcObject = stream;
+        await camVideoRef.current.play().catch(() => undefined);
+      }
+    } catch {
+      // الوصول متاح والوسائط موجودة — رفض الحوار = إذن
+      setCamError("denied");
+    } finally {
+      setCamBusy(false);
+    }
+  }
+
+  function closeCamera() {
+    stopCamTimers();
+    camRecorderRef.current?.stream.getTracks().forEach((tk) => tk.stop());
+    camRecorderRef.current = null;
+    camStreamRef.current?.getTracks().forEach((tk) => tk.stop());
+    camStreamRef.current = null;
+    camChunksRef.current = [];
+    setCamRecording(false);
+    setCamRecordSec(0);
+    setPhotoPreview(null);
+    setVideoPreview((v) => {
+      if (v) URL.revokeObjectURL(v.url);
+      return null;
+    });
+    setCamOpen(false);
+  }
+
+  function stopCamTimers() {
+    if (camTimerRef.current) clearInterval(camTimerRef.current);
+    if (camAutoStopRef.current) clearTimeout(camAutoStopRef.current);
+    camTimerRef.current = null;
+    camAutoStopRef.current = null;
+  }
+
+  function capturePhoto() {
+    const video = camVideoRef.current;
+    if (!video || !video.videoWidth) return;
+    // تصغير إلى 1280 ضلعًا أطول — جودة كافية وبحجم ≤ الحد
+    const scale = Math.min(1, 1280 / Math.max(video.videoWidth, video.videoHeight));
+    const w = Math.round(video.videoWidth * scale);
+    const h = Math.round(video.videoHeight * scale);
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    canvas.getContext("2d")?.drawImage(video, 0, 0, w, h);
+    setPhotoPreview(canvas.toDataURL("image/jpeg", 0.85));
+  }
+
+  async function startVideoRecord() {
+    const stream = camStreamRef.current;
+    if (!stream || !("MediaRecorder" in window)) return;
+    const mime = MediaRecorder.isTypeSupported("video/webm;codecs=vp8,opus")
+      ? "video/webm;codecs=vp8,opus"
+      : MediaRecorder.isTypeSupported("video/webm")
+        ? "video/webm"
+        : "video/mp4";
+    try {
+      const rec = new MediaRecorder(stream, { mimeType: mime });
+      camChunksRef.current = [];
+      rec.ondataavailable = (e) => {
+        if (e.data.size > 0) camChunksRef.current.push(e.data);
+      };
+      rec.onstop = () => {
+        const blob = new Blob(camChunksRef.current, { type: mime.split(";")[0] });
+        const durationSec = camRecordSec || 1;
+        setVideoPreview({ url: URL.createObjectURL(blob), blob, durationSec });
+        stopCamTimers();
+        setCamRecording(false);
+      };
+      rec.start(400);
+      camRecorderRef.current = rec;
+      setCamRecording(true);
+      setCamRecordSec(0);
+      camTimerRef.current = setInterval(() => setCamRecordSec((s) => s + 1), 1000);
+      camAutoStopRef.current = setTimeout(() => {
+        if (camRecorderRef.current?.state === "recording") camRecorderRef.current.stop();
+      }, MAX_VIDEO_SEC * 1000);
+    } catch {
+      setCamError("denied");
+    }
+  }
+
+  function stopVideoRecord() {
+    if (camRecorderRef.current?.state === "recording") camRecorderRef.current.stop();
+  }
+
+  /** إرسال رسالة مرئية/موقعية (multipart) — تعيين الخطأ وفق شيفرة الخادم */
+  async function sendDirect(form: FormData) {
+    if (!selected) return false;
+    setSending(true);
+    setDmError(null);
+    try {
+      const res = await fetch("/api/direct-messages", { method: "POST", body: form });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => null)) as { error?: string } | null;
+        const code = data?.error ?? "";
+        setDmError(
+          code === "photo_too_large"
+            ? "photoTooLarge"
+            : code === "video_too_large"
+              ? "videoTooLarge"
+              : code === "not_image" || code === "not_video"
+                ? "sendFailed"
+                : "sendFailed",
+        );
+        return false;
+      }
+      await loadThread(selected.userId);
+      return true;
+    } catch {
+      setDmError("sendFailed");
+      return false;
+    } finally {
+      setSending(false);
+    }
+  }
+
+  async function sendPhotoPreview() {
+    if (!photoPreview || !selected) return;
+    const blob = await (await fetch(photoPreview)).blob();
+    const form = new FormData();
+    form.set("to", selected.userId);
+    form.set("kind", "photo");
+    form.set("media", blob, "photo.jpg");
+    if (await sendDirect(form)) closeCamera();
+  }
+
+  async function sendVideoPreview() {
+    if (!videoPreview || !selected) return;
+    const form = new FormData();
+    form.set("to", selected.userId);
+    form.set("kind", "video");
+    form.set("durationSec", String(videoPreview.durationSec));
+    form.set("media", videoPreview.blob, "clip.webm");
+    const url = videoPreview.url;
+    if (await sendDirect(form)) {
+      URL.revokeObjectURL(url);
+      closeCamera();
+    }
+  }
+
+  async function shareLocation() {
+    if (!selected || locBusy) return;
+    setDmError(null);
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      setDmError("locUnsupported");
+      return;
+    }
+    setLocBusy(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const form = new FormData();
+        form.set("to", selected.userId);
+        form.set("kind", "location");
+        form.set("lat", String(pos.coords.latitude));
+        form.set("lng", String(pos.coords.longitude));
+        form.set("accuracyM", String(Math.round(pos.coords.accuracy ?? 0)));
+        await sendDirect(form);
+        setLocBusy(false);
+      },
+      () => {
+        setDmError("locDenied");
+        setLocBusy(false);
+      },
+      { enableHighAccuracy: true, timeout: 15_000, maximumAge: 5_000 },
+    );
+  }
+
+  // ── التشغيل والعرض ──
+  function markViewed(msg: DirectMsg) {
+    if (msg.recipientId !== myUserId || msg.viewedAt) return;
+    void fetch(`/api/direct-messages/${msg.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ viewed: true }),
+    })
+      .then(() => {
+        setDmMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, viewedAt: new Date().toISOString() } : m)));
+      })
+      .catch(() => null);
+  }
+
+  function togglePlay(msg: VoiceMsg) {
     if (playingId === msg.id) {
       audioRef.current?.pause();
       setPlayingId(null);
       return;
     }
     audioRef.current?.pause();
-    const url = `/api/voice-messages/${msg.id}/audio`;
-    const audio = new Audio(url);
+    const audio = new Audio(`/api/voice-messages/${msg.id}/audio`);
     audioRef.current = audio;
     setPlayingId(msg.id);
     // المستقبِل يعلّمها مستمعًا إليه عند أول تشغيل (استماع المشرف لا يعلّمها)
@@ -271,21 +584,16 @@ export function VoiceConsole({ myUserId }: { myUserId: string }) {
     audio.onended = () => setPlayingId(null);
     audio.onerror = () => setPlayingId(null);
     void audio.play().catch(() => setPlayingId(null));
-    if (names) void names; // معلومات الإشراف للاستخدام المستقبلي في الواجهة
   }
 
   useEffect(() => {
     return () => {
       audioRef.current?.pause();
       if (recorderRef.current) cleanupRecorder();
+      if (camStreamRef.current) closeCamera();
+      realtimeRef.current?.close();
     };
   }, []);
-
-  const fmtDuration = (sec: number) => {
-    const m = Math.floor(sec / 60);
-    const s = sec % 60;
-    return `${m}:${String(s).padStart(2, "0")}`;
-  };
 
   const fmtTime = (iso: string) =>
     new Date(iso).toLocaleString(locale, {
@@ -293,6 +601,29 @@ export function VoiceConsole({ myUserId }: { myUserId: string }) {
       timeStyle: "short",
       timeZone: "Africa/Casablanca",
     });
+
+  // دمج الرسائل الصوتية والمرئية/الموقعية في مسار واحد زمني — قبل أي عودة
+  // مبكرة (قاعدة الـhooks: كل الاستدعاءات بنفس الترتيب في كل عرض)
+  const thread = useMemo(() => {
+    type Item =
+      | { type: "voice"; at: string; msg: VoiceMsg }
+      | { type: "dm"; at: string; msg: DirectMsg };
+    const items: Item[] = [
+      ...messages.map((m) => ({ type: "voice" as const, at: m.createdAt, msg: m })),
+      ...dmMessages.map((m) => ({ type: "dm" as const, at: m.createdAt, msg: m })),
+    ];
+    items.sort((a, b) => a.at.localeCompare(b.at));
+    return items;
+  }, [messages, dmMessages]);
+
+  const dmErrorText = () => {
+    if (!dmError) return null;
+    if (dmError === "photoTooLarge") return t("voice.photoTooLarge");
+    if (dmError === "videoTooLarge") return t("voice.videoTooLarge");
+    if (dmError === "locDenied") return t("voice.locDenied");
+    if (dmError === "locUnsupported") return t("voice.locUnsupported");
+    return t("voice.sendFailed");
+  };
 
   // ── العرض ──
   if (loading) return <ListState loading error={false} empty={false} />;
@@ -304,9 +635,13 @@ export function VoiceConsole({ myUserId }: { myUserId: string }) {
     <div className="flex flex-col gap-6">
       {/* شريط الوضع */}
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
           <Radio className="size-4 text-primary" aria-hidden />
           {mode === "admin" ? t("voice.modeAdmin") : t("voice.modeTeam")}
+          <Badge variant={live ? "secondary" : "outline"} className="gap-1 text-[10px]">
+            <span className={`size-1.5 rounded-full ${live ? "bg-emerald-500" : "bg-muted-foreground/50"}`} aria-hidden />
+            {live ? t("voice.liveOn") : t("voice.liveFallback")}
+          </Badge>
         </div>
         {mode === "admin" && adminGroups.length > 0 && (
           <div className="flex items-center gap-2">
@@ -351,10 +686,10 @@ export function VoiceConsole({ myUserId }: { myUserId: string }) {
                             {sender} <span className="text-muted-foreground">→</span> {recipient}
                           </span>
                           <span className="text-[11px] text-muted-foreground tabular-nums" dir="auto">
-                            {fmtTime(m.createdAt)} · {fmtDuration(m.durationSec)}
+                            {fmtTime(m.createdAt)} · {hoursLabel(m.durationSec)}
                           </span>
                         </div>
-                        <Button variant="outline" size="sm" className="size-8 shrink-0" onClick={() => togglePlay(m, { sender, recipient })} aria-label={t("voice.play")}>
+                        <Button variant="outline" size="sm" className="size-8 shrink-0" onClick={() => togglePlay(m)} aria-label={t("voice.play")}>
                           {playingId === m.id ? <Pause className="size-3.5" aria-hidden /> : <Play className="size-3.5" aria-hidden />}
                         </Button>
                       </li>
@@ -384,7 +719,11 @@ export function VoiceConsole({ myUserId }: { myUserId: string }) {
               <ScrollArea className="max-h-[520px]">
                 <ul className="divide-y divide-border/60">
                   {contacts.map((c) => {
-                    const unread = messages.filter((m) => m.recipientId === myUserId && m.senderId === c.userId && !m.listenedAt).length;
+                    const unread =
+                      (liveUnread[c.userId] ?? 0) +
+                      (selected?.userId === c.userId
+                        ? messages.filter((m) => m.recipientId === myUserId && m.senderId === c.userId && !m.listenedAt).length
+                        : 0);
                     return (
                       <li key={c.userId}>
                         <button
@@ -440,7 +779,7 @@ export function VoiceConsole({ myUserId }: { myUserId: string }) {
                 </div>
                 <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
                   <Clock className="size-3.5" aria-hidden />
-                  {t("voice.pollHint")}
+                  {live ? t("voice.liveOn") : t("voice.liveFallback")}
                 </div>
               </CardHeader>
               <CardContent className="flex min-h-[320px] flex-col gap-3 p-4">
@@ -449,47 +788,127 @@ export function VoiceConsole({ myUserId }: { myUserId: string }) {
                     <div className="flex justify-center py-8">
                       <LoaderCircle className="size-5 animate-spin text-muted-foreground" aria-hidden />
                     </div>
-                  ) : messages.length === 0 ? (
+                  ) : thread.length === 0 ? (
                     <p className="py-10 text-center text-sm text-muted-foreground">{t("voice.threadEmpty")}</p>
                   ) : (
                     <ul className="flex flex-col gap-2.5">
-                      {messages.map((m) => {
-                        const mine = m.senderId === myUserId;
+                      {thread.map((item) => {
+                        const mine = item.type === "voice" ? item.msg.senderId === myUserId : item.msg.senderId === myUserId;
+                        const id = item.type === "voice" ? item.msg.id : item.msg.id;
                         return (
-                          <li key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-                            <div
-                              className={`flex max-w-[85%] items-center gap-2.5 rounded-2xl px-3.5 py-2.5 ${
-                                mine
-                                  ? "bg-primary text-primary-foreground"
-                                  : "bg-muted text-foreground"
-                              }`}
-                            >
+                          <li key={`${item.type}-${id}`} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
+                            {item.type === "voice" ? (
+                              <div
+                                className={`flex max-w-[85%] items-center gap-2.5 rounded-2xl px-3.5 py-2.5 ${
+                                  mine ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
+                                }`}
+                              >
+                                <button
+                                  type="button"
+                                  onClick={() => togglePlay(item.msg)}
+                                  className="flex size-8 shrink-0 items-center justify-center rounded-full bg-black/10"
+                                  aria-label={t("voice.play")}
+                                >
+                                  {playingId === item.msg.id ? (
+                                    <Pause className="size-4" aria-hidden />
+                                  ) : (
+                                    <Play className="size-4" aria-hidden />
+                                  )}
+                                </button>
+                                <div className="flex flex-col leading-tight">
+                                  <span className="text-xs font-semibold tabular-nums" dir="ltr">
+                                    {hoursLabel(item.msg.durationSec)}
+                                  </span>
+                                  <span className="text-[10px] opacity-80 tabular-nums" dir="auto">
+                                    {fmtTime(item.msg.createdAt)}
+                                    {mine && item.msg.listenedAt && (
+                                      <span className="ms-1 inline-flex items-center gap-0.5">
+                                        <CheckCheck className="size-3" aria-hidden />
+                                      </span>
+                                    )}
+                                  </span>
+                                </div>
+                              </div>
+                            ) : item.msg.kind === "photo" ? (
                               <button
                                 type="button"
-                                onClick={() => togglePlay(m)}
-                                className="flex size-8 shrink-0 items-center justify-center rounded-full bg-black/10"
-                                aria-label={t("voice.play")}
+                                onClick={() => {
+                                  markViewed(item.msg);
+                                  setViewer(item.msg);
+                                }}
+                                className={`block max-w-[85%] overflow-hidden rounded-2xl ${
+                                  mine ? "bg-primary" : "bg-muted"
+                                }`}
+                                aria-label={t("voice.kindPhoto")}
                               >
-                                {playingId === m.id ? (
-                                  <Pause className="size-4" aria-hidden />
-                                ) : (
-                                  <Play className="size-4" aria-hidden />
-                                )}
-                              </button>
-                              <div className="flex flex-col leading-tight">
-                                <span className="text-xs font-semibold tabular-nums" dir="ltr">
-                                  {fmtDuration(m.durationSec)}
+                                <img
+                                  src={`/api/direct-messages/${item.msg.id}/media`}
+                                  alt={t("voice.kindPhoto")}
+                                  loading="lazy"
+                                  className="h-40 w-auto rounded-2xl object-cover"
+                                />
+                                <span className="flex items-center justify-between gap-2 px-3 py-1.5 text-[10px] tabular-nums" dir="auto">
+                                  <span className="inline-flex items-center gap-1">
+                                    <ImageIcon className="size-3" aria-hidden />
+                                    {t("voice.kindPhoto")}
+                                  </span>
+                                  <span className="inline-flex items-center gap-0.5 opacity-80">
+                                    {fmtTime(item.msg.createdAt)}
+                                    {mine && item.msg.viewedAt && <CheckCheck className="size-3" aria-hidden />}
+                                  </span>
                                 </span>
-                                <span className="text-[10px] opacity-80 tabular-nums" dir="auto">
-                                  {fmtTime(m.createdAt)}
-                                  {mine && m.listenedAt && (
-                                    <span className="ms-1 inline-flex items-center gap-0.5">
-                                      <CheckCheck className="size-3" aria-hidden />
-                                    </span>
-                                  )}
+                              </button>
+                            ) : item.msg.kind === "video" ? (
+                              <div className={`max-w-[85%] overflow-hidden rounded-2xl ${mine ? "bg-primary" : "bg-muted"}`}
+                                onPointerDown={() => markViewed(item.msg)}
+                              >
+                                <video
+                                  controls
+                                  preload="metadata"
+                                  src={`/api/direct-messages/${item.msg.id}/media`}
+                                  className="h-44 w-auto rounded-t-2xl object-cover"
+                                />
+                                <span className="flex items-center justify-between gap-2 px-3 py-1.5 text-[10px] tabular-nums" dir="auto">
+                                  <span className="inline-flex items-center gap-1">
+                                    <Video className="size-3" aria-hidden />
+                                    {t("voice.kindVideo")} · {hoursLabel(item.msg.durationSec)}
+                                  </span>
+                                  <span className="inline-flex items-center gap-0.5 opacity-80">
+                                    {fmtTime(item.msg.createdAt)}
+                                    {mine && item.msg.viewedAt && <CheckCheck className="size-3" aria-hidden />}
+                                  </span>
                                 </span>
                               </div>
-                            </div>
+                            ) : (
+                              <a
+                                href={`https://www.openstreetmap.org/?mlat=${item.msg.lat}&mlon=${item.msg.lng}#map=17/${item.msg.lat}/${item.msg.lng}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={() => markViewed(item.msg)}
+                                className={`flex max-w-[85%] items-center gap-3 rounded-2xl px-3.5 py-2.5 ${
+                                  mine ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
+                                }`}
+              >
+                                <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-black/10">
+                                  <MapPin className="size-4" aria-hidden />
+                                </span>
+                                <span className="flex flex-col leading-tight">
+                                  <span className="text-xs font-semibold">{t("voice.kindLocation")}</span>
+                                  <span className="text-[10px] opacity-80 tabular-nums" dir="ltr">
+                                    {item.msg.lat?.toFixed(5)}, {item.msg.lng?.toFixed(5)}
+                                    {item.msg.accuracyM != null ? ` · ±${Math.round(item.msg.accuracyM)}m` : ""}
+                                  </span>
+                                  <span className="text-[10px] opacity-80 tabular-nums" dir="auto">
+                                    {fmtTime(item.msg.createdAt)}
+                                    {mine && item.msg.viewedAt && (
+                                      <span className="ms-1 inline-flex items-center gap-0.5">
+                                        <CheckCheck className="size-3" aria-hidden />
+                                      </span>
+                                    )}
+                                  </span>
+                                </span>
+                              </a>
+                            )}
                           </li>
                         );
                       })}
@@ -497,17 +916,19 @@ export function VoiceConsole({ myUserId }: { myUserId: string }) {
                   )}
                 </ScrollArea>
 
-                {/* شريط التسجيل */}
-                <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border/60 bg-muted/40 p-3">
-                  {micError && (
-                    <span className="w-full text-xs text-red-600 dark:text-red-400">
-                      {micError === "denied"
-                        ? t("voice.micDenied")
-                        : micError === "unsupported"
-                          ? t("voice.micUnsupported")
-                          : micError === "too_large"
-                            ? t("voice.tooLarge")
-                            : t("voice.sendFailed")}
+                {/* شريط الإنشاء: صوت + صورة + فيديو + موقع */}
+                <div className="space-y-2 rounded-xl border border-border/60 bg-muted/40 p-3">
+                  {(micError || dmErrorText()) && (
+                    <span className="block text-xs text-red-600 dark:text-red-400">
+                      {micError
+                        ? micError === "denied"
+                          ? t("voice.micDenied")
+                          : micError === "unsupported"
+                            ? t("voice.micUnsupported")
+                            : micError === "too_large"
+                              ? t("voice.tooLarge")
+                              : t("voice.sendFailed")
+                        : dmErrorText()}
                     </span>
                   )}
                   {recording ? (
@@ -517,7 +938,7 @@ export function VoiceConsole({ myUserId }: { myUserId: string }) {
                           <span className="absolute inline-flex size-full animate-ping rounded-full bg-red-400 opacity-75" />
                           <span className="relative inline-flex size-2.5 rounded-full bg-red-500" />
                         </span>
-                        {t("voice.recording")} · <span dir="ltr">{fmtDuration(recordSec)}</span> / {fmtDuration(MAX_RECORD_SEC)}
+                        {t("voice.recording")} · <span dir="ltr">{hoursLabel(recordSec)}</span> / {hoursLabel(MAX_RECORD_SEC)}
                       </div>
                       <div className="flex items-center gap-2">
                         <Button variant="outline" size="sm" onClick={() => stopRecording(false)} className="gap-2">
@@ -531,27 +952,37 @@ export function VoiceConsole({ myUserId }: { myUserId: string }) {
                       </div>
                     </div>
                   ) : (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => void startRecording()}
-                      disabled={sending}
-                      className="gap-2"
-                    >
-                      {sending ? (
-                        <>
-                          <LoaderCircle className="size-4 animate-spin" aria-hidden />
-                          {t("voice.sending")}
-                        </>
-                      ) : (
-                        <>
-                          <Mic className="size-4 text-primary" aria-hidden />
-                          {t("voice.record")}
-                        </>
-                      )}
-                    </Button>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button variant="outline" size="sm" onClick={() => void startRecording()} disabled={sending} className="gap-2">
+                        {sending ? (
+                          <>
+                            <LoaderCircle className="size-4 animate-spin" aria-hidden />
+                            {t("voice.sending")}
+                          </>
+                        ) : (
+                          <>
+                            <Mic className="size-4 text-primary" aria-hidden />
+                            {t("voice.record")}
+                          </>
+                        )}
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => void openCamera("photo")} disabled={sending} className="gap-2">
+                        <Camera className="size-4 text-primary" aria-hidden />
+                        {t("voice.takePhoto")}
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => void openCamera("video")} disabled={sending} className="gap-2">
+                        <Video className="size-4 text-primary" aria-hidden />
+                        {t("voice.recordVideo")}
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => void shareLocation()} disabled={sending || locBusy} className="gap-2">
+                        {locBusy ? <LoaderCircle className="size-4 animate-spin" aria-hidden /> : <MapPin className="size-4 text-primary" aria-hidden />}
+                        {t("voice.shareLocation")}
+                      </Button>
+                    </div>
                   )}
-                  <span className="text-[11px] text-muted-foreground">{t("voice.recordHint")}</span>
+                  <span className="block text-[11px] text-muted-foreground">
+                    {t("voice.composeHint")}
+                  </span>
                 </div>
               </CardContent>
             </>
@@ -562,6 +993,145 @@ export function VoiceConsole({ myUserId }: { myUserId: string }) {
           )}
         </Card>
       </div>
+
+      {/* حوار الكاميرا الموحّد (صورة/فيديو) */}
+      <Dialog open={camOpen} onOpenChange={(o) => (!o ? closeCamera() : setCamOpen(true))}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Camera className="size-4 text-primary" aria-hidden />
+              {camMode === "photo" ? t("voice.takePhoto") : t("voice.recordVideo")}
+            </DialogTitle>
+            <DialogDescription>
+              {camMode === "photo" ? t("voice.camPhotoHint") : `${t("voice.camVideoHint")} · ≤ ${MAX_VIDEO_SEC}s`}
+            </DialogDescription>
+          </DialogHeader>
+
+          {camError ? (
+            <div className="space-y-3 py-6 text-center">
+              <p className="text-sm text-red-600 dark:text-red-400">
+                {camError === "denied" ? t("voice.camDenied") : t("voice.camUnsupported")}
+              </p>
+              <Button variant="outline" size="sm" onClick={() => closeCamera()} className="gap-2">
+                <X className="size-4" aria-hidden />
+                {t("voice.close")}
+              </Button>
+            </div>
+          ) : photoPreview ? (
+            <div className="space-y-3">
+              <img src={photoPreview} alt={t("voice.kindPhoto")} className="max-h-[46vh] w-full rounded-xl object-contain" />
+              <div className="flex items-center justify-between gap-2">
+                <Button variant="outline" size="sm" onClick={() => setPhotoPreview(null)} className="gap-2">
+                  <RefreshCcw className="size-3.5" aria-hidden />
+                  {t("voice.retake")}
+                </Button>
+                <Button size="sm" onClick={() => void sendPhotoPreview()} disabled={sending} className="gap-2">
+                  {sending ? <LoaderCircle className="size-4 animate-spin" aria-hidden /> : <Radio className="size-3.5" aria-hidden />}
+                  {t("voice.send")}
+                </Button>
+              </div>
+            </div>
+          ) : videoPreview ? (
+            <div className="space-y-3">
+              <video src={videoPreview.url} controls className="max-h-[46vh] w-full rounded-xl object-contain" />
+              <div className="flex items-center justify-between gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    URL.revokeObjectURL(videoPreview.url);
+                    setVideoPreview(null);
+                  }}
+                  className="gap-2"
+                >
+                  <RefreshCcw className="size-3.5" aria-hidden />
+                  {t("voice.retake")}
+                </Button>
+                <Button size="sm" onClick={() => void sendVideoPreview()} disabled={sending} className="gap-2">
+                  {sending ? <LoaderCircle className="size-4 animate-spin" aria-hidden /> : <Radio className="size-3.5" aria-hidden />}
+                  {t("voice.send")}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="relative overflow-hidden rounded-xl bg-black" dir="ltr">
+                <video ref={camVideoRef} muted playsInline className="aspect-[4/3] w-full object-cover" />
+                {camBusy && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                    <LoaderCircle className="size-6 animate-spin text-white" aria-hidden />
+                  </div>
+                )}
+                {camRecording && (
+                  <span className="absolute start-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-black/60 px-2.5 py-1 text-xs font-semibold text-white">
+                    <span className="relative flex size-2">
+                      <span className="absolute inline-flex size-full animate-ping rounded-full bg-red-400 opacity-75" />
+                      <span className="relative inline-flex size-2 rounded-full bg-red-500" />
+                    </span>
+                    <span className="tabular-nums">{hoursLabel(camRecordSec)}</span> / {hoursLabel(MAX_VIDEO_SEC)}
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const next = camFacing === "environment" ? "user" : "environment";
+                      setCamFacing(next);
+                      closeCamera();
+                      setTimeout(() => void openCamera(camMode, next), 60);
+                    }}
+                    className="gap-2"
+                  >
+                    <RefreshCcw className="size-3.5" aria-hidden />
+                    {t("voice.switchCamera")}
+                  </Button>
+                  {camMode === "photo" ? (
+                    <Button variant="outline" size="sm" onClick={capturePhoto} disabled={camBusy} className="gap-2">
+                      <Camera className="size-4 text-primary" aria-hidden />
+                      {t("voice.capture")}
+                    </Button>
+                  ) : camRecording ? (
+                    <Button size="sm" onClick={stopVideoRecord} className="gap-2">
+                      <Square className="size-3.5" aria-hidden />
+                      {t("voice.stopVideo")}
+                    </Button>
+                  ) : (
+                    <Button variant="outline" size="sm" onClick={() => void startVideoRecord()} disabled={camBusy} className="gap-2">
+                      <Video className="size-4 text-primary" aria-hidden />
+                      {t("voice.recordVideo")}
+                    </Button>
+                  )}
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => closeCamera()} className="gap-2">
+                  <X className="size-4" aria-hidden />
+                  {t("voice.close")}
+                </Button>
+              </div>
+              {dmErrorText() && <span className="block text-xs text-red-600 dark:text-red-400">{dmErrorText()}</span>}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* عارض الصورة بالحجم الكامل */}
+      <Dialog open={!!viewer && viewer.kind === "photo"} onOpenChange={(o) => (!o ? setViewer(null) : undefined)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{t("voice.kindPhoto")}</DialogTitle>
+            <DialogDescription>{viewer ? fmtTime(viewer.createdAt) : ""}</DialogDescription>
+          </DialogHeader>
+          {viewer && (
+            <img
+              src={`/api/direct-messages/${viewer.id}/media`}
+              alt={t("voice.kindPhoto")}
+              className="max-h-[70vh] w-full rounded-xl object-contain"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -20,47 +20,12 @@ import { rateLimit } from "@/lib/rate-limit";
 import { writeAudit } from "@/lib/audit";
 import { localizedName } from "@/lib/localized-name";
 import { getUiLocale } from "@/i18n/ui-locale";
+// (بلاغ المالك 2026-10-24): منطق الوصول المشترك بين الصوتيات والمرئيات —
+// نفس الدوال كانت محلية هنا؛ استُخرجت دون أي تغيير سلوكي (اختبارات المرحلة 9 كما هي)
+import { messagingAccess, canConverseWith, contextGroupId, canOpenThread, existingThreadPartners, hasExistingThread, isSupervisor, latestThreadGroupId } from "@/lib/direct-messaging";
 
 export const VOICE_MAX_BYTES = 2_500_000;
 export const VOICE_MAX_DURATION_SEC = 120;
-
-type VoiceAccess = { admin: boolean; groupIds: string[] };
-
-/** وضع صلاحيات الصوت للمتصل: admin (كل الفرق) أو قائمة فرقه السارية */
-async function voiceAccess(session: { companyId: string; sub: string; role: string }): Promise<VoiceAccess> {
-  const admin = roleHas(session.role, "voice.admin") || (await hasPermission(session as never, "voice.admin"));
-  if (admin) return { admin: true, groupIds: [] };
-  const rows = await db.workerGroupMember.findMany({
-    where: { companyId: session.companyId, userId: session.sub, status: "active" },
-    select: { groupId: true },
-  });
-  const led = await db.workerGroup.findMany({
-    where: { companyId: session.companyId, leaderUserId: session.sub, status: "active" },
-    select: { id: true },
-  });
-  return { admin: false, groupIds: Array.from(new Set([...rows.map((r) => r.groupId), ...led.map((l) => l.id)])) };
-}
-
-/** هل يجوز للمتصل محادثة userId؟ (مشترك في فريق، أو وضع إشرافي) */
-async function canConverse(access: VoiceAccess, session: { companyId: string; sub: string }, otherUserId: string): Promise<boolean> {
-  if (otherUserId === session.sub) return false; // لا مراسلة للنفس
-  const other = await db.userMembership.findFirst({
-    where: { companyId: session.companyId, userId: otherUserId, revokedAt: null, user: { isActive: true } },
-    select: { id: true },
-  });
-  if (!other) return false;
-  if (access.admin) return true;
-  if (access.groupIds.length === 0) return false;
-  const share = await db.workerGroupMember.count({
-    where: { userId: otherUserId, groupId: { in: access.groupIds }, status: "active" },
-  });
-  if (share > 0) return true;
-  // الطرف الآخر قائد أحد فرقي؟ محادثة القائد مع أعضائه جائزة
-  const leadsMyGroup = await db.workerGroup.count({
-    where: { companyId: session.companyId, leaderUserId: otherUserId, id: { in: access.groupIds }, status: "active" },
-  });
-  return leadsMyGroup > 0;
-}
 
 const listMeta = (m: {
   id: string;
@@ -87,7 +52,7 @@ export async function GET(req: NextRequest) {
 
     const canUse = roleHas(session.role, "voice.use") || (await hasPermission(session as never, "voice.use"));
     if (!canUse) throw new AccessError(403, "forbidden");
-    const access = await voiceAccess(session);
+    const access = await messagingAccess(session);
     const locale = await getUiLocale();
     const url = new URL(req.url);
 
@@ -163,6 +128,12 @@ export async function GET(req: NextRequest) {
             map.set(g.leader.id, { userId: g.leader.id, fullName: localizedName(g.leader, locale, "fullName"), jobTitleKey: g.leader.employeeProfiles[0]?.jobTitleKey ?? null });
           }
         }
+        // (بلاغ المالك 2026-10-24): مستخدمو الخيوط القائمة (مثل الإدارة التي
+        // خاطبت العامل) — ليردّ عليها ويقرأها؛ بلا خيط ولا فريق مشترك يظل العزل
+        const partners = await existingThreadPartners(session.companyId, session.sub, locale);
+        for (const p of partners) {
+          if (p.userId !== session.sub) map.set(p.userId, p);
+        }
         rows = Array.from(map.values()).map((r) => ({ ...r, role: "member" }));
       }
       rows.sort((a, b) => a.fullName.localeCompare(b.fullName, "ar"));
@@ -191,7 +162,8 @@ export async function GET(req: NextRequest) {
     if (!withParam) {
       return NextResponse.json({ error: "invalid_input" }, { status: 400 });
     }
-    if (!(await canConverse(access, session, withParam))) {
+    // الخيط القائم يفتح القراءة والرد (فجوة العزل المقيسة) — وإلا فحكم canConverse
+    if (!(await canOpenThread(access, session, withParam))) {
       throw new AccessError(403, "forbidden");
     }
     const messages = await db.voiceMessage.findMany({
@@ -257,49 +229,22 @@ export async function POST(req: NextRequest) {
     }
     const mime = rawMime === "video/webm" ? "audio/webm" : rawMime;
 
-    const access = await voiceAccess(session);
-    if (!(await canConverse(access, session, parsed.data.to))) {
+    const access = await messagingAccess(session);
+    const conversable = await canConverseWith(access, session, parsed.data.to);
+    // استثناء الخيط القائم: للطرف المخوّل فقط (إشراف خاطب العامل) — خيط
+    // عضوين عاديين يظل مقيّدًا بالعضوية: إزالة العضو تقطعه (اختبار المرحلة 9)
+    const otherIsSupervisor = conversable ? false : await isSupervisor(session.companyId, parsed.data.to);
+    const threadExists = otherIsSupervisor ? await hasExistingThread(session.sub, parsed.data.to) : false;
+    if (!conversable && !threadExists) {
       throw new AccessError(403, "forbidden");
     }
 
-    // فريق السياق: عضو ⇒ أول فريق مشترك بين الطرفين؛ إشرافي ⇒ فريقه، وإلا فريق
-    // المخاطَب (الرسالة تدخل سياق فريق المتلقي)، وإلا null = رسالة إشرافية مباشرة
-    // لمستخدم بلا فريق (درس اختبار المرحلة 9: الإدارة تخاطب «جميع» المستخدمين).
-    let groupId: string | null = null;
-    if (access.admin) {
-      const myGroups = await db.workerGroupMember.findFirst({
-        where: { companyId: session.companyId, userId: session.sub, status: "active" },
-        select: { groupId: true },
-      });
-      const led = await db.workerGroup.findFirst({
-        where: { companyId: session.companyId, leaderUserId: session.sub, status: "active" },
-        select: { id: true },
-      });
-      const theirGroups = await db.workerGroupMember.findFirst({
-        where: { companyId: session.companyId, userId: parsed.data.to, status: "active" },
-        select: { groupId: true },
-      });
-      const theyLead = await db.workerGroup.findFirst({
-        where: { companyId: session.companyId, leaderUserId: parsed.data.to, status: "active" },
-        select: { id: true },
-      });
-      groupId = myGroups?.groupId ?? led?.id ?? theirGroups?.groupId ?? theyLead?.id ?? null;
-    } else {
-      const shared = await db.workerGroupMember.findFirst({
-        where: { userId: parsed.data.to, groupId: { in: access.groupIds }, status: "active" },
-        select: { groupId: true },
-      });
-      if (shared) {
-        groupId = shared.groupId;
-      } else {
-        const leadsMyGroup = await db.workerGroup.findFirst({
-          where: { companyId: session.companyId, leaderUserId: parsed.data.to, id: { in: access.groupIds }, status: "active" },
-          select: { id: true },
-        });
-        groupId = leadsMyGroup?.id ?? null;
-      }
-    }
-    if (!groupId && !access.admin) {
+    // فريق السياق: حسابه للخيط الجديد، وميراثه من الخيط القائم عند الرد —
+    // الرد على من خاطبك (إشراف مثلًا) لا يُسقط بـ409 ولا يفتح بابًا عابرًا للفرق
+    const groupId = conversable
+      ? await contextGroupId(access, session, parsed.data.to)
+      : await latestThreadGroupId(session.sub, parsed.data.to);
+    if (!groupId && !access.admin && !threadExists) {
       // عضو بلا فريق مشترك مع المخاطَب: العزل يمنع الإرسال (الإشرافي يجتاز هذا الحد)
       return NextResponse.json({ error: "no_shared_team" }, { status: 409 });
     }

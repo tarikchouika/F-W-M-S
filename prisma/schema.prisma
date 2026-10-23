@@ -119,6 +119,8 @@ model User {
   locationPings       MemberLocationPing[]   @relation("LocationReporter")
   sentVoices          VoiceMessage[]         @relation("VoiceSender")
   receivedVoices      VoiceMessage[]         @relation("VoiceRecipient")
+  sentDirect          DirectMessage[]        @relation("DirectSender")
+  receivedDirect      DirectMessage[]        @relation("DirectRecipient")
   grantedDelegations  PermissionDelegation[] @relation("DelegationGrantor")
   receivedDelegations PermissionDelegation[] @relation("DelegationGrantee")
 
@@ -338,6 +340,33 @@ model VoiceMessage {
 
   @@index([companyId, groupId, createdAt])
   @@index([recipientId, listenedAt])
+}
+
+/// مراسلة مباشرة بين المستخدمين: مرئية (صورة/فيديو) وموقعية (بلاغ المالك
+/// 2026-10-24) — نفس نموذج عزل الصوتيات (فريق مشترك أو إشراف)؛ الحمولة BLOB
+/// للموقع null مع إحداثيات lat/lng. النسخ الحية عبر SSE (api/realtime).
+model DirectMessage {
+  id          String    @id @default(cuid())
+  companyId   String
+  groupId     String? // فريق السياق — نفس منطق الصوتيات
+  senderId    String
+  recipientId String
+  kind        String // "photo" | "video" | "location"
+  mime        String    @default("") // image/jpeg | video/webm | video/mp4 — "" للموقع
+  sizeBytes   Int     @default(0)
+  durationSec Int     @default(0) // للفيديو فقط
+  lat         Float?
+  lng         Float?
+  accuracyM   Float?
+  media       Bytes? // الحمولة للموقع null
+  viewedAt    DateTime? // وقت مشاهدة المستقبِل (مقابل listenedAt للصوت)
+  createdAt   DateTime  @default(now())
+
+  sender    User @relation("DirectSender", fields: [senderId], references: [id])
+  recipient User @relation("DirectRecipient", fields: [recipientId], references: [id])
+
+  @@index([companyId, groupId, createdAt])
+  @@index([recipientId, viewedAt])
 }
 
 /// تفويض صلاحية (المرحلة 9) — السوبر أدمن وحده يفوّض؛ يمنح صلاحية فوق دور المنحوح له

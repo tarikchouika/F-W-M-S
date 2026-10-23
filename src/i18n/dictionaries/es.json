@@ -160,7 +160,7 @@
     "declarations": "Declaraciones oficiales",
     "platform": "Propiedad de la plataforma",
     "teamPresence": "Presencia de equipos",
-    "voice": "Mensajes de voz",
+    "voice": "Mensajería directa",
     "openMenu": "Abrir el menú",
     "welcomeWithName": "Hola, {name}"
   },
@@ -1354,8 +1354,8 @@
     "notLeaderHint": "Esta página es para responsables de equipo y titulares del permiso de consulta (coadmin y superior) — no eres responsable de equipo"
   },
   "voice": {
-    "title": "Mensajes de voz",
-    "subtitle": "Comunicación por voz directa dentro de tu equipo — el aislamiento entre equipos se aplica en el servidor; la supervisión (superadmin/admin/coadmin) llega a todos",
+    "title": "Mensajería directa",
+    "subtitle": "Contacto directo por voz, foto, vídeo y ubicación dentro de tu equipo — el aislamiento entre equipos se aplica en el servidor, la supervisión llega a todos y la entrega es en vivo",
     "modeTeam": "Modo equipo: conversaciones solo con los miembros de tu equipo",
     "modeAdmin": "Modo supervisión: puedes escribir y escuchar con todos los equipos y usuarios",
     "browseGroup": "Explorar mensajes de un equipo",
@@ -1367,7 +1367,7 @@
     "noContacts": "Sin contactos disponibles — verifica tu pertenencia a un equipo",
     "back": "Volver",
     "pollHint": "Actualización cada 15 s",
-    "threadEmpty": "Sin mensajes en esta conversación — graba el primero",
+    "threadEmpty": "Aún no hay mensajes en esta conversación — envía el primero (voz · foto · vídeo · ubicación)",
     "play": "Reproducir",
     "recording": "Grabando",
     "cancel": "Cancelar",
@@ -1379,7 +1379,29 @@
     "micUnsupported": "Tu navegador no admite la grabación",
     "tooLarge": "Clip demasiado grande (límite 2,5 MB)",
     "sendFailed": "No se pudo enviar — reintenta",
-    "pickContact": "Elige un contacto para comenzar"
+    "pickContact": "Elige un contacto para comenzar",
+    "liveOn": "Sincronización en vivo",
+    "liveFallback": "Respaldo cada minuto",
+    "takePhoto": "Foto desde la cámara",
+    "recordVideo": "Vídeo desde la cámara",
+    "shareLocation": "Compartir mi ubicación",
+    "kindPhoto": "Foto",
+    "kindVideo": "Vídeo",
+    "kindLocation": "Ubicación actual",
+    "camPhotoHint": "Enfoca y captura",
+    "camVideoHint": "Graba un clip corto",
+    "camDenied": "Permiso de cámara denegado — actívalo en los ajustes del navegador",
+    "camUnsupported": "Tu navegador no admite la cámara",
+    "photoTooLarge": "Foto demasiado grande (límite 3MB)",
+    "videoTooLarge": "Vídeo demasiado grande (límite 8MB)",
+    "locDenied": "Permiso de ubicación denegado — actívalo en los ajustes del navegador",
+    "locUnsupported": "Tu dispositivo no admite la geolocalización",
+    "switchCamera": "Cambiar cámara",
+    "capture": "Capturar",
+    "retake": "Repetir",
+    "stopVideo": "Detener y enviar",
+    "close": "Cerrar",
+    "composeHint": "Voz ≤120s · vídeo ≤60s · foto ≤3MB · entrega en vivo"
   },
   "usersPage": {
     "title": "Usuarios",
@@ -1632,7 +1654,7 @@
   "legal": {
     "terms": {
       "title": "Condiciones de uso de FWMS",
-      "subtitle": "Al usar la plataforma aceptas estas condiciones — última actualización: versión 0.11.0",
+      "subtitle": "Al usar la plataforma aceptas estas condiciones — última actualización: versión {version}",
       "s1h": "1. Naturaleza del servicio",
       "s1b": "FWMS es una plataforma de gestión de mano de obra de campo: asistencia con verificación geográfica, planificación y cobertura, nómina con retenciones legales y declaraciones oficiales. El servicio se presta «tal cual» a empresas establecidas en Marruecos; los datos de nómina se rigen por la legislación marroquí vigente (Código de Trabajo 65-99 y sus textos de aplicación).",
       "s2h": "2. Cuentas y permisos",
