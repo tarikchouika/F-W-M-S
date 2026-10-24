@@ -172,7 +172,7 @@ NEXTAUTH_URL="http://192.168.x.x:3000"
 **الجدولة (منفّذة فعليًا):**
 ```bash
 # crontab -l — يومي 03:15 مع flock (منع التداخل):
-15 3 * * * /usr/bin/flock -n /root/F-W-M-S/db/backups/.backup.lock /root/F-W-M-S/infra/termux/backup-db.sh >> /root/F-W-M-S/db/backups/backup.log 2>&1
+15 3 * * * /usr/bin/flock -n /root/HRMP/db/backups/.backup.lock /root/HRMP/infra/termux/backup-db.sh >> /root/HRMP/db/backups/backup.log 2>&1
 # cron يُشغَّل داخل Ubuntu: service cron start (يضيفه start-server.sh تلقائيًا)
 ```
 
@@ -191,8 +191,10 @@ NEXTAUTH_URL="http://192.168.x.x:3000"
 
 ## 9. أوامرك اليومية السريعة
 
+> **مسار 2026-10-24:** نُقل المجلد `/root/F-W-M-S` → `/root/HRMP`. أي `DATABASE_URL` مطلق في `.env` **يجب** أن يتبع المسار الجديد (`file:/root/HRMP/db/fwms.db`)؛ وإلا أنشأ Prisma قاعدة فارغة في المسار القديم عند أول تشغيل (حدث فعلًا وعُولج).
+
 ```bash
-cd /root/F-W-M-S && git pull --ff-only origin main
+cd /root/HRMP && git pull --ff-only origin main
 npx prisma migrate deploy      # تطبيق migrations جديدة
 npx prisma db seed            # البذور (تشمل pay_rules — prisma/seeds/pay-rules.ts)
 bash infra/termux/start-server.sh   # wake-lock + cron + النفق + الخادم (كله في واحد)
