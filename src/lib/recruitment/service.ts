@@ -10,6 +10,7 @@ import { writeAudit } from "@/lib/audit";
 import { localizedName } from "@/lib/localized-name";
 import { hashPassword, verifyPassword } from "@/lib/auth/password";
 import { rateLimit } from "@/lib/rate-limit";
+import { notifySeekerReady } from "@/lib/telegram";
 import type { Locale } from "@/i18n/config";
 import type { SessionPayload } from "@/lib/auth/jwt";
 import {
@@ -146,6 +147,8 @@ export async function markChannelVerified(
     data: channel === "email" ? { emailVerifiedAt: new Date() } : { phoneVerifiedAt: new Date() },
   });
   await writeAudit({ action: "recruitment.seeker.verified", entity: "JobSeeker", entityId: seekerId, after: { channel } });
+  // إشعار المشرف إن اكتمل التوثيق المزدوج + الوثيقة بهذه الخطوة (خلفية بلا حجب)
+  void notifySeekerReady(seekerId);
   return ok(true);
 }
 
@@ -179,6 +182,8 @@ export async function uploadSeekerDocument(
     entityId: seekerId,
     after: { type: doc.type, mime: doc.mime, bytes: doc.bytes.byteLength, sha256: documentHash.slice(0, 16) },
   });
+  // إن كانت خطوة الوثيقة هي آخر شرط، يصل المشرف إشعار تيليغرام فورًا
+  void notifySeekerReady(seekerId);
   return ok(true);
 }
 
