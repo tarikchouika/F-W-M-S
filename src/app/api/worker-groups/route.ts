@@ -1,4 +1,4 @@
-// FWMS — مجموعات العمال (SPEC §5 و§8 — المرحلة 2): قائمة وإنشاء — تُستخدم في الجدولة لاحقًا
+// HRMP — مجموعات العمال (SPEC §5 و§8 — المرحلة 2): قائمة وإنشاء — تُستخدم في الجدولة لاحقًا
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth/session";

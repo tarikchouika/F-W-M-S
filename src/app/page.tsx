@@ -1,6 +1,6 @@
 "use client";
 
-// FWMS — صفحة الهبوط: الهوية الرسمية للمنصة (SPEC §1: المكونات والقرارات المعتمدة)
+// HRMP — صفحة الهبوط: الهوية الرسمية للمنصة (SPEC §1: المكونات والقرارات المعتمدة)
 import Link from "next/link";
 import {
   CalendarClock,
@@ -21,13 +21,15 @@ import {
   Github,
   Scale,
   FileDown,
+  // (طلب المالك 2026-10-24): بطاقة الاستقطاب والتوظيف في الوحدات الوظيفية
+  Briefcase,
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { LangSwitcher } from "@/components/fwms/lang-switcher";
-import { FwmsLogo, FwmsMark } from "@/components/fwms/logo";
+import { LangSwitcher } from "@/components/hrmp/lang-switcher";
+import { HrmpLogo, HrmpMark } from "@/components/hrmp/logo";
 import { useI18n } from "@/i18n/provider";
 // (بلاغ المالك 2026-10-24): اختصار تحميل تطبيق أندرويد من الرابط الدائم —
 // زر مباشر على التطبيق + رابط دليل التثبيت وتجاوز Play Protect (/app).
@@ -41,6 +43,7 @@ type Feature = {
 };
 
 const FEATURES: Feature[] = [
+  { titleKey: "landing.featureRecruitmentTitle", descKey: "landing.featureRecruitmentDesc", icon: Briefcase },
   { titleKey: "landing.featureSchedulingTitle", descKey: "landing.featureSchedulingDesc", icon: CalendarClock },
   { titleKey: "landing.featureGeofencingTitle", descKey: "landing.featureGeofencingDesc", icon: MapPin },
   { titleKey: "landing.featurePayrollTitle", descKey: "landing.featurePayrollDesc", icon: Calculator },
@@ -73,7 +76,7 @@ function SectionHeading({ titleKey, subtitleKey }: { titleKey: string; subtitleK
       {subtitleKey && (
         <p className="mt-4 text-pretty text-base text-muted-foreground sm:text-lg">{t(subtitleKey)}</p>
       )}
-      <div className="fwms-gold-line mx-auto mt-6 w-24" aria-hidden />
+      <div className="hrmp-gold-line mx-auto mt-6 w-24" aria-hidden />
     </div>
   );
 }
@@ -81,7 +84,7 @@ function SectionHeading({ titleKey, subtitleKey }: { titleKey: string; subtitleK
 function Stat({ valueKey, labelKey }: { valueKey: string; labelKey: string }) {
   const { t } = useI18n();
   return (
-    <div className="fwms-glass rounded-xl px-4 py-3 text-center min-w-28">
+    <div className="hrmp-glass rounded-xl px-4 py-3 text-center min-w-28">
       <div className="text-xl font-bold text-white sm:text-2xl" dir="ltr">
         {t(valueKey)}
       </div>
@@ -97,18 +100,21 @@ export default function LandingPage() {
   return (
     <div className="flex min-h-dvh flex-col bg-background">
       {/* ── الترويسة ── */}
-      <header className="fwms-sticky-top sticky top-0 z-50 border-b border-border/60 bg-background/85 backdrop-blur-md">
+      <header className="hrmp-sticky-top sticky top-0 z-50 border-b border-border/60 bg-background/85 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
-          <Link href="/" className="flex items-center gap-2.5" aria-label="FWMS">
-            <FwmsLogo className="size-9" />
+          <Link href="/" className="flex items-center gap-2.5" aria-label="HRMP">
+            <HrmpLogo className="size-9" />
             <div className="flex flex-col leading-none">
               <span className="text-lg font-extrabold tracking-tight text-primary" dir="ltr">
-                FWMS
+                HRMP
               </span>
               <span className="hidden text-[11px] text-muted-foreground sm:block">{t("app.fullName")}</span>
             </div>
           </Link>
           <nav className="flex items-center gap-2" aria-label="main">
+            <Button asChild variant="ghost" size="sm" className="hidden font-medium sm:inline-flex">
+              <Link href="/jobs">{t("jobs.title")}</Link>
+            </Button>
             <LangSwitcher />
             <Button asChild variant="outline" size="sm" className="gap-2 font-medium">
               <Link href="/login">
@@ -123,15 +129,15 @@ export default function LandingPage() {
 
       <main className="flex-1">
         {/* ── البطل ── */}
-        <section className="fwms-hero-gradient relative overflow-hidden">
-          <div className="fwms-zellige absolute inset-0 opacity-60" aria-hidden />
+        <section className="hrmp-hero-gradient relative overflow-hidden">
+          <div className="hrmp-zellige absolute inset-0 opacity-60" aria-hidden />
           {/* العلامة المائية داخل البطل — لوغو ذهبي كبير بخفّة منخفضة (توقيع الهوية) */}
-          <FwmsMark
+          <HrmpMark
             className="pointer-events-none absolute left-1/2 top-1/2 w-[30rem] max-w-[120%] -translate-x-1/2 -translate-y-1/2 select-none opacity-[0.08] sm:w-[34rem]"
             aria-hidden
           />
           <div className="relative mx-auto flex max-w-4xl flex-col items-center px-4 py-20 text-center sm:px-6 sm:py-28">
-            <Badge variant="secondary" className="fwms-glass mb-6 border-none text-white/90 hover:bg-white/10">
+            <Badge variant="secondary" className="hrmp-glass mb-6 border-none text-white/90 hover:bg-white/10">
               {t("landing.badge")}
             </Badge>
             <h1 className="text-balance text-4xl font-extrabold leading-[1.2] tracking-tight text-white sm:text-5xl lg:text-6xl">
@@ -153,7 +159,10 @@ export default function LandingPage() {
                 variant="outline"
                 className="gap-2 border-white/30 bg-transparent font-semibold text-white hover:bg-white/10 hover:text-white"
               >
-                <Link href="/login">{t("landing.ctaSecondary")}</Link>
+                <Link href="/jobs">
+                  <Briefcase className="size-4" aria-hidden />
+                  {t("jobs.me.browseCta")}
+                </Link>
               </Button>
             </div>
             <div className="mt-12 flex flex-wrap items-center justify-center gap-3">
@@ -170,7 +179,7 @@ export default function LandingPage() {
           <SectionHeading titleKey="landing.featuresTitle" subtitleKey="landing.featuresSubtitle" />
           <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {FEATURES.map((f) => (
-              <Card key={f.titleKey} className="fwms-card-hover group border-border/70 bg-card">
+              <Card key={f.titleKey} className="hrmp-card-hover group border-border/70 bg-card">
                 <CardContent className="flex h-full flex-col gap-4 p-6">
                   <div className="flex size-12 items-center justify-center rounded-xl bg-secondary text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
                     <f.icon className="size-6" aria-hidden />
@@ -188,7 +197,7 @@ export default function LandingPage() {
           <SectionHeading titleKey="landing.referencesTitle" subtitleKey="landing.referencesSubtitle" />
           <div className="mt-12 grid gap-5 sm:grid-cols-3">
             {REFERENCE_POINTS.map((point) => (
-              <div key={point.titleKey} className="fwms-card-hover rounded-xl border border-border/70 bg-card p-5">
+              <div key={point.titleKey} className="hrmp-card-hover rounded-xl border border-border/70 bg-card p-5">
                 <point.icon className="size-7 text-primary" aria-hidden />
                 <h3 className="mt-4 text-base font-bold text-card-foreground">{t(point.titleKey)}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{t(point.descKey)}</p>
@@ -213,7 +222,7 @@ export default function LandingPage() {
               {TECH.map((item) => (
                 <div
                   key={item.titleKey}
-                  className="fwms-card-hover rounded-xl border border-border/70 bg-card p-5"
+                  className="hrmp-card-hover rounded-xl border border-border/70 bg-card p-5"
                 >
                   <item.icon className="size-7 text-primary" aria-hidden />
                   <h3 className="mt-4 text-base font-bold text-card-foreground">{t(item.titleKey)}</h3>
@@ -228,20 +237,20 @@ export default function LandingPage() {
       {/* ── التذييل ──
           البنية: شريط كحلي عميق (لون أرضية اللوغو) يحمل الشعار والعبارة، ثم
           الروابط — مع خط ذهبي علوي يفصله عن المحتوى (توقيع الهوية الجديدة). ── */}
-      <footer className="fwms-footer-band relative mt-auto overflow-hidden border-t-2 border-[var(--fwms-gold)]/60">
-        <div className="fwms-zellige pointer-events-none absolute inset-0 opacity-40" aria-hidden />
+      <footer className="hrmp-footer-band relative mt-auto overflow-hidden border-t-2 border-[var(--hrmp-gold)]/60">
+        <div className="hrmp-zellige pointer-events-none absolute inset-0 opacity-40" aria-hidden />
         {/* العلامة المائية في الفوتر — لوغو ذهبي كبير بخفّة منخفضة */}
-        <FwmsMark
+        <HrmpMark
           className="pointer-events-none absolute -end-20 -bottom-24 w-80 select-none opacity-[0.07] sm:-end-28 sm:w-96"
           aria-hidden
         />
         <div className="relative mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:px-6 md:grid-cols-[1fr_auto] md:items-start md:gap-12">
           <div className="space-y-6">
             <div className="flex items-start gap-4">
-              <FwmsLogo className="size-14 shrink-0" />
+              <HrmpLogo className="size-14 shrink-0" />
               <div className="space-y-1.5">
-                <p className="text-lg font-extrabold tracking-tight text-[var(--fwms-gold)]" dir="ltr">
-                  FWMS
+                <p className="text-lg font-extrabold tracking-tight text-[var(--hrmp-gold)]" dir="ltr">
+                  HRMP
                 </p>
                 <p className="max-w-md text-xs leading-6 text-white/75">{t("app.tagline")}</p>
               </div>
@@ -252,7 +261,7 @@ export default function LandingPage() {
                 href={APP_DOWNLOAD_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex h-10 items-center gap-2 rounded-lg bg-[var(--fwms-gold)] px-4 text-sm font-bold text-[#0f2242] shadow-lg transition-transform hover:scale-[1.02] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--fwms-gold)]"
+                className="inline-flex h-10 items-center gap-2 rounded-lg bg-[var(--hrmp-gold)] px-4 text-sm font-bold text-[#0f2242] shadow-lg transition-transform hover:scale-[1.02] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--hrmp-gold)]"
               >
                 <Download className="size-4" aria-hidden />
                 {t("appPage.downloadCta")}
@@ -269,6 +278,10 @@ export default function LandingPage() {
 
           <nav className="flex flex-col gap-3 text-xs text-white/70 md:items-end">
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 md:justify-end">
+              <Link href="/jobs" className="inline-flex items-center gap-1.5 underline-offset-4 hover:text-white hover:underline">
+                <Briefcase className="size-3.5 shrink-0" aria-hidden />
+                {t("jobs.title")}
+              </Link>
               <Link href="/references" className="inline-flex items-center gap-1.5 underline-offset-4 hover:text-white hover:underline">
                 <Scale className="size-3.5" aria-hidden />
                 {t("landing.referencesCta")}
@@ -285,20 +298,20 @@ export default function LandingPage() {
             </div>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 md:justify-end">
               <a
-                href="https://github.com/tarikchouika/F-W-M-S"
+                href="https://github.com/tarikchouika/HRMP"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 underline-offset-4 hover:text-white hover:underline"
               >
                 <Github className="size-3.5 shrink-0" aria-hidden />
-                <span dir="ltr">tarikchouika/F-W-M-S</span>
+                <span dir="ltr">tarikchouika/HRMP</span>
               </a>
               <span aria-hidden>·</span>
               <span>{t("landing.footerRights")}</span>
             </div>
           </nav>
         </div>
-        <div className="h-1 w-full bg-gradient-to-l from-transparent via-[var(--fwms-gold)] to-transparent opacity-80" aria-hidden />
+        <div className="h-1 w-full bg-gradient-to-l from-transparent via-[var(--hrmp-gold)] to-transparent opacity-80" aria-hidden />
       </footer>
     </div>
   );

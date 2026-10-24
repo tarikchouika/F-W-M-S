@@ -1,15 +1,15 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { PageHeader } from "@/components/fwms/org-bits";
+import { PageHeader } from "@/components/hrmp/org-bits";
 import { getSession } from "@/lib/auth/session";
-import { LOCALE_COOKIE, resolveLocale } from "@/i18n/config";
+import { readLocaleCookie, resolveLocale } from "@/i18n/config";
 import { getDictionary, tServer } from "@/i18n/get-dictionary";
-import { TeamPresenceView } from "@/components/fwms/team-presence-view";
+import { TeamPresenceView } from "@/components/hrmp/team-presence-view";
 
 export async function generateMetadata(): Promise<Metadata> {
   const store = await cookies();
-  const dict = getDictionary(resolveLocale(store.get(LOCALE_COOKIE)?.value));
+  const dict = getDictionary(resolveLocale(readLocaleCookie(store)));
   return { title: tServer(dict, "presence.title") };
 }
 
@@ -18,7 +18,7 @@ export default async function TeamPresencePage() {
   if (!session) redirect("/login");
 
   const store = await cookies();
-  const locale = resolveLocale(store.get(LOCALE_COOKIE)?.value);
+  const locale = resolveLocale(readLocaleCookie(store));
   const dict = getDictionary(locale);
 
   // الوصول الدقيق يُفحص داخل API (قادة الفرق بغض النظر عن دورهم + أصحاب location.view)

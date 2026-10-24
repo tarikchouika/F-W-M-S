@@ -1,4 +1,4 @@
-// FWMS — تعديل فرع/أرشفته/استعادته: عزل الشركة (404 عند التخمين) + تدقيق قبل/بعد
+// HRMP — تعديل فرع/أرشفته/استعادته: عزل الشركة (404 عند التخمين) + تدقيق قبل/بعد
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth/session";

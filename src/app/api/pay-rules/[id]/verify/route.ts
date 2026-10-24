@@ -1,4 +1,4 @@
-// FWMS — توثيق قاعدة أجر من المحاسب (SPEC §11.6 verifiedBy/verifiedAt) — يفتح باب الاعتماد
+// HRMP — توثيق قاعدة أجر من المحاسب (SPEC §11.6 verifiedBy/verifiedAt) — يفتح باب الاعتماد
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { requirePermission, AccessError } from "@/lib/rbac";

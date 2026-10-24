@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# FWMS — اختبار قناة SSE: تسجيل دخول العامل ثم فتح القناة والتقاط أحداث الاتصال
-# التشغيل: bash /home/z/my-project/fwms/scripts/test-sse-call.sh
+# HRMP — اختبار قناة SSE: تسجيل دخول العامل ثم فتح القناة والتقاط أحداث الاتصال
+# التشغيل: bash /home/z/my-project/hrmp/scripts/test-sse-call.sh
 set -euo pipefail
 BASE="http://localhost:3100"
 
@@ -14,16 +14,16 @@ echo "✓ دخول العامل"
 sleep 3
 
 # المالك يبدأ اتصالًا
-CALL=$(curl -s -b /tmp/fwms-cookies.txt -X POST "$BASE/api/calls" -H "Content-Type: application/json" \
+CALL=$(curl -s -b /tmp/hrmp-cookies.txt -X POST "$BASE/api/calls" -H "Content-Type: application/json" \
   -d '{"to":"user-employee","media":"video"}')
 CALL_ID=$(echo "$CALL" | python3 -c "import json,sys; print(json.load(sys.stdin)['callId'])")
 echo "✓ اتصال أُنشئ: $CALL_ID"
 sleep 5
 
 # المرسل يرسل offer ثم ice (محاكاة WebRTC)
-curl -s -b /tmp/fwms-cookies.txt -X POST "$BASE/api/calls/$CALL_ID/signal" -H "Content-Type: application/json" \
+curl -s -b /tmp/hrmp-cookies.txt -X POST "$BASE/api/calls/$CALL_ID/signal" -H "Content-Type: application/json" \
   -d '{"kind":"offer","payload":{"sdp":"v=0 fake-offer-sdp","type":"offer"}}' > /dev/null
-curl -s -b /tmp/fwms-cookies.txt -X POST "$BASE/api/calls/$CALL_ID/signal" -H "Content-Type: application/json" \
+curl -s -b /tmp/hrmp-cookies.txt -X POST "$BASE/api/calls/$CALL_ID/signal" -H "Content-Type: application/json" \
   -d '{"kind":"ice","payload":{"candidate":"candidate:1 udp","sdpMid":"0"}}' > /dev/null
 echo "✓ أُرسلت offer + ice من المرسل"
 sleep 6
@@ -32,7 +32,7 @@ echo "=== أحداث SSE التي وصلت العامل ==="
 rg "^event: |^data: " /tmp/sse-events.txt | head -20
 
 # إنهاء الاتصال من المرسل
-curl -s -b /tmp/fwms-cookies.txt -X POST "$BASE/api/calls/$CALL_ID/signal" -H "Content-Type: application/json" \
+curl -s -b /tmp/hrmp-cookies.txt -X POST "$BASE/api/calls/$CALL_ID/signal" -H "Content-Type: application/json" \
   -d '{"kind":"end"}' > /dev/null
 echo "✓ أُنهي الاتصال"
 sleep 5

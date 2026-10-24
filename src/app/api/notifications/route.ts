@@ -1,4 +1,4 @@
-// FWMS — إشعارات المستخدم نفسه (المرحلة 5): قائمة + عدد غير المقروء — أي دور مصادق عليه
+// HRMP — إشعارات المستخدم نفسه (المرحلة 5): قائمة + عدد غير المقروء — أي دور مصادق عليه
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { requirePermission, AccessError } from "@/lib/rbac";

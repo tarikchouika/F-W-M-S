@@ -3,16 +3,16 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { ShieldCheck } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { LangSwitcher } from "@/components/fwms/lang-switcher";
-import { ThemeSwitcher } from "@/components/fwms/theme-switcher";
-import { FwmsLogo, FwmsMark } from "@/components/fwms/logo";
-import { LoginForm } from "@/components/fwms/login-form";
+import { LangSwitcher } from "@/components/hrmp/lang-switcher";
+import { ThemeSwitcher } from "@/components/hrmp/theme-switcher";
+import { HrmpLogo, HrmpMark } from "@/components/hrmp/logo";
+import { LoginForm } from "@/components/hrmp/login-form";
 import { getSession } from "@/lib/auth/session";
 import { getPlatformBranding } from "@/lib/branding";
 import { APP_VERSION } from "@/lib/version";
-import { LOCALE_COOKIE, localeDirection, resolveLocale } from "@/i18n/config";
+import { readLocaleCookie, localeDirection, resolveLocale } from "@/i18n/config";
 import { getDictionary, tServer } from "@/i18n/get-dictionary";
-import { LangParamSync } from "@/components/fwms/lang-param-sync";
+import { LangParamSync } from "@/components/hrmp/lang-param-sync";
 
 type LoginProps = {
   searchParams: Promise<{ lang?: string }>;
@@ -23,7 +23,7 @@ type LoginProps = {
 async function resolvePageLocale(searchParams: { lang?: string }) {
   const { lang } = searchParams;
   const store = await cookies();
-  const cookieLocale = resolveLocale(store.get(LOCALE_COOKIE)?.value);
+  const cookieLocale = resolveLocale(readLocaleCookie(store));
   return lang === "ar" || lang === "fr" || lang === "en" || lang === "es" ? lang : cookieLocale;
 }
 
@@ -44,7 +44,7 @@ export default async function LoginPage({ searchParams }: LoginProps) {
   try {
     session = await getSession();
   } catch (e) {
-    console.error("[FWMS][login] فشل عابر في قراءة الجلسة — نتابع كـ «لا جلسة»:", e);
+    console.error("[HRMP][login] فشل عابر في قراءة الجلسة — نتابع كـ «لا جلسة»:", e);
   }
   if (session) redirect("/dashboard");
 
@@ -56,11 +56,11 @@ export default async function LoginPage({ searchParams }: LoginProps) {
   return (
     <div
       dir={localeDirection[pageLocale]}
-      className="fwms-hero-gradient relative flex min-h-dvh flex-col items-center justify-center overflow-hidden px-4 py-10 lg:px-8"
+      className="hrmp-hero-gradient relative flex min-h-dvh flex-col items-center justify-center overflow-hidden px-4 py-10 lg:px-8"
     >
-      <div className="fwms-zellige absolute inset-0 opacity-50" aria-hidden />
+      <div className="hrmp-zellige absolute inset-0 opacity-50" aria-hidden />
       {/* العلامة المائية — لوغو ذهبي كبير خلف بطاقة الدخول */}
-      <FwmsMark
+      <HrmpMark
         className="pointer-events-none absolute left-1/2 top-1/2 w-[28rem] max-w-[130%] -translate-x-1/2 -translate-y-1/2 select-none opacity-[0.10]"
         aria-hidden
       />
@@ -79,7 +79,7 @@ export default async function LoginPage({ searchParams }: LoginProps) {
       <div className="relative z-10 grid w-full max-w-5xl items-center gap-8 lg:grid-cols-2 lg:gap-16">
         {/* لوحة الهوية — بلا أي نص مثبّت: الاسم من القاعدة (white-label) والإصدار من version.ts */}
         <div className="flex flex-col items-center gap-4 text-center lg:items-start lg:text-start">
-          <FwmsLogo className="size-14 drop-shadow-lg lg:size-20" />
+          <HrmpLogo className="size-14 drop-shadow-lg lg:size-20" />
           <div className="text-2xl font-bold text-white drop-shadow lg:text-3xl" dir="ltr">
             {branding.displayName}
           </div>

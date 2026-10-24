@@ -1,4 +1,4 @@
-// FWMS — تسجيل الدخول (SPEC §6): تحقق خادمي، تحديد معدل، تسجيل في التدقيق، ثم جلسة بشركة نشطة
+// HRMP — تسجيل الدخول (SPEC §6): تحقق خادمي، تحديد معدل، تسجيل في التدقيق، ثم جلسة بشركة نشطة
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";

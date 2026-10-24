@@ -1,4 +1,4 @@
-// FWMS — أعضاء الشركة النشطون (المرحلة 3): خيارات إسناد العمال في الجدولة
+// HRMP — أعضاء الشركة النشطون (المرحلة 3): خيارات إسناد العمال في الجدولة
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth/session";

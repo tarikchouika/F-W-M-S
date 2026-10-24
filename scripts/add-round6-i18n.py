@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-# FWMS — إضافة مفاتيح i18n للجولة السادسة (بلاغ المالك 2026-10-24) ×4 لغات
+# HRMP — إضافة مفاتيح i18n للجولة السادسة (بلاغ المالك 2026-10-24) ×4 لغات
 # 1) reports: أعطال التوليد (اختيار العامل إلزامي + تأهيل التصريح + رسائل خطأ محددة)
 # 2) voice: الاتصال المباشر (شاشة الاحترافية كاملة) + الصوتيات المؤقتة
 import json
 from collections import OrderedDict
 
-BASE = "/home/z/my-project/fwms/src/i18n/dictionaries"
+BASE = "/home/z/my-project/hrmp/src/i18n/dictionaries"
 
 # reports: مفاتيح أعطال توليد المستندات
 REPORTS = {

@@ -1,4 +1,4 @@
-// FWMS — تعديل مسار شركة (إصدار جديد لا تعديل للقديم — SPEC §12)
+// HRMP — تعديل مسار شركة (إصدار جديد لا تعديل للقديم — SPEC §12)
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { requirePermission, AccessError } from "@/lib/rbac";

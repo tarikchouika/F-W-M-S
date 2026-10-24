@@ -1,4 +1,4 @@
-// FWMS — تسجيل الخروج: إبطال حقيقي لكل جلسات المستخدم + تسجيل في التدقيق
+// HRMP — تسجيل الخروج: إبطال حقيقي لكل جلسات المستخدم + تسجيل في التدقيق
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { clearSessionCookie, getRawSession } from "@/lib/auth/session";

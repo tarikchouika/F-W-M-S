@@ -1,11 +1,11 @@
 "use client";
 
-// FWMS — حد أخطاء العرض العام (بلاغ المالك 2026-10-19 «صفحة خطأ عند تسجيل الدخول»):
+// HRMP — حد أخطاء العرض العام (بلاغ المالك 2026-10-19 «صفحة خطأ عند تسجيل الدخول»):
 // بدون هذا الملف، أي استثناء غير ملتقط خلال SSR (مثل فشل قاعدة عابر) يعرض للمستخدم
 // صفحة Next.js الافتراضية الإنجليزية «Application error: a server-side exception has
 // occurred … Digest: N» — انظر بلا الدخول إلى المنصة أصلًا. هذا الحد يلتقط أي خطأ
 // في أي صفحة تحت الجذر (عدا أخطاء الـ root layout نفسها — يلتقطها global-error.tsx)
-// ويعرض صفحة أنيقة بهوية FWMS مع إعادة المحاولة بدل الرفض الكامل.
+// ويعرض صفحة أنيقة بهوية HRMP مع إعادة المحاولة بدل الرفض الكامل.
 //
 // i18n (بلاغ المالك 2026-10-19 «خلل في الترجمة»): النصوص كلها من القواميس الأربع
 // (ar/fr/en/es) عبر useI18n — الحد يُعرض داخل الـ root layout فيظل مزوّد اللغة
@@ -25,20 +25,20 @@ export default function ErrorPage({
 
   useEffect(() => {
     // الخطأ يُسجَّل دائمًا للسجلات (Vercel) — التفاصيل أدناه للبيئة التطويرية فقط
-    console.error("[FWMS][error-boundary] خطأ عرض غير ملتقط:", error);
+    console.error("[HRMP][error-boundary] خطأ عرض غير ملتقط:", error);
   }, [error]);
 
   return (
     <div
       dir={dir}
       lang={locale}
-      className="fwms-hero-gradient relative flex min-h-dvh flex-col items-center justify-center overflow-hidden px-4 py-10"
+      className="hrmp-hero-gradient relative flex min-h-dvh flex-col items-center justify-center overflow-hidden px-4 py-10"
       style={{
         background:
           "linear-gradient(160deg, oklch(0.28 0.04 160) 0%, oklch(0.42 0.09 160) 55%, oklch(0.5 0.1 150) 100%)",
       }}
     >
-      <div className="fwms-zellige absolute inset-0 opacity-50" aria-hidden />
+      <div className="hrmp-zellige absolute inset-0 opacity-50" aria-hidden />
 
       <div className="relative z-10 flex w-full max-w-md flex-col items-center gap-6 text-center">
         {/* أيقونة تحذير مضمّنة — بلا اعتماد على أي حزمة حتى في أسوأ الحالات */}

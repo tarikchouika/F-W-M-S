@@ -1,4 +1,4 @@
-// FWMS — توثيق كل قواعد الأجور دفعة واحدة (للمحاسب — يسبق أول اعتماد لفترة)
+// HRMP — توثيق كل قواعد الأجور دفعة واحدة (للمحاسب — يسبق أول اعتماد لفترة)
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { requirePermission, AccessError } from "@/lib/rbac";

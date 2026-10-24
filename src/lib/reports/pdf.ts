@@ -1,4 +1,4 @@
-// FWMS — مولّد PDF للتقارير (SPEC §4.4.1) على محرّك pdfkit + محرّك Bidi داخلي
+// HRMP — مولّد PDF للتقارير (SPEC §4.4.1) على محرّك pdfkit + محرّك Bidi داخلي
 // ─────────────────────────────────────────────────────────────────────────────
 // لماذا تبديل المحرّك؟ (بلاغ المالك 2026-10-20: «الوثائق بصيغة PDF مشوّهة
 // والعربية معكوسة»، والـDOCX سليم)
@@ -68,7 +68,7 @@ type Ctx = {
 const BRAND = "#0f2242"; // --primary (كحلي عميق — لون أرضية اللوغو)
 const BRAND_SOFT = "#eef1f7"; // --secondary
 const BRAND_TINT = "#f5f7fb"; // مسحة كحلية فاتحة
-const GOLD = "#d4a437"; // --fwms-gold
+const GOLD = "#d4a437"; // --hrmp-gold
 const INK = "#101722"; // --foreground
 const BODY = "#2b3342";
 const MUTED = "#5a6478"; // --muted-foreground
@@ -243,7 +243,7 @@ function hLine(doc: Doc, x: number, y: number, w: number, color: string, thickne
 const LOGO_PIN_PATH =
   "M32 48.23C30.3 43.73 22.4 33.2 22.4 26.5A9.6 9.6 0 1 1 41.6 26.5C41.6 33.2 33.7 43.73 32 48.23Z";
 
-/** شعار FWMS: العلامة الذهبية المعتمدة (PNG شفاف) فوق شريط الهوية الكحلي.
+/** شعار HRMP: العلامة الذهبية المعتمدة (PNG شفاف) فوق شريط الهوية الكحلي.
  *  الاحتياطي المتجهي (نجمة زليج + دبوس) يُرسم فقط إن تعذّر تحميل الصورة (بيئة بلا public/). */
 function drawLogo(doc: Doc, x: number, y: number, size: number, star: string, pin: string, hole: string, mark?: Buffer | null): void {
   if (mark && mark.length > 0) {
@@ -1122,7 +1122,7 @@ export async function renderReportPdf(
     info: {
       Title: meta.refNumber,
       Author: meta.generatedBy,
-      Creator: "FWMS",
+      Creator: "HRMP",
       Subject: meta.verifyUrl,
     },
   });

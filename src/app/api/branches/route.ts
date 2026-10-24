@@ -1,4 +1,4 @@
-// FWMS — الفروع (SPEC §5 و§8 — المرحلة 2): قائمة وإنشاء مع عزل الشركة وتدقيق
+// HRMP — الفروع (SPEC §5 و§8 — المرحلة 2): قائمة وإنشاء مع عزل الشركة وتدقيق
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth/session";

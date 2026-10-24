@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
-# FWMS — تدقيق مفاتيح t() في مكونات المرحلة 6ج مقابل قاموس ar (درس WORKLOG 6أ/6ب:
+# HRMP — تدقيق مفاتيح t() في مكونات المرحلة 6ج مقابل قاموس ar (درس WORKLOG 6أ/6ب:
 # المفاتيح المفقودة من الأربع معًا يمرّ منها فحص التكافؤ — التدقيق الشامل إلزامي نهاية كل جلسة)
 import json
 import re
 import sys
 
 FILES = [
-    "src/components/fwms/regimes-manager.tsx",
-    "src/components/fwms/declaration-specs-manager.tsx",
-    "src/components/fwms/declarations-manager.tsx",
-    "src/components/fwms/payroll-manager.tsx",
+    "src/components/hrmp/regimes-manager.tsx",
+    "src/components/hrmp/declaration-specs-manager.tsx",
+    "src/components/hrmp/declarations-manager.tsx",
+    "src/components/hrmp/payroll-manager.tsx",
 ]
 
 with open("src/i18n/dictionaries/ar.json", encoding="utf-8") as f:

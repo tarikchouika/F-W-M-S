@@ -1,17 +1,17 @@
-// FWMS — صفحة الإعدادات (جولة 2026-10-19): «قريبا» صارت صفحة فعلية
+// HRMP — صفحة الإعدادات (جولة 2026-10-19): «قريبا» صارت صفحة فعلية
 // تبويبان: الملف الشخصي (للجميع) + إعدادات الشركة (company.manage).
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/session";
 import { sessionCan } from "@/lib/rbac";
-import { LOCALE_COOKIE, resolveLocale } from "@/i18n/config";
+import { readLocaleCookie, resolveLocale } from "@/i18n/config";
 import { getDictionary, tServer } from "@/i18n/get-dictionary";
-import { SettingsView } from "@/components/fwms/settings-view";
+import { SettingsView } from "@/components/hrmp/settings-view";
 
 export async function generateMetadata(): Promise<Metadata> {
   const store = await cookies();
-  const dict = getDictionary(resolveLocale(store.get(LOCALE_COOKIE)?.value));
+  const dict = getDictionary(resolveLocale(readLocaleCookie(store)));
   return { title: tServer(dict, "settingsPage.title") };
 }
 

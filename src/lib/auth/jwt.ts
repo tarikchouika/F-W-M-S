@@ -1,7 +1,9 @@
-// FWMS — رموز JWT للجلسات (jose): قصيرة العمر، توقّع HS256
+// HRMP — رموز JWT للجلسات (jose): قصيرة العمر، توقّع HS256
 import { SignJWT, jwtVerify } from "jose";
 
-export const SESSION_COOKIE = "FWMS_SESSION";
+// (إعادة التسمية 2026-10-24): الكوكي باسم المنصة الجديدة — الجلسات قصيرة العمر
+// (12 ساعة) أصلًا فلا فقدان ذو قيمة؛ الكوكي القديم يُترك ينتهي وحده.
+export const SESSION_COOKIE = "HRMP_SESSION";
 export const SESSION_MAX_AGE = 60 * 60 * 12; // 12 ساعة (SPEC §6: JWT قصير العمر)
 
 export type SessionPayload = {
@@ -40,14 +42,14 @@ export async function signSession(payload: SessionPayload): Promise<string> {
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(payload.sub)
     .setIssuedAt()
-    .setIssuer("fwms")
+    .setIssuer("hrmp")
     .setExpirationTime(`${SESSION_MAX_AGE}s`)
     .sign(getSecretKey());
 }
 
 export async function verifySession(token: string): Promise<SessionPayload | null> {
   try {
-    const { payload } = await jwtVerify(token, getSecretKey(), { issuer: "fwms" });
+    const { payload } = await jwtVerify(token, getSecretKey(), { issuer: "hrmp" });
     if (
       typeof payload.sub === "string" &&
       typeof payload.membershipId === "string" &&

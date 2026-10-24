@@ -1,4 +1,4 @@
-// FWMS — إدارة الشركات (SPEC §3 و§8): super_admin فقط — إنشاء الشركات وتعليقها
+// HRMP — إدارة الشركات (SPEC §3 و§8): super_admin فقط — إنشاء الشركات وتعليقها
 // العزل (§3.1): companyId من الجلسة لا من العميل أبدًا
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";

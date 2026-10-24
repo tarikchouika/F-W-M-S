@@ -1,4 +1,4 @@
-// FWMS — خيارات المواقع النشطة للجدولة (المرحلة 3): أسماء فقط لمن يملك scheduling.manage
+// HRMP — خيارات المواقع النشطة للجدولة (المرحلة 3): أسماء فقط لمن يملك scheduling.manage
 // co_admin لا يملك company.manage (قراءة /api/sites الكاملة) لكنه يحتاج أسماء المواقع في تعديلات اليوم
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";

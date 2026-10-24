@@ -1,4 +1,4 @@
-// FWMS — التحكم بالوصول القائم على الأدوار (SPEC §3)
+// HRMP — التحكم بالوصول القائم على الأدوار (SPEC §3)
 // الطبقة الوحيدة للتحقق من الصلاحيات في الخادم — قابلة للاختبار، لا تُكرَّر في الواجهات
 import type { SessionPayload } from "@/lib/auth/jwt";
 
@@ -31,6 +31,8 @@ export const PERMISSIONS = [
   "audit.view", // عرض سجل التدقيق
   "attendance.manage", // مراجعة الحضور وتعديلات الطوارئ
   "scheduling.manage", // تعيين البرامج اليومية
+  "recruitment.manage", // إدارة الوظائف الشاغرة في مشاريع الشركة وطلبات التقديم (طلب المالك 2026-10-24)
+  "seekers.verify", // مصادقة هوية الباحثين عن عمل (أمر المالك الصريح: الأدمن أو السوبر أدمن)
   "self.view", // بيانات المستخدم نفسه فقط
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
@@ -61,6 +63,8 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "audit.view",
     "attendance.manage",
     "scheduling.manage",
+    "recruitment.manage",
+    "seekers.verify",
     "self.view",
   ],
   co_admin: ["attendance.manage", "scheduling.manage", "voice.use", "voice.admin", "location.view", "self.view"],

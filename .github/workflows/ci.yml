@@ -1,4 +1,4 @@
-# FWMS — التكامل المستمر (SPEC §7): lint + build عند كل push
+# HRMP — التكامل المستمر (SPEC §7): lint + build عند كل push
 name: CI
 
 on:

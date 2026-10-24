@@ -1,4 +1,4 @@
-// FWMS — إدارة أعضاء الفريق (المرحلة 9): إضافة/إزالة/عرض — teams.manage أو قيادة الفريق.
+// HRMP — إدارة أعضاء الفريق (المرحلة 9): إضافة/إزالة/عرض — teams.manage أو قيادة الفريق.
 // الإزالة مؤرخة (removedAt — نمط UserMembership) والسجل التاريخي محفوظ.
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";

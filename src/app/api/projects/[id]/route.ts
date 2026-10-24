@@ -1,4 +1,4 @@
-// FWMS — تعديل مشروع/أرشفته/استعادته: عزل الشركة + تحقق ملكية الفرع + تدقيق
+// HRMP — تعديل مشروع/أرشفته/استعادته: عزل الشركة + تحقق ملكية الفرع + تدقيق
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth/session";

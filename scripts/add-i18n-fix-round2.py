@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
-# FWMS — إضافة مفاتيح i18n لجولة إصلاح «خلل الترجمة» الثانية (2026-10-19)
+# HRMP — إضافة مفاتيح i18n لجولة إصلاح «خلل الترجمة» الثانية (2026-10-19)
 # نمط سكربتات المراحل نفسه (add-0.10.3-i18n.py): idempotent — لا يكرر ولا يستبدل الموجود.
 import json, collections, sys, io
 
-BASE = "/home/z/my-project/fwms/src/i18n/dictionaries"
+BASE = "/home/z/my-project/hrmp/src/i18n/dictionaries"
 
 # المفاتيح الجديدة: (شجرة، مفتاح، القيم بالترتيب ar/fr/en/es)
 NEW = {
     "meta": {
         "title": {
-            "ar": "FWMS — نظام إدارة القوى العاملة الميدانية",
-            "fr": "FWMS — Gestion de la main-d'œuvre terrain",
-            "en": "FWMS — Field Workforce Management",
-            "es": "FWMS — Gestión de la mano de obra de campo",
+            "ar": "HRMP — نظام إدارة القوى العاملة الميدانية",
+            "fr": "HRMP — Gestion de la main-d'œuvre terrain",
+            "en": "HRMP — Field Workforce Management",
+            "es": "HRMP — Gestión de la mano de obra de campo",
         },
         "description": {
             "ar": "منصة مغربية متعددة الشركات لإدارة العمالة الميدانية: حضور جغرافي، جدولة، أجور بقواعد مدونة الشغل (CNSS/AMO/IR)، وتصاريح رسمية — بأربع لغات.",

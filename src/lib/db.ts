@@ -26,7 +26,7 @@ import { join } from 'node:path'
 //   4) البيانات مؤقتة لكل «نسخة مثيل» (instance) — تُصفَّر مع كل نشر جديد؛ هذا هو
 //      عقد «معاينة» المعلن في DEPLOYMENT.md، والبيانات الحقيقية تبقى في الهاتف.
 const PREVIEW_SNAPSHOT_REL = 'infra/vercel/preview.db'
-const PREVIEW_RUNTIME_NAME = 'fwms-preview.db'
+const PREVIEW_RUNTIME_NAME = 'hrmp-preview.db'
 let previewNoticePrinted = false
 
 function bootstrapServerlessPreview(): void {
@@ -40,7 +40,7 @@ function bootstrapServerlessPreview(): void {
   const snapshot = join(process.cwd(), PREVIEW_SNAPSHOT_REL)
   if (!existsSync(snapshot)) {
     console.warn(
-      '[FWMS][preview] DATABASE_URL غير صالحة على هذا النشر ولا توجد لقطة معاينة ' +
+      '[HRMP][preview] DATABASE_URL غير صالحة على هذا النشر ولا توجد لقطة معاينة ' +
         `(infra/vercel/preview.db) — أعد توليدها بـ scripts/regen-preview-db.sh`,
     )
     return
@@ -74,12 +74,12 @@ function bootstrapServerlessPreview(): void {
     if (!previewNoticePrinted) {
       previewNoticePrinted = true
       console.warn(
-        `[FWMS][preview] قاعدة معاينة مؤقتة من لقطة المستودع → ${target} ` +
+        `[HRMP][preview] قاعدة معاينة مؤقتة من لقطة المستودع → ${target} ` +
           '(بيانات عرض مؤقتة تُصفَّر مع النشر — الإنتاج الحقيقي على الخادم المحلي بـ DATABASE_URL خاصة)',
       )
     }
   } catch (e) {
-    console.warn('[FWMS][preview] فشل تجهيز قاعدة المعاينة:', e)
+    console.warn('[HRMP][preview] فشل تجهيز قاعدة المعاينة:', e)
   }
 }
 
@@ -114,7 +114,7 @@ if (process.env.NODE_ENV === 'production') {
     db.$queryRawUnsafe('PRAGMA journal_mode=WAL;')
       .then((rows) => {
         const mode = (rows as unknown as Array<{ journal_mode?: string }>)[0]?.journal_mode;
-        console.warn(`[FWMS][db] journal_mode = ${mode ?? 'unknown'}`);
+        console.warn(`[HRMP][db] journal_mode = ${mode ?? 'unknown'}`);
       })
       .catch((e) => {
         // قد يفشل إن كان هناك معاملة مفتوحة على اتصال آخر ⇒ إعادة محاولة واحدة
@@ -122,7 +122,7 @@ if (process.env.NODE_ENV === 'production') {
           setTimeout(() => enableWal(attempt + 1), 500);
           return;
         }
-        console.warn('[FWMS][db] تعذّر تفعيل WAL:', e instanceof Error ? e.message : e);
+        console.warn('[HRMP][db] تعذّر تفعيل WAL:', e instanceof Error ? e.message : e);
       });
   };
   enableWal(1);

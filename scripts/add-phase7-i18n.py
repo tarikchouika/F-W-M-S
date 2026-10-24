@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# FWMS — إضافة مفاتيح i18n للمرحلة 7 (التقارير والتصدير) إلى القواميس الأربع
+# HRMP — إضافة مفاتيح i18n للمرحلة 7 (التقارير والتصدير) إلى القواميس الأربع
 # التشغيل: python3 scripts/add-phase7-i18n.py
 # يشمل: واجهة صفحة التقارير + أزرار التصدير + نصوص المستندات (reports.doc.*) + أسماء الشهور + صفحة التحقق العامة
 import json
@@ -757,10 +757,10 @@ NEW = {
         "es": "de",
     },
     "reports.doc.footerOfficial": {
-        "ar": "وثيقة مولَّدة إلكترونيًا من نظام FWMS",
-        "fr": "Document généré électroniquement par FWMS",
-        "en": "Electronically generated document by FWMS",
-        "es": "Documento generado electrónicamente por FWMS",
+        "ar": "وثيقة مولَّدة إلكترونيًا من نظام HRMP",
+        "fr": "Document généré électroniquement par HRMP",
+        "en": "Electronically generated document by HRMP",
+        "es": "Documento generado electrónicamente por HRMP",
     },
     "reports.doc.qrCaption": {
         "ar": "امسح للتحقق من الأصالة",

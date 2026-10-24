@@ -1,4 +1,4 @@
-// FWMS — إسناد العمال لمسارات (SPEC §12): قائمة + إسناد بتاريخ سريان
+// HRMP — إسناد العمال لمسارات (SPEC §12): قائمة + إسناد بتاريخ سريان
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { requirePermission, AccessError } from "@/lib/rbac";

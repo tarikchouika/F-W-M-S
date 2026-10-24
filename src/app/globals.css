@@ -15,9 +15,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  /* رموز FWMS الدلالية — ذهبي مغربي (زوج الهوية: أخضر + ذهب) */
-  --color-gold: var(--fwms-gold);
-  --color-gold-soft: var(--fwms-gold-soft);
+  /* رموز HRMP الدلالية — ذهبي مغربي (زوج الهوية: أخضر + ذهب) */
+  --color-gold: var(--hrmp-gold);
+  --color-gold-soft: var(--hrmp-gold-soft);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -89,14 +89,14 @@
   --sidebar-accent-foreground: oklch(0.97 0.008 90);
   --sidebar-border: oklch(1 0 0 / 12%);
   --sidebar-ring: oklch(0.45 0.08 255);
-  /* ألوان FWMS الدلالية */
-  --fwms-gold: oklch(0.76 0.14 80);
-  --fwms-gold-soft: oklch(0.94 0.045 85);
-  --fwms-navy: oklch(0.33 0.07 255);
-  --fwms-navy-deep: oklch(0.2 0.05 255);
+  /* ألوان HRMP الدلالية */
+  --hrmp-gold: oklch(0.76 0.14 80);
+  --hrmp-gold-soft: oklch(0.94 0.045 85);
+  --hrmp-navy: oklch(0.33 0.07 255);
+  --hrmp-navy-deep: oklch(0.2 0.05 255);
 }
 
-/* ── الوضع القاتم — هوية FWMS الجديدة (كحلي عميق + ذهب) لا اللوحة الرمادية الافتراضية.
+/* ── الوضع القاتم — هوية HRMP الجديدة (كحلي عميق + ذهب) لا اللوحة الرمادية الافتراضية.
    قاعدة: كل قيمة مأخوذة من نظيرتها الفاتحة بخفض الإضاءة ورفع الحدّة قليلًا حتى تبقى
    الهوية (hue 255 كحلي / hue 80 ذهب) معروضة، لا أن تُستبدل بلون عام. ── */
 .dark {
@@ -134,11 +134,11 @@
   --sidebar-accent-foreground: oklch(0.965 0.012 90);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.8 0.13 80);
-  /* ألوان FWMS الدلالية — الذهب يُرفع إضاءةً ليبقى مقروءًا على الكحلي */
-  --fwms-gold: oklch(0.83 0.13 82);
-  --fwms-gold-soft: oklch(0.3 0.05 82);
-  --fwms-navy: oklch(0.22 0.05 255);
-  --fwms-navy-deep: oklch(0.14 0.035 255);
+  /* ألوان HRMP الدلالية — الذهب يُرفع إضاءةً ليبقى مقروءًا على الكحلي */
+  --hrmp-gold: oklch(0.83 0.13 82);
+  --hrmp-gold-soft: oklch(0.3 0.05 82);
+  --hrmp-navy: oklch(0.22 0.05 255);
+  --hrmp-navy-deep: oklch(0.14 0.035 255);
 }
 
 @layer base {
@@ -156,7 +156,7 @@
   html {
     scroll-behavior: smooth;
   }
-  /* ── العلامة المائية العامة — لوغو FWMS الذهبي على كل صفحات المنصة ──
+  /* ── العلامة المائية العامة — لوغو HRMP الذهبي على كل صفحات المنصة ──
      الدرس المرتبط: العنصر بـz-index سالب داخل سياق تكديس ⇒ يظهر فوق خلفية الصفحة
      ولا يغطّي أي عنصر تفاعلي (pointer-events: none). */
   body::before {
@@ -187,10 +187,10 @@
   }
 }
 
-/* ── أدوات FWMS ── */
+/* ── أدوات HRMP ── */
 
 /* نمط هندسي مستوحى من الزليج المغربي (خلفية خفيفة) — بألوان الهوية الجديدة (كحلي + ذهب) */
-.fwms-zellige {
+.hrmp-zellige {
   background-image:
     radial-gradient(circle at 0 0, oklch(0.76 0.14 80 / 0.10) 0 2px, transparent 3px),
     radial-gradient(circle at 100% 100%, oklch(0.76 0.14 80 / 0.10) 0 2px, transparent 3px),
@@ -200,19 +200,19 @@
 }
 
 /* تدرّج البطل — كحلي عميق بلمسة ذهبية (لون اللوغو) */
-.fwms-hero-gradient {
+.hrmp-hero-gradient {
   background:
     radial-gradient(120% 90% at 15% 10%, oklch(0.42 0.09 255 / 0.55) 0%, transparent 55%),
     linear-gradient(160deg, oklch(0.18 0.045 255) 0%, oklch(0.27 0.07 255) 55%, oklch(0.33 0.08 250) 100%);
 }
 /* الوضع القاتم: التدرّج نفسه يُعمَّق (يبقى الكحلي توقيعًا للهوية) حتى تباين البطاقة والنص */
-.dark .fwms-hero-gradient {
+.dark .hrmp-hero-gradient {
   background:
     radial-gradient(120% 90% at 15% 10%, oklch(0.34 0.08 255 / 0.45) 0%, transparent 55%),
     linear-gradient(160deg, oklch(0.13 0.035 255) 0%, oklch(0.19 0.05 255) 55%, oklch(0.23 0.055 250) 100%);
 }
 /* الزليج: النقاط الذهبية خفيفة فوق الكحلي */
-.dark .fwms-zellige {
+.dark .hrmp-zellige {
   background-image:
     radial-gradient(circle at 0 0, oklch(0.83 0.13 82 / 0.09) 0 2px, transparent 3px),
     radial-gradient(circle at 100% 100%, oklch(0.83 0.13 82 / 0.09) 0 2px, transparent 3px),
@@ -222,30 +222,30 @@
 }
 
 /* خط ذهبي رقيق */
-.fwms-gold-line {
+.hrmp-gold-line {
   background: linear-gradient(90deg, transparent, oklch(0.76 0.14 80 / 0.7), transparent);
   height: 1px;
 }
 
 /* شارة زجاجية */
-.fwms-glass {
+.hrmp-glass {
   background: oklch(1 0 0 / 0.08);
   backdrop-filter: blur(8px);
   border: 1px solid oklch(1 0 0 / 0.15);
 }
 
 /* توهج بطاقة عند التحويم */
-.fwms-card-hover {
+.hrmp-card-hover {
   transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
 }
-.fwms-card-hover:hover {
+.hrmp-card-hover:hover {
   transform: translateY(-3px);
   box-shadow: 0 12px 32px -16px oklch(0.33 0.07 255 / 0.4);
   border-color: oklch(0.76 0.14 80 / 0.45);
 }
 
 /* شريط الفوتر — كحلي عميق (توقيع الهوية) */
-.fwms-footer-band {
+.hrmp-footer-band {
   background:
     radial-gradient(120% 140% at 100% 0%, oklch(0.3 0.07 255 / 0.9) 0%, transparent 60%),
     linear-gradient(180deg, oklch(0.18 0.045 255) 0%, oklch(0.13 0.035 255) 100%);
@@ -253,7 +253,7 @@
 }
 
 /* احترام RTL للحواف المنطقية */
-[dir="rtl"] .fwms-flip-rtl {
+[dir="rtl"] .hrmp-flip-rtl {
   transform: scaleX(-1);
 }
 
@@ -272,17 +272,17 @@
 
 /* الإزاحة المطبَّقة مرة واحدة على جذر المستند (box-sizing: border-box في preflight
  * فلا يتضخّم الارتفاع) — كل صفحات المنصة تتوارثها بلا لمس أي تنسيق داخلي. */
-html.fwms-native {
+html.hrmp-native {
   height: 100%;
   overscroll-behavior-y: none;
 }
-html.fwms-native body {
+html.hrmp-native body {
   min-height: 100dvh;
   padding-top: var(--fwms-inset-top);
   padding-bottom: var(--fwms-inset-bottom);
 }
 
 /* الترويسة الملتصقة: تُلصق **تحت** شريط الحالة لا تحته (خلفيتها تمتد إلى الحافة) */
-html.fwms-native .fwms-sticky-top {
+html.hrmp-native .hrmp-sticky-top {
   top: var(--fwms-inset-top);
 }

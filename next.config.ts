@@ -56,7 +56,10 @@ const nextConfig: NextConfig = {
   // هو فيتطابق مع Origin أصلًا.
   experimental: {
     serverActions: {
-      allowedOrigins: ["fwms-dg8.pages.dev"],
+      // (إعادة التسمية 2026-10-24): بوابات المنصة الجديدة hrmp.pages.dev
+      // (Cloudflare Pages — تخدم الخادم المرجعي) و hrmp.vercel.app (نشر Vercel
+      // باسم المشروع الجديد) تُضاف هنا، والقديمة تبقى حية خلال الانتقال.
+      allowedOrigins: ["hrmp.pages.dev", "hrmp.vercel.app", "fwms-dg8.pages.dev"],
     },
   },
   // ترويسات أمنية (SPEC §6 + docs/SECURITY.md — المرحلة 8): HSTS (النفق/الوكيل HTTPS دائمًا)

@@ -1,4 +1,4 @@
-// FWMS — إرسال الفترة للمراجعة (SPEC §4.3: مسودة → مراجعة — يراها المحاسب)
+// HRMP — إرسال الفترة للمراجعة (SPEC §4.3: مسودة → مراجعة — يراها المحاسب)
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { requirePermission, AccessError } from "@/lib/rbac";

@@ -1,4 +1,4 @@
-// FWMS — سحب منحة محاسب خارجي (SPEC §3.3: قابلة للسحب)
+// HRMP — سحب منحة محاسب خارجي (SPEC §3.3: قابلة للسحب)
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { requirePermission, AccessError } from "@/lib/rbac";

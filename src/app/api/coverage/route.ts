@@ -1,4 +1,4 @@
-// FWMS — لوحة التغطية السريعة (SPEC §4.1 و§8 — المرحلة 5): ورديات يوم + حالة حضور المعيَّنين
+// HRMP — لوحة التغطية السريعة (SPEC §4.1 و§8 — المرحلة 5): ورديات يوم + حالة حضور المعيَّنين
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { requirePermission, AccessError } from "@/lib/rbac";

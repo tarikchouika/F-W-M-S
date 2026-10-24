@@ -1,4 +1,4 @@
-// FWMS — قواعد الأجور (SPEC §11: بيانات بتواريخ سريان): عرض للمحاسب/المدير مع حالة التوثيق
+// HRMP — قواعد الأجور (SPEC §11: بيانات بتواريخ سريان): عرض للمحاسب/المدير مع حالة التوثيق
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { requirePermission, AccessError } from "@/lib/rbac";

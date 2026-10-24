@@ -1,4 +1,4 @@
-// FWMS — توليد تقرير (SPEC §4.4.1): التوليد في الخادم + تسجيل كل تصدير + الثبات
+// HRMP — توليد تقرير (SPEC §4.4.1): التوليد في الخادم + تسجيل كل تصدير + الثبات
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { AccessError } from "@/lib/rbac";

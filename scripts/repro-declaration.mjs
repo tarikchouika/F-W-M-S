@@ -1,6 +1,6 @@
-// FWMS — إعادة إنتاج دورة رواتب كاملة + تصريح معتمد لاختبار تقرير المطابقة
+// HRMP — إعادة إنتاج دورة رواتب كاملة + تصريح معتمد لاختبار تقرير المطابقة
 // (منهجية المشروع: إعادة إنتاج قبل العلاج)
-// التشغيل: bun /home/z/my-project/fwms/scripts/repro-declaration.mjs
+// التشغيل: bun /home/z/my-project/hrmp/scripts/repro-declaration.mjs
 import { PrismaClient } from "@prisma/client";
 
 const db = new PrismaClient();

@@ -1,4 +1,4 @@
-# FWMS — بناء تطبيق أندرويد تلقائيًا + إصدار Release برابط دائم
+# HRMP — بناء تطبيق أندرويد تلقائيًا + إصدار Release برابط دائم
 # ---------------------------------------------------------------------------
 # طلب المالك 2026-10-19: «يجب أن يشتغل سير بناء ملف apk بشكل آلي كلما نُشرت
 # نسخة محسّنة أو أي تحديث، وينشئ رابطًا دائمًا لتحميل آخر نسخة».
@@ -32,7 +32,7 @@
 #   - رفع الإصدار = Release/وسم جديد يصير «الأحدث» تلقائيًا (--latest).
 #
 # الرابط الدائم لآخر نسخة (اسم أصل ثابت — لا يتغير أبدًا):
-#   https://github.com/tarikchouika/F-W-M-S/releases/latest/download/FWMS.apk
+#   https://github.com/tarikchouika/F-W-M-S/releases/latest/download/HRMP.apk
 #
 # التوقيع: أسرار المستودع الأربعة (ANDROID_KEYSTORE_*) — مفتاح واحد ثابت عبر
 # كل البناءات (يُمكّن التحديث فوق التثبيتات القائمة). وإن غابت الأسرار وُلِّد
@@ -59,7 +59,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  APP_NAME: "FWMS"
+  APP_NAME: "HRMP"
   PACKAGE_ID: "ma.fwms.app"
   KEY_ALIAS: "fwms-release"
 
@@ -96,7 +96,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
           {
             echo "APP_VERSION=$APP_VERSION"
-            echo "FWMS_VERSION_CODE=$VERSION_CODE"
+            echo "HRMP_VERSION_CODE=$VERSION_CODE"
           } >> "$GITHUB_ENV"
           echo "→ الإصدار: $APP_VERSION (versionCode $VERSION_CODE)"
 
@@ -118,14 +118,14 @@ jobs:
             <head>
               <meta charset="utf-8" />
               <meta name="viewport" content="width=device-width, initial-scale=1" />
-              <title>FWMS</title>
+              <title>HRMP</title>
               <style>
                 body { margin:0; min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; font-family:system-ui,sans-serif; background:#f8faf6; color:#14532d; text-align:center; }
                 a { color:#14532d; font-weight:700; }
               </style>
             </head>
             <body>
-              <h1>FWMS</h1>
+              <h1>HRMP</h1>
               <p data-i18n="hint">يتطلب التطبيق اتصالًا بالإنترنت لفتح المنصة.</p>
               <a href="REPLACE_ME" id="open" data-i18n="open">فتح المنصة في المتصفح</a>
               <script>
@@ -162,7 +162,7 @@ jobs:
           # درس التشغيل الأول: cap init أنشأ capacitor.config.ts (لا .json) ففشلت قراءته.
           cat > package.json <<PKG
           {
-            "name": "fwms-android-shell",
+            "name": "hrmp-android-shell",
             "version": "$APP_VERSION",
             "private": true
           }
@@ -217,7 +217,7 @@ jobs:
           # والظهور عابرًا بالسحب ثم الاختفاء تلقائيًا (BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE).
           # قياسات الشرائط المخفية = صفر ⇒ الشاشة ممتلئة 100%؛ ولوحة المفاتيح
           # وحدها تُحقن (--fwms-inset-bottom) مع تمرير الحقل النشط فوقها.
-          MAIN="android/app/src/main/java/ma/fwms/app/MainActivity.java"
+          MAIN="android/app/src/main/java/ma/hrmp/app/MainActivity.java"
           cat > "$MAIN" <<'JAVA'
           package ma.fwms.app;
 
@@ -231,7 +231,7 @@ jobs:
           import com.getcapacitor.WebViewListener;
 
           /**
-           * FWMS — نشاط التطبيق (بلاغ المالك 2026-10-24):
+           * HRMP — نشاط التطبيق (بلاغ المالك 2026-10-24):
            * وضع غامر كامل (Sticky Immersive): شريطا النظام يختفيان عند فتح
            * التطبيق فتمتد الواجهة على 100% من الشاشة، ويظهران عابرَين عند
            * السحب من الأعلى أو الأسفل (شبه شفافين فوق المحتوى) ثم يختفيان
@@ -470,7 +470,7 @@ jobs:
             grep -q "@capacitor/$P" android/app/src/main/assets/capacitor.plugins.json || { echo "✗ إضافة $P غير مُسجَّلة"; exit 1; }
           done
 
-      - name: Brand the launcher icon (FWMS logo — أمر المالك 2026-10-23)
+      - name: Brand the launcher icon (HRMP logo — أمر المالك 2026-10-23)
         working-directory: android-shell
         run: |
           # استبدال أيقونات Capacitor الافتراضية بأيقونات اللوغو المعتمد المولَّدة
@@ -515,11 +515,11 @@ jobs:
             echo "KEYSTORE_FROM_SECRET=true" >> "$GITHUB_ENV"
           else
             echo "→ ⚠ غياب الأسرار: توليد مفتاح ابتدائي (غير مستحسن — يكسر استمرارية التوقيع)"
-            STOREPASS="Fwms$(openssl rand -hex 8)"
+            STOREPASS="Hrmp$(openssl rand -hex 8)"
             keytool -genkeypair -v \
               -storetype PKCS12 -keystore android/android.keystore -storepass "$STOREPASS" \
               -alias "$KEY_ALIAS" -keypass "$STOREPASS" -keyalg RSA -keysize 2048 -validity 10000 \
-              -dname "CN=FWMS, OU=Field Workforce, O=FWMS, L=Casablanca, C=MA" >/dev/null 2>&1
+              -dname "CN=HRMP, OU=Field Workforce, O=HRMP, L=Casablanca, C=MA" >/dev/null 2>&1
             printf 'storeFile=android.keystore\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' \
               "$STOREPASS" "$KEY_ALIAS" "$STOREPASS" \
               > android/keystore.properties
@@ -556,7 +556,7 @@ jobs:
             }
           }
           GRADLE
-          sed -i "s/__VC__/${FWMS_VERSION_CODE:-1}/; s/__VN__/${APP_VERSION:-0.0.0}/" app/build.gradle
+          sed -i "s/__VC__/${HRMP_VERSION_CODE:-1}/; s/__VN__/${APP_VERSION:-0.0.0}/" app/build.gradle
           echo "→ آخر 25 سطرًا من app/build.gradle:"
           tail -25 app/build.gradle
 
@@ -579,15 +579,15 @@ jobs:
             exit 1
           fi
           mkdir -p dist
-          cp "$APK" dist/FWMS.apk
+          cp "$APK" dist/HRMP.apk
           echo "→ المصدر: $APK"
           ls -la dist/
-          sha256sum dist/FWMS.apk
+          sha256sum dist/HRMP.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: fwms-android-apk
+          name: hrmp-android-apk
           path: dist/*.apk
           if-no-files-found: error
 
@@ -620,27 +620,27 @@ jobs:
           APP_VERSION: ${{ steps.version.outputs.app_version }}
         run: |
           TAG="v$APP_VERSION"
-          PERMALINK="https://github.com/tarikchouika/F-W-M-S/releases/latest/download/FWMS.apk"
-          NOTES="تطبيق أندرويد FWMS — غلاف Capacitor يشير إلى الخادم المرجعي (fwms.tarikc.workers.dev): كود واحد وسلوك واحد (SPEC §7).
+          PERMALINK="https://github.com/tarikchouika/HRMP/releases/latest/download/HRMP.apk"
+          NOTES="تطبيق أندرويد HRMP — غلاف Capacitor يشير إلى الخادم المرجعي (fwms.tarikc.workers.dev): كود واحد وسلوك واحد (SPEC §7).
 
           الوضع الغامر: شريطا النظام يختفيان عند فتح التطبيق (واجهة 100% من الشاشة) ويظهران عابرَين بالسحب من الأعلى/الأسفل ثم يختفيان تلقائيًا.
 
           الرابط الدائم لآخر نسخة (لا يتغير أبدًا):
           $PERMALINK
 
-          - الإصدار: v$APP_VERSION (versionCode $FWMS_VERSION_CODE)
+          - الإصدار: v$APP_VERSION (versionCode $HRMP_VERSION_CODE)
           - البناء من commit: ${GITHUB_SHA::7} بتاريخ $(date -u '+%Y-%m-%d %H:%M UTC')
           - التوقيع: $([ "$KEYSTORE_FROM_SECRET" = "true" ] && echo 'مفتاح ثابت من أسرار المستودع' || echo 'مفتاح ابتدائي مؤقت (غير مستحبن)')"
           if gh release view "$TAG" >/dev/null 2>&1; then
             echo "→ الإصدار $TAG قائم — تحديث أصوله بنسخة هذا البناء (--clobber)"
-            gh release edit "$TAG" --title "FWMS $APP_VERSION — Android" --notes "$NOTES" --latest || true
+            gh release edit "$TAG" --title "HRMP $APP_VERSION — Android" --notes "$NOTES" --latest || true
           else
             echo "→ إنشاء الإصدار $TAG"
             gh release create "$TAG" \
-              --title "FWMS $APP_VERSION — Android" \
+              --title "HRMP $APP_VERSION — Android" \
               --notes "$NOTES" \
               --target "$GITHUB_SHA" \
               --latest
           fi
-          gh release upload "$TAG" dist/FWMS.apk --clobber
+          gh release upload "$TAG" dist/HRMP.apk --clobber
           echo "✓ الرابط الدائم لآخر نسخة: $PERMALINK"

@@ -1,4 +1,4 @@
-// FWMS — تفعيل مواصفة (SPEC §4.6): المحاسب يعتمد → تسحب المفعّلة السابقة — العينة لا تُفعَّل في الإنتاج
+// HRMP — تفعيل مواصفة (SPEC §4.6): المحاسب يعتمد → تسحب المفعّلة السابقة — العينة لا تُفعَّل في الإنتاج
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { requirePermission, AccessError } from "@/lib/rbac";

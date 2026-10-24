@@ -1,4 +1,4 @@
-// FWMS — اختبار API للمرحلة 8 (SPEC §3.2 و§8): ملكية المنصة + white-label + نقل الملكية التجريبي
+// HRMP — اختبار API للمرحلة 8 (SPEC §3.2 و§8): ملكية المنصة + white-label + نقل الملكية التجريبي
 // التشغيل (قاعدة اختبار مستقلة — لا تلمس قاعدة التطوير):
 //   rm -f db/test-phase8.db*
 //   DATABASE_URL=file:$(pwd)/db/test-phase8.db node_modules/.bin/prisma db push --skip-generate
@@ -100,7 +100,7 @@ ok(r.status === 403, "ownership: المدير 403 (platform.manage للمالك 
 
 r = await call(owner, "GET", "/api/platform/ownership");
 ok(r.status === 200, "ownership: 200 للمالك");
-ok(r.json?.owner?.legalName === "FWMS Platform Owner (Demo)", "identity: الاسم القانوني من البذور", r.json?.owner?.legalName);
+ok(r.json?.owner?.legalName === "HRMP Platform Owner (Demo)", "identity: الاسم القانوني من البذور", r.json?.owner?.legalName);
 ok(r.json?.activeTransfer === null, "status: لا نقل جارٍ");
 ok(r.json?.freeze === false, "status: لا تجميد");
 console.log("✓ RBAC: super_admin حصرًا + الحالة الأولية سليمة");

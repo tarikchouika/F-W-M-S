@@ -1,4 +1,4 @@
-// FWMS — تعديل قالب وردية/أرشفته: عزل الشركة + تحقق المدة بعد الدمج + تدقيق
+// HRMP — تعديل قالب وردية/أرشفته: عزل الشركة + تحقق المدة بعد الدمج + تدقيق
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth/session";

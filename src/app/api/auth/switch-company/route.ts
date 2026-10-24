@@ -1,4 +1,4 @@
-// FWMS — تبديل الشركة النشطة (SPEC §3.1): صريح، لعضوية سارية فقط، ويُسجَّل في التدقيق
+// HRMP — تبديل الشركة النشطة (SPEC §3.1): صريح، لعضوية سارية فقط، ويُسجَّل في التدقيق
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";

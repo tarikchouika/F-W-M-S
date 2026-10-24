@@ -10,12 +10,12 @@ import { localizedName, localizeRow, localizeNested } from "@/lib/localized-name
 import { getUiLocale } from "@/i18n/ui-locale";
 import { db } from "@/lib/db";
 import { APP_VERSION } from "@/lib/version";
-import { LOCALE_COOKIE, resolveLocale } from "@/i18n/config";
+import { readLocaleCookie, resolveLocale } from "@/i18n/config";
 import { getDictionary, tServer } from "@/i18n/get-dictionary";
 
 export async function generateMetadata(): Promise<Metadata> {
   const store = await cookies();
-  const dict = getDictionary(resolveLocale(store.get(LOCALE_COOKIE)?.value));
+  const dict = getDictionary(resolveLocale(readLocaleCookie(store)));
   return { title: tServer(dict, "dashboard.title") };
 }
 
@@ -34,7 +34,7 @@ export default async function DashboardPage() {
   if (!session) redirect("/login");
 
   const cookieStore = await cookies();
-  const locale = resolveLocale(cookieStore.get(LOCALE_COOKIE)?.value);
+  const locale = resolveLocale(readLocaleCookie(cookieStore));
   const dict = getDictionary(locale);
   // (بلاغ «خلل الترجمة» 2026-10-19): الاستيفاء صار داخل القاموس — لا فاصلة عربية مثبتة
   const t = (key: string, params?: Record<string, string | number>) => tServer(dict, key, params);
@@ -103,7 +103,7 @@ export default async function DashboardPage() {
       {/* الإحصاءات — الجوال: عمودان (كانا عمودًا واحدًا يلتهم الشاشة) — سطح المكتب: أربعة */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {stats.map((s) => (
-          <Card key={s.labelKey} className="fwms-card-hover border-border/70">
+          <Card key={s.labelKey} className="hrmp-card-hover border-border/70">
             <CardContent className="flex items-center justify-between gap-2 p-4 sm:gap-3 sm:p-5">
               <div className="flex min-w-0 flex-col">
                 <span className="text-2xl font-extrabold tabular-nums text-foreground" dir="ltr">

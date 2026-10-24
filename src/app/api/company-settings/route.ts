@@ -1,4 +1,4 @@
-// FWMS — إعدادات الشركة (CompanySettings): قراءتها وتعديلها لمن يملك company.manage
+// HRMP — إعدادات الشركة (CompanySettings): قراءتها وتعديلها لمن يملك company.manage
 // (جولة 2026-10-19): كانت بلا واجهة إطلاقًا — هذه بوابة صفحة الإعدادات.
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";

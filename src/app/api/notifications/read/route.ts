@@ -1,4 +1,4 @@
-// FWMS — تعليم الإشعارات مقروءة (المرحلة 5): معرفات محددة أو الكل
+// HRMP — تعليم الإشعارات مقروءة (المرحلة 5): معرفات محددة أو الكل
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getSession } from "@/lib/auth/session";

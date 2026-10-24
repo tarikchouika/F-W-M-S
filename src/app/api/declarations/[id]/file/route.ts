@@ -1,4 +1,4 @@
-// FWMS — قراءة الملف المُصدَّر (المحاسب — وثيقة قانونية ثابتة + hash للتحقق)
+// HRMP — قراءة الملف المُصدَّر (المحاسب — وثيقة قانونية ثابتة + hash للتحقق)
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { requirePermission, AccessError } from "@/lib/rbac";
@@ -11,14 +11,14 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     requirePermission(session, "declarations.export");
     const file = await getDeclarationFileContent(session!, id);
     const body = file.content;
-    const filename = `fwms-${file.format}-${file.sha256.slice(0, 12)}.${file.format === "xml" ? "xml" : "txt"}`;
+    const filename = `hrmp-${file.format}-${file.sha256.slice(0, 12)}.${file.format === "xml" ? "xml" : "txt"}`;
     return new NextResponse(body, {
       status: 200,
       headers: {
         "Content-Type": file.format === "xml" ? "application/xml; charset=utf-8" : "text/plain; charset=utf-8",
         "Content-Disposition": `attachment; filename="${filename}"`,
-        "X-Fwms-Spec-Version": String(file.specVersion),
-        "X-Fwms-Sha256": file.sha256,
+        "X-Hrmp-Spec-Version": String(file.specVersion),
+        "X-Hrmp-Sha256": file.sha256,
       },
     });
   } catch (error) {

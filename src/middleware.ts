@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-// FWMS — وسيط لغة الرابط (?lang=): SSR صحيح من الطلب الأول
+// HRMP — وسيط لغة الرابط (?lang=): SSR صحيح من الطلب الأول
 // ---------------------------------------------------------------------------
 // بلاغ المالك «خلل الترجمة» 2026-10-19 (الجولة الثالثة): /login?lang=fr كان
 // يعرض نصًّا فرنسيًّا داخل <html lang="ar" dir="rtl"> — لأن الجذر (layout) يقرأ
@@ -19,7 +19,11 @@ import { NextResponse, type NextRequest } from "next/server";
 // يمرّرها إلى الخادم (x-middleware-request-*) — راجع spec-extension/response.js.
 
 const LOCALES = ["ar", "fr", "en", "es"] as const;
-const LOCALE_COOKIE = "FWMS_LOCALE";
+// (إعادة التسمية 2026-10-24): الكوكي الجديد باسم المنصة الجديدة، مع كتابة الكوكي
+// القديم أيضًا في زمن الانتقال — زوار ما قبل التسمية لا يفقدون تفضيل لغتهم
+// (readLocaleCookie في i18n/config يقرأ الجديد ثم القديم).
+const LOCALE_COOKIE = "HRMP_LOCALE";
+const LEGACY_LOCALE_COOKIE = "FWMS_LOCALE";
 
 export function middleware(request: NextRequest) {
   const lang = request.nextUrl.searchParams.get("lang");
@@ -43,6 +47,11 @@ export function middleware(request: NextRequest) {
     maxAge: 60 * 60 * 24 * 365,
     sameSite: "lax",
   });
+  response.cookies.set(LEGACY_LOCALE_COOKIE, lang, {
+    path: "/",
+    maxAge: 60 * 60 * 24 * 365,
+    sameSite: "lax",
+  });
   return response;
 }
 
@@ -53,5 +62,6 @@ export const config = {
   // (جولة 2026-10-19): الصفحات العامة القانونية والدليل تقبل ?lang= كذلك —
   // نفس آلية صفحة الدخول (كوكي طلب + استجابة، بلا وميض).
   // (جولة 2026-10-24): صفحة تحميل تطبيق أندرويد /app — نفس الآلية.
-  matcher: ["/login", "/verify/:path*", "/legal/:path*", "/guide", "/app"],
+  // (جولة إعادة التسمية 2026-10-24): قسم الوظائف العام /jobs — نفس الآلية.
+  matcher: ["/login", "/verify/:path*", "/legal/:path*", "/guide", "/app", "/jobs/:path*"],
 };

@@ -1,4 +1,4 @@
-// FWMS — كشف قيم القواميس غير المترجمة/المتسربة بين اللغات
+// HRMP — كشف قيم القواميس غير المترجمة/المتسربة بين اللغات
 // 1) قيمة fr/en/es مطابقة تماماً لقيمة ar (نص عربي تسرب للغات الأخرى)
 // 2) قيمة ar تحتوي نصاً لاتينياً واسعاً (نص أجنبي داخل العربية)
 // 3) قيمة fr/en/es مطابقة لقيمة en (قيم منسوخة بلا ترجمة بين اللغات اللاتينية)
@@ -25,7 +25,7 @@ const arabicRe = /[\u0600-\u06FF]/;
 const latinWordRe = /[A-Za-z]{4,}/; // كلمة لاتينية من 4 أحرف فأكثر
 
 // أسماء علم/مختصات مقبولة في العربية (لا تُعد خللاً)
-const whitelistAr = /^(MAD|CNSS|AMO|IR|DGI|SIM|CNIE|CIN|PDF|XML|XSD|JSON|CSV|QR|URL|API|FWMS|SMIG|SMAG|ISO|UTC|OK|ID|SSN|NNI|RIP|RSSB|RC|ICE|IFU|TP|Patente|true|false|week|month|day)$/i;
+const whitelistAr = /^(MAD|CNSS|AMO|IR|DGI|SIM|CNIE|CIN|PDF|XML|XSD|JSON|CSV|QR|URL|API|HRMP|SMIG|SMAG|ISO|UTC|OK|ID|SSN|NNI|RIP|RSSB|RC|ICE|IFU|TP|Patente|true|false|week|month|day)$/i;
 
 let issues = 0;
 

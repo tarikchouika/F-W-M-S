@@ -1,4 +1,4 @@
-// FWMS — هوية مالك المنصة (white-label — SPEC §3.2، المرحلة 8)
+// HRMP — هوية مالك المنصة (white-label — SPEC §3.2، المرحلة 8)
 // المبدأ: «لا شيء مكتوب باسم المطوّر داخل الكود أو القوالب: الاسم والشعار وعناوين
 // الاتصال وشروط الاستخدام وتذييل التقارير كلها إعدادات تخصيص» — كلها من كيان
 // platform_owner في القاعدة، لا ثوابت في الكود. المصادقة عند العرض من الخادم دائمًا.
@@ -24,8 +24,8 @@ export type PlatformBranding = {
 /** احتياط محايد إن لم يوجد كيان مالك (قاعدة فارغة قبل البذور) — اسم منتج لا اسم مطوّر */
 const NEUTRAL_FALLBACK: PlatformBranding = {
   id: "",
-  legalName: "FWMS Platform",
-  displayName: "FWMS",
+  legalName: "HRMP Platform",
+  displayName: "HRMP",
   contactEmail: null,
   contactPhone: null,
   logoUrl: null,
@@ -67,7 +67,7 @@ export async function getPlatformBranding(): Promise<PlatformBranding> {
       transferFreeze: owner.transferFreeze,
     };
   } catch (e) {
-    console.error("[FWMS][branding] فشل تحميل هوية المالك — الاحتياط المحايد:", e);
+    console.error("[HRMP][branding] فشل تحميل هوية المالك — الاحتياط المحايد:", e);
     return { ...NEUTRAL_FALLBACK };
   }
 }

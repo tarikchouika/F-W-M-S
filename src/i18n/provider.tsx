@@ -1,6 +1,6 @@
 "use client";
 
-// FWMS i18n — مزوّد اللغة للعميل: t() بمفاتيح شجرة النقاط + اتجاه ديناميكي
+// HRMP i18n — مزوّد اللغة للعميل: t() بمفاتيح شجرة النقاط + اتجاه ديناميكي
 import { createContext, useCallback, useContext, useMemo } from "react";
 import type { Locale } from "./config";
 import { localeDirection } from "./config";

@@ -5,13 +5,13 @@ import { ShieldAlert } from "lucide-react";
 import { getSession } from "@/lib/auth/session";
 import { sessionCan } from "@/lib/rbac";
 import { isShiftManager } from "@/lib/scheduling";
-import { LOCALE_COOKIE, resolveLocale } from "@/i18n/config";
+import { readLocaleCookie, resolveLocale } from "@/i18n/config";
 import { getDictionary, tServer } from "@/i18n/get-dictionary";
-import { ShiftTemplatesManager } from "@/components/fwms/shift-templates-manager";
+import { ShiftTemplatesManager } from "@/components/hrmp/shift-templates-manager";
 
 export async function generateMetadata(): Promise<Metadata> {
   const store = await cookies();
-  const dict = getDictionary(resolveLocale(store.get(LOCALE_COOKIE)?.value));
+  const dict = getDictionary(resolveLocale(readLocaleCookie(store)));
   return { title: tServer(dict, "templates.title") };
 }
 
@@ -20,7 +20,7 @@ export default async function ShiftTemplatesPage() {
   if (!session) redirect("/login");
 
   const store = await cookies();
-  const locale = resolveLocale(store.get(LOCALE_COOKIE)?.value);
+  const locale = resolveLocale(readLocaleCookie(store));
   const dict = getDictionary(locale);
 
   // عرض القوالب لكل من يملك scheduling.manage؛ الإنشاء/التعديل للمديرين فقط (SPEC §3)

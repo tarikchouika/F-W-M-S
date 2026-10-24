@@ -1,4 +1,4 @@
-// FWMS — محرك نقل ملكية المنصة (SPEC §3.2 — المرحلة 8)
+// HRMP — محرك نقل ملكية المنصة (SPEC §3.2 — المرحلة 8)
 // الإجراء كله بأداة إدارية موثّقة (docs/OWNERSHIP_TRANSFER.md) لا بتعديل يدوي في القاعدة:
 //   1) موافقة صريحة من المالك الحالي والجديد (خطوتان منفصلتان + إعادة مصادقة بكلمة المرور)
 //      مع تجميد مؤقت للتغييرات الإدارية (isPlatformFrozen في branding.ts)
@@ -430,7 +430,7 @@ export async function executeTransfer(
     });
   }
   const exportPayload = JSON.stringify(
-    { format: "fwms-open-export", version: 1, transferId: row.id, generatedAt: new Date().toISOString(), tables: exportData },
+    { format: "hrmp-open-export", version: 1, transferId: row.id, generatedAt: new Date().toISOString(), tables: exportData },
     null,
     1
   );

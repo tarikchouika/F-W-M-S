@@ -3,13 +3,13 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/session";
 import { todayInZone } from "@/lib/scheduling";
-import { LOCALE_COOKIE, resolveLocale } from "@/i18n/config";
+import { readLocaleCookie, resolveLocale } from "@/i18n/config";
 import { getDictionary, tServer } from "@/i18n/get-dictionary";
-import { MyScheduleView } from "@/components/fwms/my-schedule-view";
+import { MyScheduleView } from "@/components/hrmp/my-schedule-view";
 
 export async function generateMetadata(): Promise<Metadata> {
   const store = await cookies();
-  const dict = getDictionary(resolveLocale(store.get(LOCALE_COOKIE)?.value));
+  const dict = getDictionary(resolveLocale(readLocaleCookie(store)));
   return { title: tServer(dict, "mySchedule.title") };
 }
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# FWMS — توليد لقطة قاعدة المعاينة (infra/vercel/preview.db) — docs/DEPLOYMENT.md §2
+# HRMP — توليد لقطة قاعدة المعاينة (infra/vercel/preview.db) — docs/DEPLOYMENT.md §2
 # ---------------------------------------------------------------------------
 # اللقطة = مخطط كامل (migrations) + بذور العرض الكاملة (نفس بيانات الهاتف/التطوير)
 # تُرفع مع المستودع وتُضمَّن في تتبع البناء (next.config.ts) وتُنسخ إلى /tmp عند
@@ -15,7 +15,7 @@ cd "$(dirname "$0")/.."
 
 node_modules/.bin/prisma generate >/dev/null
 
-TMP_DB="$(mktemp -u /tmp/fwms-preview-regen-XXXXXX).db"
+TMP_DB="$(mktemp -u /tmp/hrmp-preview-regen-XXXXXX).db"
 trap 'rm -f "$TMP_DB" "$TMP_DB-journal" "$TMP_DB-wal" "$TMP_DB-shm"' EXIT
 
 echo "→ تطبيق migrations على قاعدة مؤقتة..."

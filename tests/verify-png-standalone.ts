@@ -1,4 +1,4 @@
-// FWMS — تحقق جلسة 2026-10-18 (المساعد الأول): توليد PNG داخل standalone
+// HRMP — تحقق جلسة 2026-10-18 (المساعد الأول): توليد PNG داخل standalone
 // الهدف: إثبات أن حلقة نسخ @img/* في build تجعل sharp يعمل من standalone مباشرة
 // (وضع الفشل على الهاتف: كل PNG كان internal_error قبل fix-sharp-standalone.sh)
 // التشغيل: BASE=http://localhost:3200 bun tests/verify-png-standalone.ts

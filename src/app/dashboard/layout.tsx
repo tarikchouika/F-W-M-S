@@ -3,16 +3,16 @@ import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth/session";
 import { localizedName, localizeRow, localizeNested } from "@/lib/localized-name";
 import { getUiLocale } from "@/i18n/ui-locale";
-import { DashboardSidebar, MobileNav } from "@/components/fwms/dashboard-sidebar";
-import { LocationWatcher } from "@/components/fwms/location-watcher";
-import { CompanySwitcher } from "@/components/fwms/company-switcher";
-import { LogoutButton } from "@/components/fwms/logout-button";
-import { LangSwitcher } from "@/components/fwms/lang-switcher";
-import { ThemeSwitcher } from "@/components/fwms/theme-switcher";
-import { NotificationBell } from "@/components/fwms/notification-bell";
+import { DashboardSidebar, MobileNav } from "@/components/hrmp/dashboard-sidebar";
+import { LocationWatcher } from "@/components/hrmp/location-watcher";
+import { CompanySwitcher } from "@/components/hrmp/company-switcher";
+import { LogoutButton } from "@/components/hrmp/logout-button";
+import { LangSwitcher } from "@/components/hrmp/lang-switcher";
+import { ThemeSwitcher } from "@/components/hrmp/theme-switcher";
+import { NotificationBell } from "@/components/hrmp/notification-bell";
 // (بلاغ المالك 2026-10-24): مدير الاتصال المباشر — يعيش في التخطيط فيصلك
 // الرن في أي صفحة (WebRTC نظير-إلى-نظير: الوسائط لا تمر بالخادم ولا تُخزَّن)
-import { CallManager } from "@/components/fwms/call-manager";
+import { CallManager } from "@/components/hrmp/call-manager";
 import { getPlatformBranding, parseModules, isModuleEnabled, MODULE_KEYS } from "@/lib/branding";
 
 /** مفاتيح عناصر الشريط الجانبي التي تحكمها وحدة مالك المنصة (white-label — SPEC §3.2) */
@@ -79,16 +79,23 @@ export default async function DashboardLayout({
       <DashboardSidebar role={session.role} brandName={branding.displayName} hiddenKeys={hiddenKeys} />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="fwms-sticky-top sticky top-0 z-40 flex h-14 items-center justify-between gap-2 border-b border-border/60 bg-background/90 px-2 backdrop-blur-md sm:px-5">
-          <div className="flex min-w-0 items-center gap-1.5">
-            <div className="md:hidden">
+        {/* (بلاغ المالك 2026-10-24 — خلل الهواتف): تداخل اسم الشركة مع أيقونة الإشعارات
+            على الشاشات الضيقة (≤360px). الجذر: مجموعة "مبدّل الشركة" كانت بعرض ثابت
+            w-44 (176px) بلا قابلية انكماش، والمجموعة اليمنى (الأزرار) بلا shrink-0
+            — فيفوق مجموعهما عرض الشاشة ويتداخلان بصريًا فوق بعضهما.
+            العلاج: جانب أيسر مرن flex-1 min-w-0 (زر القائمة shrink-0 + منطقة الشركة
+            min-w-0 flex-1 تقتطع النص الطويل truncate)، وجانب أيمن shrink-0 ثابت —
+            فلا يبقى أي عنصر قادر على تجاوز حدود الشريط مهما طال اسم الشركة أو صغرت الشاشة. */}
+        <header className="hrmp-sticky-top sticky top-0 z-40 flex h-14 items-center justify-between gap-2 border-b border-border/60 bg-background/90 px-2 backdrop-blur-md sm:px-5">
+          <div className="flex min-w-0 flex-1 items-center gap-1.5">
+            <div className="shrink-0 md:hidden">
               <MobileNav role={session.role} brandName={branding.displayName} hiddenKeys={hiddenKeys} />
             </div>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <CompanySwitcher companies={companies} activeId={session.companyId} />
             </div>
           </div>
-          <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="flex shrink-0 items-center gap-1 sm:gap-2">
             {/* المرحلة 5: جرس الإشعارات — لكل مستخدم (self.view) — استطلاع 20ث/120ث */}
             <NotificationBell />
             <LangSwitcher />

@@ -1,4 +1,4 @@
-// FWMS — كاتب سجل التدقيق (SPEC §3 و§6): كل فعل حساس يُسجَّل ولا يُحذف
+// HRMP — كاتب سجل التدقيق (SPEC §3 و§6): كل فعل حساس يُسجَّل ولا يُحذف
 import { db } from "@/lib/db";
 import { requestMeta } from "@/lib/auth/session";
 

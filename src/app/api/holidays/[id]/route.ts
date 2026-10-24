@@ -1,4 +1,4 @@
-// FWMS — حذف عطلة رسمية (إدخال خاطئ مثلاً) — company.manage + تدقيق
+// HRMP — حذف عطلة رسمية (إدخال خاطئ مثلاً) — company.manage + تدقيق
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { requirePermission, AccessError } from "@/lib/rbac";

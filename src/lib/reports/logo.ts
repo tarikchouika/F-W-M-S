@@ -1,4 +1,4 @@
-// FWMS — الشعار في صيغ PNG (للـDOCX) والعلامة المائية (للـPDF/PNG)
+// HRMP — الشعار في صيغ PNG (للـDOCX) والعلامة المائية (للـPDF/PNG)
 // المصدر (2026-10-21): اللوغو المعتمد من المالك — public/brand/logo-square.jpg
 // والعلامة الذهبية الشفافة public/brand/logo-mark.png (تُولَّد بـscripts/gen-brand-assets.mjs).
 // يُستعمل في ترويسة وثائق DOCX وPDF وPNG ليطابق الشعار المعروض في الواجهة.

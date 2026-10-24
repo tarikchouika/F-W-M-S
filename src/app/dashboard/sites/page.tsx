@@ -5,13 +5,13 @@ import { ShieldAlert } from "lucide-react";
 import { getSession } from "@/lib/auth/session";
 import { sessionCan } from "@/lib/rbac";
 import { hasPermission } from "@/lib/delegations";
-import { LOCALE_COOKIE, resolveLocale } from "@/i18n/config";
+import { readLocaleCookie, resolveLocale } from "@/i18n/config";
 import { getDictionary, tServer } from "@/i18n/get-dictionary";
-import { SitesManager } from "@/components/fwms/sites-manager";
+import { SitesManager } from "@/components/hrmp/sites-manager";
 
 export async function generateMetadata(): Promise<Metadata> {
   const store = await cookies();
-  const dict = getDictionary(resolveLocale(store.get(LOCALE_COOKIE)?.value));
+  const dict = getDictionary(resolveLocale(readLocaleCookie(store)));
   return { title: tServer(dict, "sites.title") };
 }
 
@@ -20,7 +20,7 @@ export default async function SitesPage() {
   if (!session) redirect("/login");
 
   const store = await cookies();
-  const locale = resolveLocale(store.get(LOCALE_COOKIE)?.value);
+  const locale = resolveLocale(readLocaleCookie(store));
   const dict = getDictionary(locale);
 
   // معيار قبول المرحلة 2 (SPEC §8): إنشاء موقع بنصف قطر وعرضه على الخريطة

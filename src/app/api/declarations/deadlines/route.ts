@@ -1,4 +1,4 @@
-// FWMS — مواعيد التصاريح (SPEC §4.6): تذكير قبل 10 الشهر الموالي و28 فبراير + غرامات كمعلومة
+// HRMP — مواعيد التصاريح (SPEC §4.6): تذكير قبل 10 الشهر الموالي و28 فبراير + غرامات كمعلومة
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { requirePermission, AccessError } from "@/lib/rbac";

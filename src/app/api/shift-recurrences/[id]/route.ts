@@ -1,4 +1,4 @@
-// FWMS — تعديل قاعدة تكرار/أرشفتها: تغيير النطاق والأيام والخطوة — تبديل العامل/الموقع بإنشاء قاعدة جديدة
+// HRMP — تعديل قاعدة تكرار/أرشفتها: تغيير النطاق والأيام والخطوة — تبديل العامل/الموقع بإنشاء قاعدة جديدة
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth/session";

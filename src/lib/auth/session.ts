@@ -1,4 +1,4 @@
-// FWMS — إدارة الجلسة من الخادم: قراءة cookie، جلسة موسّعة من القاعدة، وحرّاس الوصول
+// HRMP — إدارة الجلسة من الخادم: قراءة cookie، جلسة موسّعة من القاعدة، وحرّاس الوصول
 import { cookies, headers } from "next/headers";
 import { db } from "@/lib/db";
 import { localizedName } from "@/lib/localized-name";

@@ -1,4 +1,4 @@
-// FWMS — بنود يدوية على كشف (SPEC §4.3: مكافآت وبدلات وخصومات — كل بند بسببه ومنشئه)
+// HRMP — بنود يدوية على كشف (SPEC §4.3: مكافآت وبدلات وخصومات — كل بند بسببه ومنشئه)
 // POST: إضافة بند (draft/reviewing فقط) | DELETE: حذف بند يدوي (lineId)
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";

@@ -1,4 +1,4 @@
-// FWMS — تسجيل الانصراف (SPEC §4.2 — المرحلة 4): نفس قواعد الدخول + زوج دخول مفتوح مطلوب
+// HRMP — تسجيل الانصراف (SPEC §4.2 — المرحلة 4): نفس قواعد الدخول + زوج دخول مفتوح مطلوب
 import { NextRequest } from "next/server";
 import { recordAttendance } from "@/lib/attendance-service";
 

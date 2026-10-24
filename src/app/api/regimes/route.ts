@@ -1,4 +1,4 @@
-// FWMS — المسارات (SPEC §12 — المرحلة 6ج): قائمة القوالب ومسارات الشركة + منشئ المسارات
+// HRMP — المسارات (SPEC §12 — المرحلة 6ج): قائمة القوالب ومسارات الشركة + منشئ المسارات
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { requirePermission, AccessError } from "@/lib/rbac";

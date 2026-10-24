@@ -1,4 +1,4 @@
-// FWMS — تنسيق توليد التقارير (SPEC §4.4.1 — المرحلة 7)
+// HRMP — تنسيق توليد التقارير (SPEC §4.4.1 — المرحلة 7)
 // القواعد النافذة هنا:
 // 1) RBAC مركزي: كل نوع تقرير بدوره (المشرف بلا أرقام أجور افتراضيًا — سؤال §10-3 حسمه SPEC بالافتراض «لا»)
 // 2) الثبات: بصمة المحتوى contentHash (SHA-256 للبيانات المجمدة) — نفس المحتوى يعيد المستند نفسه،
@@ -482,8 +482,8 @@ async function renderViaWorker(
   const { existsSync } = await import("node:fs");
 
   const jobId = randomBytes(8).toString("hex");
-  const jobPath = join(os.tmpdir(), `fwms-report-${jobId}.json`);
-  const outPath = join(os.tmpdir(), `fwms-report-${jobId}.bin`);
+  const jobPath = join(os.tmpdir(), `hrmp-report-${jobId}.json`);
+  const outPath = join(os.tmpdir(), `hrmp-report-${jobId}.bin`);
 
   // .cjs المترجم أولاً (يعمل تحت node وbun معًا — علاج فشل التوليد على Vercel)،
   // ثم المصدر .ts (يعمل تحت bun حصرًا — وضع dev).
@@ -667,8 +667,12 @@ export type VerifyResult =
 // الإنتاج — فكان الرابط يعمل والحكم «الوثيقة غير حقيقية» (not_found).
 // العلاج: إن لم يجد الحكم المحلي الوثيقة، تسأل البوابة الخادم المرجعي مباشرة
 // وتنسخ حكمه (بلا كشف أي معلومة إضافية — نقطة التحقق عامة ومحدودة أصلًا).
+// (إعادة التسمية 2026-10-24): الاسم الجديد HRMP_VERIFY_FALLBACK_ORIGIN يُقرأ أولًا
+// والقديم FWMS_VERIFY_FALLBACK_ORIGIN يُقبل للتوافق مع النشر القائم.
 const FEDERATED_VERIFY_ORIGIN = (
-  process.env.FWMS_VERIFY_FALLBACK_ORIGIN || (process.env.VERCEL ? "https://fwms.tarikc.workers.dev" : "")
+  process.env.HRMP_VERIFY_FALLBACK_ORIGIN ||
+  process.env.FWMS_VERIFY_FALLBACK_ORIGIN ||
+  (process.env.VERCEL ? "https://fwms.tarikc.workers.dev" : "")
 )
   .trim()
   .replace(/\/+$/, "");

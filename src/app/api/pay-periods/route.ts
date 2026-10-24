@@ -1,4 +1,4 @@
-// FWMS — فترات الأجور (SPEC §4.3 و§8 — المرحلة 6أ/6ب): قائمة + إنشاء فترة شهرية
+// HRMP — فترات الأجور (SPEC §4.3 و§8 — المرحلة 6أ/6ب): قائمة + إنشاء فترة شهرية
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { requirePermission, AccessError } from "@/lib/rbac";

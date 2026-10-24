@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# FWMS — إعادة توليد لقطة قاعدة معاينة Vercel (infra/vercel/preview.db) مع
+# HRMP — إعادة توليد لقطة قاعدة معاينة Vercel (infra/vercel/preview.db) مع
 # الحفاظ على بصمات كلمات المرور الحالية (كلمة المالك المعروفة تبقى تعمل كما هي).
 #
 # السبب (بلاغ المالك 2026-10-22 «تحرير و تحميل الوثائق لا يعمل»):
@@ -11,8 +11,8 @@ set -euo pipefail
 cd "$(dirname "$0")/.."   # جذر المستودع (السكربت داخل <repo>/scripts/)
 
 SNAPSHOT="infra/vercel/preview.db"
-BACKUP="/tmp/fwms-preview-db-backup-$(date +%Y%m%dT%H%M%SZ).db"
-TMP_DB="$(mktemp -u /tmp/fwms-preview-regen-XXXXXX).db"
+BACKUP="/tmp/hrmp-preview-db-backup-$(date +%Y%m%dT%H%M%SZ).db"
+TMP_DB="$(mktemp -u /tmp/hrmp-preview-regen-XXXXXX).db"
 
 echo "→ نسخة احتياطية من اللقطة الحالية إلى $BACKUP (لأخذ بصمات الكلمات)..."
 cp "$SNAPSHOT" "$BACKUP"
@@ -46,9 +46,9 @@ DIFF=$(node_modules/.bin/prisma migrate diff \
   --from-url "file:$TMP_DB" \
   --to-migrations prisma/migrations \
   --shadow-database-url "file:$TMP_DB-shadow" 2>/dev/null | grep -c "ALTER\|CREATE\|DROP" || true)
-node_modules/.bin/prisma migrate diff --from-url "file:$TMP_DB" --to-migrations prisma/migrations --shadow-database-url "file:$TMP_DB-shadow" > /tmp/fwms-snapshot-diff.sql 2>/dev/null || true
-if [ -s /tmp/fwms-snapshot-diff.sql ]; then
-  echo "✗ اللقطة الجديدة ما تزال تخالف المخطط:"; head -20 /tmp/fwms-snapshot-diff.sql; exit 1
+node_modules/.bin/prisma migrate diff --from-url "file:$TMP_DB" --to-migrations prisma/migrations --shadow-database-url "file:$TMP_DB-shadow" > /tmp/hrmp-snapshot-diff.sql 2>/dev/null || true
+if [ -s /tmp/hrmp-snapshot-diff.sql ]; then
+  echo "✗ اللقطة الجديدة ما تزال تخالف المخطط:"; head -20 /tmp/hrmp-snapshot-diff.sql; exit 1
 fi
 echo "  ✓ المخطط مطابق للهجرات تمامًا"
 

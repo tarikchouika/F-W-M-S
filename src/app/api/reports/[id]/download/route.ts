@@ -1,4 +1,4 @@
-// FWMS — تنزيل مستند مُولَّد (SPEC §4.4.1): يُخدَم من النسخة الثابتة المخزنة — لا إعادة توليد
+// HRMP — تنزيل مستند مُولَّد (SPEC §4.4.1): يُخدَم من النسخة الثابتة المخزنة — لا إعادة توليد
 import { NextRequest, NextResponse } from "next/server";
 import { AccessError } from "@/lib/rbac";
 import { writeAudit } from "@/lib/audit";

@@ -1,4 +1,4 @@
-// FWMS — سحب البديل (SPEC §4.1 و§8 — المرحلة 5): تحديث الوردية + إشعار فوري + تدقيق
+// HRMP — سحب البديل (SPEC §4.1 و§8 — المرحلة 5): تحديث الوردية + إشعار فوري + تدقيق
 // معيار القبول: «البديل يصله الإشعار ويظهر الموقع في برنامجه»
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";

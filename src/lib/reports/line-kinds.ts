@@ -1,4 +1,4 @@
-// FWMS — خريطة أنواع بنود الكشف ← مفاتيح i18n (مشتركة بين مولّدات PDF/DOCX/PNG)
+// HRMP — خريطة أنواع بنود الكشف ← مفاتيح i18n (مشتركة بين مولّدات PDF/DOCX/PNG)
 export const LINE_KIND_MAP: Record<string, string> = {
   base_hours: "payroll.lineBaseHours",
   base_days: "payroll.lineBaseDays",

@@ -1,4 +1,4 @@
-// FWMS — سحب مواصفة مفعّلة (SPEC §4.6: حالتها مسودة←اختبار←مفعّلة←مسحوبة)
+// HRMP — سحب مواصفة مفعّلة (SPEC §4.6: حالتها مسودة←اختبار←مفعّلة←مسحوبة)
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { requirePermission, AccessError } from "@/lib/rbac";

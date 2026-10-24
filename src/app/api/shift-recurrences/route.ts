@@ -1,4 +1,4 @@
-// FWMS — قواعد الورديات المتكررة (fixed) والمتناوبة (rotating) — SPEC §4.1 و§8 — المرحلة 3
+// HRMP — قواعد الورديات المتكررة (fixed) والمتناوبة (rotating) — SPEC §4.1 و§8 — المرحلة 3
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth/session";

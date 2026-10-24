@@ -5,13 +5,13 @@ import { ShieldAlert } from "lucide-react";
 import { getSession } from "@/lib/auth/session";
 import { sessionCan } from "@/lib/rbac";
 import { todayInZone } from "@/lib/scheduling";
-import { LOCALE_COOKIE, resolveLocale } from "@/i18n/config";
+import { readLocaleCookie, resolveLocale } from "@/i18n/config";
 import { getDictionary, tServer } from "@/i18n/get-dictionary";
-import { AttendanceManager } from "@/components/fwms/attendance-manager";
+import { AttendanceManager } from "@/components/hrmp/attendance-manager";
 
 export async function generateMetadata(): Promise<Metadata> {
   const store = await cookies();
-  const dict = getDictionary(resolveLocale(store.get(LOCALE_COOKIE)?.value));
+  const dict = getDictionary(resolveLocale(readLocaleCookie(store)));
   return { title: tServer(dict, "attendance.title") };
 }
 
@@ -20,7 +20,7 @@ export default async function AttendancePage() {
   if (!session) redirect("/login");
 
   const store = await cookies();
-  const locale = resolveLocale(store.get(LOCALE_COOKIE)?.value);
+  const locale = resolveLocale(readLocaleCookie(store));
   const dict = getDictionary(locale);
 
   // المرحلة 4 (SPEC §4.2 و§4.4): متابعة الحضور ومراجعة المعلَّق — attendance.manage

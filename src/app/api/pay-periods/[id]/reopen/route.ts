@@ -1,4 +1,4 @@
-// FWMS — إعادة فترة من المراجعة إلى المسودة (admin): حلقة ملاحظات المراجعة — القفل الحقيقي بعد الاعتماد فقط
+// HRMP — إعادة فترة من المراجعة إلى المسودة (admin): حلقة ملاحظات المراجعة — القفل الحقيقي بعد الاعتماد فقط
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { requirePermission, AccessError } from "@/lib/rbac";

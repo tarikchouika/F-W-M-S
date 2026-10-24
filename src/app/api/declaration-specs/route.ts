@@ -1,4 +1,4 @@
-// FWMS — سجل المواصفات الرسمية (SPEC §4.6 — المرحلة 6ج): قائمة + رفع إصدار جديد
+// HRMP — سجل المواصفات الرسمية (SPEC §4.6 — المرحلة 6ج): قائمة + رفع إصدار جديد
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { requirePermission, AccessError } from "@/lib/rbac";

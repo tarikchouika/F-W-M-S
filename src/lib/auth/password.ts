@@ -1,4 +1,4 @@
-// FWMS — تشفير كلمات المرور (bcrypt، وSPEC §6 يسمح Argon2id أو bcrypt)
+// HRMP — تشفير كلمات المرور (bcrypt، وSPEC §6 يسمح Argon2id أو bcrypt)
 import bcrypt from "bcryptjs";
 
 const ROUNDS = 10;

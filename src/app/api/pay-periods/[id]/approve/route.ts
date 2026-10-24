@@ -1,4 +1,4 @@
-// FWMS — اعتماد نهائي (SPEC §4.3 و§8): يمنع الاعتماد عند اختراق SMIG (§11.2) أو قواعد غير موثقة،
+// HRMP — اعتماد نهائي (SPEC §4.3 و§8): يمنع الاعتماد عند اختراق SMIG (§11.2) أو قواعد غير موثقة،
 // ثم يجمد snapshot ويكتب قيود الدفتر append-only ويقفل الكشوف (لا تُعدَّل إلا بقيد تصحيح جديد)
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";

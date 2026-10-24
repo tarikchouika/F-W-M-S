@@ -1,4 +1,4 @@
-// FWMS — تفاصيل تصريح (SPEC §4.6): الملخص + أخطاء التحقق + الملفات + الإشعارات
+// HRMP — تفاصيل تصريح (SPEC §4.6): الملخص + أخطاء التحقق + الملفات + الإشعارات
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { requirePermission, AccessError } from "@/lib/rbac";

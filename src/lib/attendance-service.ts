@@ -1,4 +1,4 @@
-// FWMS — خدمة الحضور المشتركة بين check-in وcheck-out (SPEC §4.2 — المرحلة 4)
+// HRMP — خدمة الحضور المشتركة بين check-in وcheck-out (SPEC §4.2 — المرحلة 4)
 // المسار الإلزامي: تحقق الخادم بالنطاق ← مكافحة التلاعب ← سياسة التحقق ← التسجيل (append-only)
 // companyId من الجلسة حصراً (عزل SPEC §3.1) — الرفض يُسجَّل كمحاولة دائماً
 import { NextRequest, NextResponse } from "next/server";

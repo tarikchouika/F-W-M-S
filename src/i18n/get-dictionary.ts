@@ -1,4 +1,4 @@
-// FWMS i18n — محمّل القواميس في الخادم (استيراد ثابت = يعمل على Vercel وTermux معًا)
+// HRMP i18n — محمّل القواميس في الخادم (استيراد ثابت = يعمل على Vercel وTermux معًا)
 import type { Locale } from "./config";
 import ar from "./dictionaries/ar.json";
 import fr from "./dictionaries/fr.json";

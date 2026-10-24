@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# FWMS — حقن مفاتيح i18n المرحلة 6أ/6ب في القواميس الأربعة (ar/fr/en/es)
+# HRMP — حقن مفاتيح i18n المرحلة 6أ/6ب في القواميس الأربعة (ar/fr/en/es)
 # يتبع سابقة scripts/add-phase5-i18n.py — التشغيل: python3 scripts/add-phase6-i18n.py
 import json
 import os

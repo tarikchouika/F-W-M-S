@@ -1,4 +1,4 @@
-// FWMS — سجل التدقيق (SPEC §3): يقرؤه من يملك audit.view — مقيّد بالشركة النشطة
+// HRMP — سجل التدقيق (SPEC §3): يقرؤه من يملك audit.view — مقيّد بالشركة النشطة
 // (جولة 2026-10-19): فلاتر (إجراء/فاعل/مدى زمني) + ترقيم صفحات — صفحة كاملة بدل آخر 50
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";

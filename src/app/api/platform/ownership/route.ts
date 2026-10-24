@@ -1,4 +1,4 @@
-// FWMS — ملكية المنصة (SPEC §3.2 — المرحلة 8): حالة المالك + أداة نقل الملكية
+// HRMP — ملكية المنصة (SPEC §3.2 — المرحلة 8): حالة المالك + أداة نقل الملكية
 // super_admin حصرًا (platform.manage) — وكل خطوة حساسة تُعيد المصادقة بكلمة المرور.
 // GET  /api/platform/ownership           → حالة المالك + النقل الجاري + آخر منجز + السجل
 // POST /api/platform/ownership           → أفعال النقل: initiate | approve-current |

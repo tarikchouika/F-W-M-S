@@ -5,9 +5,9 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "next-themes";
 import { I18nProvider } from "@/i18n/provider";
-import { ServiceWorkerRegister } from "@/components/fwms/sw-register";
-import { NativeShell } from "@/components/fwms/native-shell";
-import { LOCALE_COOKIE, localeDirection, resolveLocale } from "@/i18n/config";
+import { ServiceWorkerRegister } from "@/components/hrmp/sw-register";
+import { NativeShell } from "@/components/hrmp/native-shell";
+import { readLocaleCookie, localeDirection, resolveLocale } from "@/i18n/config";
 import { getDictionary, tServer } from "@/i18n/get-dictionary";
 
 const geistSans = Geist({
@@ -31,14 +31,14 @@ const notoArabic = Noto_Sans_Arabic({
 // generateMetadata بدل metadata الثابتة — نفس نمط كل صفحات المنصة.
 export async function generateMetadata(): Promise<Metadata> {
   const store = await cookies();
-  const dict = getDictionary(resolveLocale(store.get(LOCALE_COOKIE)?.value));
+  const dict = getDictionary(resolveLocale(readLocaleCookie(store)));
   return {
     title: {
       default: tServer(dict, "meta.title"),
-      template: "%s | FWMS",
+      template: "%s | HRMP",
     },
     description: tServer(dict, "meta.description"),
-    keywords: ["FWMS", "workforce", "Morocco", "CNSS", "AMO", "IR", "geofencing", "payroll"],
+    keywords: ["HRMP", "workforce", "Morocco", "CNSS", "AMO", "IR", "geofencing", "payroll"],
     manifest: "/manifest.json",
     // الفافكون — من اللوغو المعتمد 2026-10-21 (توليد: scripts/gen-brand-assets.mjs)
     icons: {
@@ -72,7 +72,7 @@ export default async function RootLayout({
 }>) {
   // اللغة من cookie (تحددها واجهة تبديل اللغة) — العربية افتراضياً (SPEC §2)
   const store = await cookies();
-  const locale = resolveLocale(store.get(LOCALE_COOKIE)?.value);
+  const locale = resolveLocale(readLocaleCookie(store));
   const dict = getDictionary(locale);
 
   return (

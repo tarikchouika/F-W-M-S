@@ -1,4 +1,4 @@
-// FWMS — تعديل موقع/أرشفته/استعادته: عزل الشركة + تحقق الإحداثيات والمراجع + تدقيق
+// HRMP — تعديل موقع/أرشفته/استعادته: عزل الشركة + تحقق الإحداثيات والمراجع + تدقيق
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth/session";

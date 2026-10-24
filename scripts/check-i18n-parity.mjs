@@ -1,4 +1,4 @@
-// FWMS — فحص تطابق مفاتيح الترجمة بين القواميس الأربعة (ar/fr/en/es)
+// HRMP — فحص تطابق مفاتيح الترجمة بين القواميس الأربعة (ar/fr/en/es)
 // SPEC §2: CI يفشل إن نقص مفتاح في أي لغة — هذا هو الفحص الفعلي.
 // التشغيل: node scripts/check-i18n-parity.mjs  (أو bun scripts/check-i18n-parity.mjs)
 import { readFileSync } from "node:fs";

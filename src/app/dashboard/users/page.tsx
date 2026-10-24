@@ -2,17 +2,17 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { ShieldAlert } from "lucide-react";
-import { PageHeader } from "@/components/fwms/org-bits";
+import { PageHeader } from "@/components/hrmp/org-bits";
 import { getSession } from "@/lib/auth/session";
 import { roleHas } from "@/lib/rbac";
 import { hasPermission } from "@/lib/delegations";
-import { LOCALE_COOKIE, resolveLocale } from "@/i18n/config";
+import { readLocaleCookie, resolveLocale } from "@/i18n/config";
 import { getDictionary, tServer } from "@/i18n/get-dictionary";
-import { UsersManager } from "@/components/fwms/users-manager";
+import { UsersManager } from "@/components/hrmp/users-manager";
 
 export async function generateMetadata(): Promise<Metadata> {
   const store = await cookies();
-  const dict = getDictionary(resolveLocale(store.get(LOCALE_COOKIE)?.value));
+  const dict = getDictionary(resolveLocale(readLocaleCookie(store)));
   return { title: tServer(dict, "usersPage.title") };
 }
 
@@ -21,7 +21,7 @@ export default async function UsersPage() {
   if (!session) redirect("/login");
 
   const store = await cookies();
-  const locale = resolveLocale(store.get(LOCALE_COOKIE)?.value);
+  const locale = resolveLocale(readLocaleCookie(store));
   const dict = getDictionary(locale);
 
   // الدخول: users.manage (سوبر/أدمن بطبعهما أو تفويض) — إنشاء الحسابات أضيق (users.create)

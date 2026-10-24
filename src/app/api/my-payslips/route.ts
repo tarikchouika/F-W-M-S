@@ -1,4 +1,4 @@
-// FWMS — «أجوري» (SPEC §4.5): كشوف العامل المعتمدة فقط — عزل تام ببياناته حصرًا
+// HRMP — «أجوري» (SPEC §4.5): كشوف العامل المعتمدة فقط — عزل تام ببياناته حصرًا
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { requirePermission, AccessError } from "@/lib/rbac";

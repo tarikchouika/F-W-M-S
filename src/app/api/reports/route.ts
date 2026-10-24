@@ -1,4 +1,4 @@
-// FWMS — التقارير: الأنواع المتاحة للدور + سجل التصديرات (SPEC §4.4.1 — المرحلة 7)
+// HRMP — التقارير: الأنواع المتاحة للدور + سجل التصديرات (SPEC §4.4.1 — المرحلة 7)
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { AccessError } from "@/lib/rbac";

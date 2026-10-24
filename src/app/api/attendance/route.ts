@@ -1,4 +1,4 @@
-// FWMS — قائمة أحداث الحضور (SPEC §4.2 و§4.4): للمشرفين والمديرين بحسب النطاق + إحصاءات اليوم
+// HRMP — قائمة أحداث الحضور (SPEC §4.2 و§4.4): للمشرفين والمديرين بحسب النطاق + إحصاءات اليوم
 // co_admin: مواقع scopeJson إن حُدد، وإلا كامل الشركة (افتراضي موثَّق) — العامل يستخدم /api/my-attendance
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";

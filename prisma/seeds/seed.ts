@@ -1,4 +1,4 @@
-// FWMS — بذور المرحلة 0–2: مالك المنصة + شركة تجريبية + مستخدمو الأدوار الخمسة + بنية تنظيمية تجريبية
+// HRMP — بذور المرحلة 0–2: مالك المنصة + شركة تجريبية + مستخدمو الأدوار الخمسة + بنية تنظيمية تجريبية
 // ملكية: مشتركة (المساعد الأول). قواعد الأجور pay_rules مهمة المساعد الثاني (docs/DATABASE_GUIDE.md §6)
 // التشغيل: bun prisma/seeds/seed.ts
 import { PrismaClient } from "@prisma/client";
@@ -17,16 +17,19 @@ const db = new PrismaClient();
 const DEMO_PASSWORD = process.env.SEED_DEMO_PASSWORD ?? "Fwms#2026"; // تجريبي فقط — يُستبدل في الإنتاج
 
 async function main() {
-  console.log("🌱 FWMS seed — المرحلة 0–1 ...");
+  console.log("🌱 HRMP seed — المرحلة 0–1 ...");
 
   // 1) مالك المنصة (white-label — SPEC §3.2)
+  // ⚠️ المعرف مستقر عبر إعادة التسمية (platform-owner-fwms): القواعد القائمة (هاتف الإنتاج
+  // ولقطة المعاينة) تحمل هذا المفتاح — تغييره ينشئ مالكًا مكررًا عند upsert.
+  // الاسم المعروض تغيّر إلى HRMP عبر هجرة البيانات phase10_recruitment.
   const owner = await db.platformOwner.upsert({
     where: { id: "platform-owner-fwms" },
     update: {},
     create: {
       id: "platform-owner-fwms",
-      legalName: "FWMS Platform Owner (Demo)",
-      displayName: "FWMS",
+      legalName: "HRMP Platform Owner (Demo)",
+      displayName: "HRMP",
       contactEmail: "owner@fwms.local",
       defaultLocale: "ar",
       defaultCurrency: "MAD",

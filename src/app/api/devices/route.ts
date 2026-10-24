@@ -1,4 +1,4 @@
-// FWMS — اشتراكات دفع المتصفح (المرحلة 5 — SPEC §7: Web Push مفتوح، محوّل قابل للتبديل)
+// HRMP — اشتراكات دفع المتصفح (المرحلة 5 — SPEC §7: Web Push مفتوح، محوّل قابل للتبديل)
 // GET: مفتاح VAPID العام (null = الدفع غير مفعّل) | POST: تسجيل اشتراك | DELETE: إلغاء
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";

@@ -1,13 +1,13 @@
-// FWMS — صفحة المراجع الرسمية المغربية (public)
+// HRMP — صفحة المراجع الرسمية المغربية (public)
 // الروابط الرسمية المتحقَّق منها + نصوص القانون المتاحة للتحميل من مصادرها.
 // الصفحة عامة (بلا جلسة) — تُبنى من قاموس اللغة + بيانات `src/lib/references.ts`.
 import type { Metadata } from "next";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { ExternalLink, FileDown, Landmark, Scale, ShieldCheck } from "lucide-react";
-import { LOCALE_COOKIE, resolveLocale } from "@/i18n/config";
+import { readLocaleCookie, resolveLocale } from "@/i18n/config";
 import { getDictionary, tServer } from "@/i18n/get-dictionary";
-import { PublicLegalShell } from "@/components/fwms/public-legal-shell";
+import { PublicLegalShell } from "@/components/hrmp/public-legal-shell";
 import { CATEGORY_ORDER, LAW_FILES, OFFICIAL_SOURCES, VERIFIED_ON } from "@/lib/references";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -16,13 +16,13 @@ const TITLE_KEY = "references.title";
 
 export async function generateMetadata(): Promise<Metadata> {
   const store = await cookies();
-  const dict = getDictionary(resolveLocale(store.get(LOCALE_COOKIE)?.value));
+  const dict = getDictionary(resolveLocale(readLocaleCookie(store)));
   return { title: tServer(dict, TITLE_KEY) };
 }
 
 export default async function ReferencesPage() {
   const store = await cookies();
-  const locale = resolveLocale(store.get(LOCALE_COOKIE)?.value);
+  const locale = resolveLocale(readLocaleCookie(store));
   const dict = getDictionary(locale);
   const tr = (key: string) => tServer(dict, key);
 

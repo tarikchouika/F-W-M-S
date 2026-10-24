@@ -1,4 +1,4 @@
-// FWMS — منح المحاسب الخارجي (SPEC §3.3): صريحة، مؤقتة، قابلة للسحب
+// HRMP — منح المحاسب الخارجي (SPEC §3.3): صريحة، مؤقتة، قابلة للسحب
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { requirePermission, AccessError } from "@/lib/rbac";

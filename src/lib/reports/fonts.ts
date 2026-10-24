@@ -1,4 +1,4 @@
-// FWMS — الخطوط المضمّنة للتقارير (SPEC §4.4.1: «خطوط عربية مضمّنة» — Noto Naskh Arabic)
+// HRMP — الخطوط المضمّنة للتقارير (SPEC §4.4.1: «خطوط عربية مضمّنة» — Noto Naskh Arabic)
 // الخطوط تسكن public/fonts (OFL) فتصل الخادمَين: dev (جذر المشروع) و standalone (يُنسخ public إليه)
 // وقواعد بيانات Termux/Vercel معًا — بلا اعتماد على خطوط النظام إطلاقًا في PDF/DOCX
 import { join } from "node:path";
@@ -46,9 +46,9 @@ export async function ensureFontconfig(): Promise<boolean> {
   try {
     const { writeFile, mkdir } = await import("node:fs/promises");
     const os = await import("node:os");
-    const cacheDir = join(os.tmpdir(), "fwms-fc-cache");
+    const cacheDir = join(os.tmpdir(), "hrmp-fc-cache");
     await mkdir(cacheDir, { recursive: true });
-    const confPath = join(os.tmpdir(), "fwms-fonts.conf");
+    const confPath = join(os.tmpdir(), "hrmp-fonts.conf");
     const conf = `<?xml version="1.0"?>
 <!DOCTYPE fontconfig SYSTEM "fonts.dtd">
 <fontconfig>

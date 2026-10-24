@@ -1,4 +1,4 @@
-// FWMS — تفاصيل فترة أجور: الكشوف والإجماليات والتحذيرات (SPEC §4.3 — شفافية المراجعة)
+// HRMP — تفاصيل فترة أجور: الكشوف والإجماليات والتحذيرات (SPEC §4.3 — شفافية المراجعة)
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { requirePermission, AccessError } from "@/lib/rbac";

@@ -1,4 +1,4 @@
-// FWMS — العطل الرسمية (SPEC §11.5 و§11.4): يدخلها admin بتاريخ مؤكد — العطلة تُعامل كيوم راحة في الإضافي
+// HRMP — العطل الرسمية (SPEC §11.5 و§11.4): يدخلها admin بتاريخ مؤكد — العطلة تُعامل كيوم راحة في الإضافي
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { requirePermission, AccessError } from "@/lib/rbac";

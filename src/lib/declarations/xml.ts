@@ -1,4 +1,4 @@
-// FWMS — أدوات XML (SPEC §4.6 — المرحلة 6ج): مُحلّل خفيف + بانٍ من ربط (mapping)
+// HRMP — أدوات XML (SPEC §4.6 — المرحلة 6ج): مُحلّل خفيف + بانٍ من ربط (mapping)
 // بلا تبعيات خارجية (بيئة الهاتف): مُحلّل متناسي بسيط للـXML المتشكل تمامًا.
 import type { DeclarationContext, XmlMapping, XmlMappingField } from "./types";
 

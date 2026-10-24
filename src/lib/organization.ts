@@ -1,4 +1,4 @@
-// FWMS — تحقق مدخلات البنية التنظيمية (SPEC §5 و§8 — المرحلة 2)
+// HRMP — تحقق مدخلات البنية التنظيمية (SPEC §5 و§8 — المرحلة 2)
 // zod في الخادم دائمًا (SPEC §6) — كل مسار يتحقق قبل أي كتابة
 import { z } from "zod";
 import { localeNamesSchema } from "@/lib/localized-name";

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// FWMS — تفعيل خطافات المستودع (تُستدعى من postinstall)
+// HRMP — تفعيل خطافات المستودع (تُستدعى من postinstall)
 //
 // لماذا عبر postinstall: `core.hooksPath` **إعداد محلي** لا يُرفع مع git، فإن
 // اعتمدنا على ضبط يدوي يُنسى في كل نسخة جديدة وتعود المشكلة. ربطه بـpostinstall

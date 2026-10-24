@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-# FWMS — تعديل مخطط Prisma: حقول مسح الصوتيات المؤقتة + نموذجا الاتصال المباشر
+# HRMP — تعديل مخطط Prisma: حقول مسح الصوتيات المؤقتة + نموذجا الاتصال المباشر
 # (بلاغ المالك 2026-10-24: اتصال آني بلا تخزين + صوتيات تُمسح بعد الاستهلاك)
 # مراسي إنجليزية/رمزية فقط — لا مطابقة نص عربي (درس التركيب المتحوّل يونيكود)
 
-SCHEMA = "/home/z/my-project/fwms/prisma/schema.prisma"
+SCHEMA = "/home/z/my-project/hrmp/prisma/schema.prisma"
 src = open(SCHEMA, encoding="utf-8").read()
 
 # ── 1) علاقات المستخدم: startedCalls/receivedCalls بعد receivedDirect ──

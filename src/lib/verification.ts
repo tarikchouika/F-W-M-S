@@ -1,4 +1,4 @@
-// FWMS — سياسة التحقق من الهوية عند الحضور + رموز QR الدوّارة (SPEC §4.2 — المرحلة 4)
+// HRMP — سياسة التحقق من الهوية عند الحضور + رموز QR الدوّارة (SPEC §4.2 — المرحلة 4)
 // «تُحدَّد بتخصيص الجهة المالكة، مع تخصيص أضيق للشركة ثم الموقع فقط ضمن ما يسمح به المالك»
 // QR: رمز قصير العمر موقَّع HMAC في الخادم — لا رمز ثابت مطبوع (يُصوَّر ويُرسَل)
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "crypto";
@@ -89,7 +89,7 @@ export async function resolvePolicyForSite(site: {
 export const QR_TTL_SECONDS = 90; // دوّار قصير العمر — «لا يكفي تصويره» (SPEC §4.2)
 
 function qrSecret(): string {
-  const base = process.env.AUTH_SECRET ?? "fwms-dev-qr-secret"; // اشتقاق مفتاح مستقل عن JWT
+  const base = process.env.AUTH_SECRET ?? "hrmp-dev-qr-secret"; // اشتقاق مفتاح مستقل عن JWT
   return createHash("sha256").update(`${base}:qr`).digest("hex");
 }
 

@@ -1,4 +1,4 @@
-// FWMS — تأشير اتصال مباشر (بلاغ المالك 2026-10-24): offer/answer/ice/end/decline
+// HRMP — تأشير اتصال مباشر (بلاغ المالك 2026-10-24): offer/answer/ice/end/decline
 // إشارات تأسيس WebRTC وحدها تمرّ هنا — SDP ومرشحو ICE، أجسام JSON صغيرة قصيرة
 // العمر. الوسائط نفسها تتدفق نظير-إلى-نظير ولا تلمس الخادم أبدًا.
 import { NextRequest, NextResponse } from "next/server";

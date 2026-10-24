@@ -1,4 +1,4 @@
-// FWMS — تفاصيل كشف أجر واحد ببنوده (SPEC §4.3 «كيف حُسب كل مبلغ»): المدير/المحاسب، والعامل كشفه المعتمد فقط
+// HRMP — تفاصيل كشف أجر واحد ببنوده (SPEC §4.3 «كيف حُسب كل مبلغ»): المدير/المحاسب، والعامل كشفه المعتمد فقط
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { requirePermission, AccessError } from "@/lib/rbac";

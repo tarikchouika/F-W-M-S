@@ -1,4 +1,4 @@
-// FWMS — العمال المتاحون لسحب بديل (SPEC §4.1): حصريًا الأحرار داخل نافذة الوردية (بلا تعارض)
+// HRMP — العمال المتاحون لسحب بديل (SPEC §4.1): حصريًا الأحرار داخل نافذة الوردية (بلا تعارض)
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { requirePermission, AccessError } from "@/lib/rbac";

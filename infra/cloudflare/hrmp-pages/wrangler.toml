@@ -1,0 +1,8 @@
+# HRMP — بوابة Pages (hrmp) — إعداد wrangler (طلب المالك 2026-10-24: hrmp.pages.dev)
+# ملكية المساعد الأول — infra/cloudflare/** (COORDINATION §3)
+# النشر: npx wrangler pages deploy public --project-name=hrmp --branch=main
+# الأسرار لا تُخزَّن هنا أبدًا — التوكن يُمرَّر عبر متغير البيئة CLOUDFLARE_API_TOKEN فقط (DEPLOYMENT.md §4).
+
+name = "hrmp"
+pages_build_output_dir = "public"
+compatibility_date = "2026-10-24"

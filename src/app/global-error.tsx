@@ -1,6 +1,6 @@
 "use client";
 
-// FWMS — شبكة الأمان الأخيرة (global-error): يلتقط ما لا يلتقطه error.tsx —
+// HRMP — شبكة الأمان الأخيرة (global-error): يلتقط ما لا يلتقطه error.tsx —
 // أخطاء الـ root layout نفسه (src/app/layout.tsx) مثل فشل قراءة cookies. بوجوده
 // لا يمكن أن تظهر صفحة Next.js الافتراضية «Application error: a server-side
 // exception…» مهما انفجر الموضع، لأن هذا الحد يستبدل الجذر كله — ولذا يجب أن
@@ -93,7 +93,7 @@ export default function GlobalError({
   );
 
   useEffect(() => {
-    console.error("[FWMS][global-error] خطأ في جذر التخطيط:", error);
+    console.error("[HRMP][global-error] خطأ في جذر التخطيط:", error);
   }, [error]);
 
   const s = ERROR_STRINGS[locale];

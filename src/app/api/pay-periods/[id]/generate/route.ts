@@ -1,4 +1,4 @@
-// FWMS — توليد كشوف فترة (SPEC §4.3): من الورديات والحضور الموثق وقواعد الأجور السارية
+// HRMP — توليد كشوف فترة (SPEC §4.3): من الورديات والحضور الموثق وقواعد الأجور السارية
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { requirePermission, AccessError } from "@/lib/rbac";

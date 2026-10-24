@@ -1,4 +1,4 @@
-// FWMS — الجلسة الحالية (موثّقة من القاعدة): للواجهات والتحقق
+// HRMP — الجلسة الحالية (موثّقة من القاعدة): للواجهات والتحقق
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 

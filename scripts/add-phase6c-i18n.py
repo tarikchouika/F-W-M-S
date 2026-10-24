@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# FWMS — إضافة مفاتيح i18n للمرحلة 6ج إلى القواميس الأربع (ar/fr/en/es)
+# HRMP — إضافة مفاتيح i18n للمرحلة 6ج إلى القواميس الأربع (ar/fr/en/es)
 # التشغيل: python3 scripts/add-phase6c-i18n.py
 import json
 import os

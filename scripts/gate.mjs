@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// FWMS — بوابة الجودة قبل الدفع (gate)
+// HRMP — بوابة الجودة قبل الدفع (gate)
 //
 // لماذا وُجدت (علاج دائم لا يدوي):
 //   1) استيراد ناقص (`ThemeSwitcher`) كان يمرّ إلى main ثم يسقط CI بعد الدفع —
@@ -195,7 +195,7 @@ if (!QUICK) {
       "--to-migrations",
       join(ROOT, "prisma/migrations"),
       "--shadow-database-url",
-      "file:/tmp/fwms-gate-shadow.db",
+      "file:/tmp/hrmp-gate-shadow.db",
     ]);
     const noDiff = /No difference detected/.test(diff.out);
     const drift = !noDiff || diff.code !== 0;
@@ -214,7 +214,7 @@ if (!QUICK) {
         : "",
     });
     // نظّف قاعدة الظل إن أُنشئت
-    try { rmSync("/tmp/fwms-gate-shadow.db", { force: true }); } catch { /* بلا أثر */ }
+    try { rmSync("/tmp/hrmp-gate-shadow.db", { force: true }); } catch { /* بلا أثر */ }
   }
 }
 

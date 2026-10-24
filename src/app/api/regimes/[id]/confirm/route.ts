@@ -1,4 +1,4 @@
-// FWMS — تأكيد المحاسب لقاعدة أساس المسار الفلاحي (SPEC §12: مرة واحدة ثم تُحفَظ)
+// HRMP — تأكيد المحاسب لقاعدة أساس المسار الفلاحي (SPEC §12: مرة واحدة ثم تُحفَظ)
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { requirePermission, AccessError } from "@/lib/rbac";

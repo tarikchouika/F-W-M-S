@@ -1,4 +1,4 @@
-// FWMS — تفاصيل مواصفة (التخطيط/XSD كما رفعها المحاسب — عرض للتدقيق)
+// HRMP — تفاصيل مواصفة (التخطيط/XSD كما رفعها المحاسب — عرض للتدقيق)
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { requirePermission, AccessError } from "@/lib/rbac";

@@ -1,4 +1,4 @@
-// FWMS — مخطط قاعدة البيانات (SQLite + Prisma)
+// HRMP — مخطط قاعدة البيانات (SQLite + Prisma)
 // ملكية: المساعد الثاني (تغييرات البنية عبر migrations فقط — راجع docs/DATABASE_GUIDE.md)
 // قواعد نافذة: companyId في كل جدول تشغيلي | المال Int بالسنتيم | UTC في التخزين
 // ملاحظة SQLite: لا enums — القيم النصية تُتحقق في طبقة التطبيق (src/lib/rbac.ts)
@@ -82,6 +82,7 @@ model Company {
   declarationSpecs     DeclarationSpec[]
   declarations         Declaration[]
   generatedDocuments   GeneratedDocument[]
+  vacancies            ProjectVacancy[]
 
   @@index([status])
 }
@@ -211,9 +212,10 @@ model Project {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
-  company Company @relation(fields: [companyId], references: [id])
-  branch  Branch? @relation(fields: [branchId], references: [id])
-  sites   Site[]
+  company   Company          @relation(fields: [companyId], references: [id])
+  branch    Branch?          @relation(fields: [branchId], references: [id])
+  sites     Site[]
+  vacancies ProjectVacancy[]
 
   @@index([companyId, status])
   @@index([companyId, branchId])
@@ -1162,4 +1164,108 @@ model OwnershipTransfer {
 
   @@index([state])
   @@index([createdAt])
+}
+
+// ─────────────────────────────────────────────────────────────
+// الاستقطاب والتوظيف (طلب المالك 2026-10-24): باحثو عمل عامّون + وظائف شاغرة
+// في مشاريع الشركات المسجلة — بتحقق آلي (OTP إيمايل+هاتف) ووثيقة هوية
+// تُصادق من الأدمن أو السوبر أدمن. العزل: الوظائف ببيانات الشركة حصرًا،
+// والباحثون كيان عام مستقل عن مستخدمي الشركات (جدول خاص لا UserMembership).
+// ─────────────────────────────────────────────────────────────
+
+/// باحث عن عمل — حساب عام مستقل (لا يظهر في مستخدمي الشركات حتى توظيفه فعليًا)
+model JobSeeker {
+  id                    String    @id @default(cuid())
+  email                 String    @unique // مطبَّع: أحرف صغيرة بلا فراغات
+  phone                 String    @unique // مطبَّع بصيغة دولية +212XXXXXXXXX
+  fullName              String
+  passwordHash          String
+  locale                String    @default("ar")
+  /// التحقق الآلي: وقت نجاح OTP البريد/الهاتف — التقديم يتطلبهما معًا
+  emailVerifiedAt       DateTime?
+  phoneVerifiedAt       DateTime?
+  /// وثيقة الهوية (بطاقة وطنية / جواز سفر / رخصة سياقة) — صورة ≤ 5MB داخل القاعدة
+  documentType          String? // national_id | passport | driver_license
+  documentName          String? // اسم الملف الأصلي (للعرض فقط)
+  documentMime          String? // image/jpeg | image/png | image/webp
+  documentBytes         Bytes? // محتوى الصورة — يُخدم لمصادقي الهوية حصرًا
+  documentHash          String? // SHA-256 (سلامة + كشف التكرار)
+  /// مصادقة الأدمن/السوبر أدمن (الأمر الصريح للمالك): pending → approved|rejected
+  status                String    @default("pending") // pending | approved | rejected
+  rejectionReason       String?
+  reviewedById          String? // userId للمصادِق (User.id — مرجع منطقي بلا FK: الباحث كيان عام)
+  reviewedAt            DateTime?
+  isActive              Boolean   @default(true) // تعطيل حساب (إساءة مثلًا) — يمنع الدخول والتقديم
+  lastLoginAt           DateTime?
+  sessionsInvalidatedAt DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  applications VacancyApplication[]
+
+  @@index([status])
+  @@index([isActive])
+}
+
+/// رمز تحقق أحادي الاستخدام (OTP) للتسجيل العام — بريد أو هاتف
+model OtpCode {
+  id         String    @id @default(cuid())
+  channel    String // email | phone
+  target     String // البريد المطبَّع أو الهاتف بصيغته الدولية
+  codeHash   String // SHA-256(رمز 6 أرقام + ملح) — الرمز ذاته لا يُخزَّن أبدًا
+  purpose    String    @default("seeker_register") // نطاق الرمز (توسعة مستقبلية)
+  attempts   Int       @default(0) // عدّاد المحاولات (حد 5 ثم إبطال الرمز)
+  expiresAt  DateTime // 10 دقائق من الإصدار
+  consumedAt DateTime? // وقت الاستهلاك (أحادي الاستخدام)
+  createdAt  DateTime  @default(now())
+
+  @@index([channel, target])
+  @@index([expiresAt])
+}
+
+/// وظيفة شاغرة ضمن مشروع شركة — تُعرض علنًا عند status=published فقط
+model ProjectVacancy {
+  id             String    @id @default(cuid())
+  companyId      String
+  projectId      String
+  title          String
+  description    String
+  requirements   String? // المؤهلات/الخبرات المطلوبة (نص حر)
+  employmentType String    @default("full_time") // full_time | part_time | temporary | seasonal | internship
+  salaryMin      Int? // سنتيم MAD (Int حصرًا — قاعدة المنصة)
+  salaryMax      Int?
+  openings       Int       @default(1) // عدد المناصب
+  contactEmail   String? // قناة تواصل اختيارية تظهر للعموم
+  contactPhone   String? // بصيغة دولية (تُتحقق كالهااتف)
+  status         String    @default("draft") // draft | published | closed
+  publishedAt    DateTime?
+  closesAt       DateTime? // إغلاق تلقائي عند بلوغه (فحص عند القراءة)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  company      Company              @relation(fields: [companyId], references: [id])
+  project      Project              @relation(fields: [projectId], references: [id])
+  applications VacancyApplication[]
+
+  @@index([companyId, status])
+  @@index([projectId])
+  @@index([status, publishedAt])
+}
+
+/// طلب تقديم باحث (مُعتمَد) على وظيفة منشورة — طلب واحد لكل (باحث، وظيفة)
+model VacancyApplication {
+  id        String   @id @default(cuid())
+  vacancyId String
+  seekerId  String
+  coverNote String? // كلمة تقديم اختيارية (≤ 2000 حرف)
+  status    String   @default("submitted") // submitted | viewed | shortlisted | rejected | hired | withdrawn
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  vacancy ProjectVacancy @relation(fields: [vacancyId], references: [id])
+  seeker  JobSeeker      @relation(fields: [seekerId], references: [id])
+
+  @@unique([vacancyId, seekerId])
+  @@index([vacancyId, status])
+  @@index([seekerId])
 }

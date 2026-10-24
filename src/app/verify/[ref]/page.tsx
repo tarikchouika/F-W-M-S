@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import Link from "next/link";
 import { ShieldCheck, ShieldX, SearchX } from "lucide-react";
-import { LOCALE_COOKIE, localeDirection, localeLabels, resolveLocale } from "@/i18n/config";
+import { readLocaleCookie, localeDirection, localeLabels, resolveLocale } from "@/i18n/config";
 import { getDictionary, tServer } from "@/i18n/get-dictionary";
 import { verifyDocumentByRef } from "@/lib/reports/generate";
 import { getPlatformBranding } from "@/lib/branding";
@@ -16,7 +16,7 @@ type Props = {
 async function resolvePageLocale(searchParams: { h?: string; lang?: string }) {
   const { lang } = searchParams;
   const store = await cookies();
-  const cookieLocale = resolveLocale(store.get(LOCALE_COOKIE)?.value);
+  const cookieLocale = resolveLocale(readLocaleCookie(store));
   return lang === "ar" || lang === "fr" || lang === "en" || lang === "es" ? lang : cookieLocale;
 }
 
@@ -56,7 +56,7 @@ export default async function VerifyPage({ params, searchParams }: Props) {
                 <svg viewBox="0 0 24 24" className="size-5" aria-hidden fill="currentColor">
                   <path d="M12 2 3 6v6c0 5 3.8 9.3 9 10 5.2-.7 9-5 9-10V6l-9-4z" />
                 </svg>
-                FWMS
+                HRMP
               </div>
               <span className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] text-muted-foreground">
                 {t("reports.verify.publicBadge")}

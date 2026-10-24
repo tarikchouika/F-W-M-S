@@ -1,4 +1,4 @@
-// FWMS — ملفات أجور العمال (SPEC §4.3 أنظمة الاحتساب الثلاثة + §11.6 الأعباء العائلية)
+// HRMP — ملفات أجور العمال (SPEC §4.3 أنظمة الاحتساب الثلاثة + §11.6 الأعباء العائلية)
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { requirePermission, AccessError } from "@/lib/rbac";
