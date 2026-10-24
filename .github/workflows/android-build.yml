@@ -152,7 +152,10 @@ jobs:
           # الإضافات الثلاث ضرورية لبلاغ المالك 2026-10-23:
           # status-bar (نمط الشريط العلوي) · filesystem + share (تنزيل الوثائق
           # داخل WebView عبر مشاركة النظام — WebView لا ينفّذ <a download>).
-          npm install --no-save @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6 \
+          # --legacy-peer-deps (2026-10-24): nodemailer@6 (تبعية المنصة الجديدة لإرسال OTP)
+          # يتعارض مع peerOptional لـ next-auth (يريد ^7) في تحليل npm الصارم — bun (استوديو
+          # المنصة/Vercel/الهاتف) متسامح، وهنا نثبّت إضافات Capacitor فقط بلا مساس بتبعيات المشروع.
+          npm install --no-save --legacy-peer-deps @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6 \
             @capacitor/status-bar@6 @capacitor/filesystem@6 @capacitor/share@6
 
       - name: Write Capacitor config + add Android platform
