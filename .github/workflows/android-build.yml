@@ -220,7 +220,7 @@ jobs:
           # والظهور عابرًا بالسحب ثم الاختفاء تلقائيًا (BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE).
           # قياسات الشرائط المخفية = صفر ⇒ الشاشة ممتلئة 100%؛ ولوحة المفاتيح
           # وحدها تُحقن (--fwms-inset-bottom) مع تمرير الحقل النشط فوقها.
-          MAIN="android/app/src/main/java/ma/hrmp/app/MainActivity.java"
+          MAIN="android/app/src/main/java/ma/fwms/app/MainActivity.java"
           cat > "$MAIN" <<'JAVA'
           package ma.fwms.app;
 
